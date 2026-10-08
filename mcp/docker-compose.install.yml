@@ -1,0 +1,29 @@
+# Универсальная установка из каталога mcp/: direct_http (bases.yaml) или dcc.
+name: extractor1c-mcp
+services:
+  extractor1c:
+    build:
+      context: ..
+      dockerfile: mcp/Dockerfile
+    env_file:
+      - .env
+    environment:
+      EXTRACTOR_PROJECTS_BASES_FILE: /run/extractor1c/bases.yaml
+      EXTRACTOR_PROJECTS_OPERATION_DB: /var/lib/extractor1c/operations.sqlite3
+    # Только локальный доступ. Для удалённых клиентов используйте HTTPS-прокси.
+    ports:
+      - "127.0.0.1:8001:8000"
+    volumes:
+      - ./bases.yaml:/run/extractor1c/bases.yaml:ro
+      - extractor1c_state:/var/lib/extractor1c
+    # В этой конфигурации входящие forwarded-заголовки не нужны.
+    command: ["uvicorn", "extractor1c.mcp_server:app", "--host", "0.0.0.0", "--port", "8000", "--no-proxy-headers"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+volumes:
+  extractor1c_state:

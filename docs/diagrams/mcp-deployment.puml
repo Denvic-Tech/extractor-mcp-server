@@ -1,0 +1,24 @@
+@startuml
+title MCP Экстрактора 1С: варианты развертывания
+left to right direction
+skinparam shadowing false
+skinparam componentStyle rectangle
+actor "ИИ-клиент" as AI
+node "Сервер MCP\nDocker или Python" as HOST {
+  component "MCP 3.2.0" as MCP
+}
+node "Сервер 1С" as ONE {
+  component "Web-публикация\nHTTP-сервис расширения" as WEB
+  component "Экстрактор 1С\nОдна или несколько баз" as EX
+}
+node "Сервер DCC v2" as DCC
+AI --> MCP : MCP: HTTP или stdio
+MCP --> WEB : Без DCC: HTTP(S)
+WEB --> EX
+MCP --> DCC : Через DCC: HTTPS
+EX --> DCC : 1С опрашивает задачи\nи отправляет результаты
+note bottom of MCP
+  Выбирается один маршрут:
+  direct_http (по умолчанию) или dcc
+end note
+@enduml

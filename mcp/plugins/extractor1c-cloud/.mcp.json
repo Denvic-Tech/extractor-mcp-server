@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "extractor1c": {
+      "type": "http",
+      "url": "${EXTRACTOR1C_MCP_URL}",
+      "headers": {
+        "Authorization": "${EXTRACTOR1C_MCP_AUTHORIZATION}"
+      }
+    }
+  }
+}

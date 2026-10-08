@@ -1,0 +1,910 @@
+{
+  "normalized": {
+    "items": [
+      {
+        "table": "d1003_probe_subconto",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "Период",
+        "target": "Period",
+        "type": "DateTime64"
+      },
+      {
+        "table": "d1003_probe_subconto",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "Регистратор",
+        "target": "Registrator",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_subconto",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "НомерСтроки",
+        "target": "NomerStroki",
+        "type": "UInt32"
+      },
+      {
+        "table": "d1003_probe_subconto",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ВидДвижения",
+        "target": "VidDvizheniya",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_subconto",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "Вид",
+        "target": "Vid",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_subconto",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "Значение",
+        "target": "Znachenie",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_subconto",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "Параметр.ПериодДень",
+        "target": "ParametrPeriodDen",
+        "type": "DateTime64"
+      },
+      {
+        "table": "d1003_probe_subconto",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "РегистраторГуид",
+        "target": "RegistratorGuid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_subconto",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ВидГуид",
+        "target": "VidGuid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_subconto",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ЗначениеГуид",
+        "target": "ZnachenieGuid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_subconto",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "РегистраторТип",
+        "target": "RegistratorTip",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_subconto",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ЗначениеТип",
+        "target": "ZnachenieTip",
+        "type": "String"
+      }
+    ],
+    "total": 12,
+    "nextCursor": null
+  },
+  "wide": {
+    "items": [
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "Период",
+        "target": "Period",
+        "type": "DateTime64"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "Регистратор",
+        "target": "Registrator",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "НомерСтроки",
+        "target": "NomerStroki",
+        "type": "UInt32"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "Активность",
+        "target": "Aktivnost",
+        "type": "Bool"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СчетДт",
+        "target": "SchetDt",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СубконтоДт1",
+        "target": "SubkontoDt1",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ВидСубконтоДт1",
+        "target": "VidSubkontoDt1",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СубконтоДт2",
+        "target": "SubkontoDt2",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ВидСубконтоДт2",
+        "target": "VidSubkontoDt2",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СубконтоДт3",
+        "target": "SubkontoDt3",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ВидСубконтоДт3",
+        "target": "VidSubkontoDt3",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СчетКт",
+        "target": "SchetKt",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СубконтоКт1",
+        "target": "SubkontoKt1",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ВидСубконтоКт1",
+        "target": "VidSubkontoKt1",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СубконтоКт2",
+        "target": "SubkontoKt2",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ВидСубконтоКт2",
+        "target": "VidSubkontoKt2",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СубконтоКт3",
+        "target": "SubkontoKt3",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ВидСубконтоКт3",
+        "target": "VidSubkontoKt3",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "Организация",
+        "target": "Organizatsiya",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ВалютаДт",
+        "target": "ValyutaDt",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ВалютаКт",
+        "target": "ValyutaKt",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ПодразделениеДт",
+        "target": "PodrazdelenieDt",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ПодразделениеКт",
+        "target": "PodrazdelenieKt",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "НаправлениеДеятельностиДт",
+        "target": "NapravlenieDeyatelnostiDt",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "НаправлениеДеятельностиКт",
+        "target": "NapravlenieDeyatelnostiKt",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 15,
+        "scale": 2,
+        "source": "Сумма",
+        "target": "Summa",
+        "type": "Decimal"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 15,
+        "scale": 2,
+        "source": "ВалютнаяСуммаДт",
+        "target": "ValyutnayaSummaDt",
+        "type": "Decimal"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 15,
+        "scale": 2,
+        "source": "ВалютнаяСуммаКт",
+        "target": "ValyutnayaSummaKt",
+        "type": "Decimal"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 15,
+        "scale": 3,
+        "source": "КоличествоДт",
+        "target": "KolichestvoDt",
+        "type": "Decimal"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 15,
+        "scale": 3,
+        "source": "КоличествоКт",
+        "target": "KolichestvoKt",
+        "type": "Decimal"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 15,
+        "scale": 2,
+        "source": "СуммаНУДт",
+        "target": "SummaNUDt",
+        "type": "Decimal"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 15,
+        "scale": 2,
+        "source": "СуммаНУКт",
+        "target": "SummaNUKt",
+        "type": "Decimal"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 15,
+        "scale": 2,
+        "source": "СуммаПРДт",
+        "target": "SummaPRDt",
+        "type": "Decimal"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 15,
+        "scale": 2,
+        "source": "СуммаПРКт",
+        "target": "SummaPRKt",
+        "type": "Decimal"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 15,
+        "scale": 2,
+        "source": "СуммаВРДт",
+        "target": "SummaVRDt",
+        "type": "Decimal"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 15,
+        "scale": 2,
+        "source": "СуммаВРКт",
+        "target": "SummaVRKt",
+        "type": "Decimal"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "Содержание",
+        "target": "Soderzhanie",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "НеКорректироватьСтоимостьАвтоматически",
+        "target": "NeKorrektirovatStoimostAvtomaticheski",
+        "type": "Bool"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "Сторно",
+        "target": "Storno",
+        "type": "Bool"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "Параметр.ПериодДень",
+        "target": "ParametrPeriodDen",
+        "type": "DateTime64"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "РегистраторГуид",
+        "target": "RegistratorGuid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СчетДтГуид",
+        "target": "SchetDtGuid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СубконтоДт1Гуид",
+        "target": "SubkontoDt1Guid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ВидСубконтоДт1Гуид",
+        "target": "VidSubkontoDt1Guid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СубконтоДт2Гуид",
+        "target": "SubkontoDt2Guid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ВидСубконтоДт2Гуид",
+        "target": "VidSubkontoDt2Guid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СубконтоДт3Гуид",
+        "target": "SubkontoDt3Guid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ВидСубконтоДт3Гуид",
+        "target": "VidSubkontoDt3Guid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СчетКтГуид",
+        "target": "SchetKtGuid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СубконтоКт1Гуид",
+        "target": "SubkontoKt1Guid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ВидСубконтоКт1Гуид",
+        "target": "VidSubkontoKt1Guid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СубконтоКт2Гуид",
+        "target": "SubkontoKt2Guid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ВидСубконтоКт2Гуид",
+        "target": "VidSubkontoKt2Guid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СубконтоКт3Гуид",
+        "target": "SubkontoKt3Guid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ВидСубконтоКт3Гуид",
+        "target": "VidSubkontoKt3Guid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ОрганизацияГуид",
+        "target": "OrganizatsiyaGuid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ВалютаДтГуид",
+        "target": "ValyutaDtGuid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ВалютаКтГуид",
+        "target": "ValyutaKtGuid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ПодразделениеДтГуид",
+        "target": "PodrazdelenieDtGuid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "ПодразделениеКтГуид",
+        "target": "PodrazdelenieKtGuid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "НаправлениеДеятельностиДтГуид",
+        "target": "NapravlenieDeyatelnostiDtGuid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "НаправлениеДеятельностиКтГуид",
+        "target": "NapravlenieDeyatelnostiKtGuid",
+        "type": "UUID"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "РегистраторТип",
+        "target": "RegistratorTip",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СубконтоДт1Тип",
+        "target": "SubkontoDt1Tip",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СубконтоДт2Тип",
+        "target": "SubkontoDt2Tip",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СубконтоДт3Тип",
+        "target": "SubkontoDt3Tip",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СубконтоКт1Тип",
+        "target": "SubkontoKt1Tip",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СубконтоКт2Тип",
+        "target": "SubkontoKt2Tip",
+        "type": "String"
+      },
+      {
+        "table": "d1003_probe_movements",
+        "nullable": true,
+        "precision": 0,
+        "scale": 0,
+        "source": "СубконтоКт3Тип",
+        "target": "SubkontoKt3Tip",
+        "type": "String"
+      }
+    ],
+    "total": 69,
+    "nextCursor": null
+  },
+  "verification": {
+    "projectName": "d1003_ЖурналПроводокРегламентированный",
+    "projectRef": "3e6538b6-bf2a-11f1-a471-bbdee4b67738",
+    "connectionName": "demo Clickhouse - erp_25_demo_denis",
+    "comment": "",
+    "rowCount": 4,
+    "fieldsMapped": 61,
+    "rows": [
+      {
+        "source": "РегистрБухгалтерии.Хозрасчетный",
+        "table": "d1003_ledger",
+        "disabled": false,
+        "fieldCount": 39,
+        "guidFields": [
+          {
+            "source": "РегистраторГуид",
+            "target": "RegistratorGuid",
+            "type": "UUID"
+          },
+          {
+            "source": "СчетДтГуид",
+            "target": "SchetDtGuid",
+            "type": "UUID"
+          },
+          {
+            "source": "СчетКтГуид",
+            "target": "SchetKtGuid",
+            "type": "UUID"
+          },
+          {
+            "source": "ОрганизацияГуид",
+            "target": "OrganizatsiyaGuid",
+            "type": "UUID"
+          },
+          {
+            "source": "ВалютаДтГуид",
+            "target": "ValyutaDtGuid",
+            "type": "UUID"
+          },
+          {
+            "source": "ВалютаКтГуид",
+            "target": "ValyutaKtGuid",
+            "type": "UUID"
+          },
+          {
+            "source": "ПодразделениеДтГуид",
+            "target": "PodrazdelenieDtGuid",
+            "type": "UUID"
+          },
+          {
+            "source": "ПодразделениеКтГуид",
+            "target": "PodrazdelenieKtGuid",
+            "type": "UUID"
+          },
+          {
+            "source": "НаправлениеДеятельностиДтГуид",
+            "target": "NapravlenieDeyatelnostiDtGuid",
+            "type": "UUID"
+          },
+          {
+            "source": "НаправлениеДеятельностиКтГуид",
+            "target": "NapravlenieDeyatelnostiKtGuid",
+            "type": "UUID"
+          }
+        ],
+        "grouping": [
+          {
+            "enabled": true,
+            "field": "ПериодДень",
+            "path": "Период",
+            "function": "День",
+            "inclusive": false
+          }
+        ],
+        "maxItemsPerBatch": 0
+      },
+      {
+        "source": "РегистрБухгалтерии.Хозрасчетный.Субконто",
+        "table": "d1003_subconto",
+        "disabled": false,
+        "fieldCount": 12,
+        "guidFields": [
+          {
+            "source": "РегистраторГуид",
+            "target": "RegistratorGuid",
+            "type": "UUID"
+          },
+          {
+            "source": "ВидГуид",
+            "target": "VidGuid",
+            "type": "UUID"
+          },
+          {
+            "source": "ЗначениеГуид",
+            "target": "ZnachenieGuid",
+            "type": "UUID"
+          }
+        ],
+        "grouping": [
+          {
+            "enabled": true,
+            "field": "ПериодДень",
+            "path": "Период",
+            "function": "День",
+            "inclusive": false
+          }
+        ],
+        "maxItemsPerBatch": 0
+      },
+      {
+        "source": "ПланВидовХарактеристик.ВидыСубконтоХозрасчетные",
+        "table": "d1003_subconto_kinds",
+        "disabled": false,
+        "fieldCount": 5,
+        "guidFields": [
+          {
+            "source": "Параметр.Ссылка",
+            "target": "ParametrSsylka",
+            "type": "UUID"
+          },
+          {
+            "source": "СсылкаГуид",
+            "target": "SsylkaGuid",
+            "type": "UUID"
+          }
+        ],
+        "grouping": [
+          {
+            "enabled": true,
+            "field": "Ссылка",
+            "path": "Ссылка",
+            "function": "",
+            "inclusive": false
+          }
+        ],
+        "maxItemsPerBatch": 1000
+      },
+      {
+        "source": "ПланСчетов.Хозрасчетный",
+        "table": "d1003_accounts",
+        "disabled": false,
+        "fieldCount": 5,
+        "guidFields": [
+          {
+            "source": "Параметр.Ссылка",
+            "target": "ParametrSsylka",
+            "type": "UUID"
+          },
+          {
+            "source": "СсылкаГуид",
+            "target": "SsylkaGuid",
+            "type": "UUID"
+          }
+        ],
+        "grouping": [
+          {
+            "enabled": true,
+            "field": "Ссылка",
+            "path": "Ссылка",
+            "function": "",
+            "inclusive": false
+          }
+        ],
+        "maxItemsPerBatch": 1000
+      }
+    ]
+  }
+}

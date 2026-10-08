@@ -1,0 +1,251 @@
+{
+  "$defs": {
+    "Segmentation": {
+      "additionalProperties": false,
+      "description": "One native grouping with independently selected execution roles (API 3.2.0).",
+      "properties": {
+        "segment": {
+          "enum": [
+            "По значению",
+            "Первая буква",
+            "Первые две буквы",
+            "Произвольная подстрока",
+            "Час",
+            "День",
+            "Неделя",
+            "Месяц",
+            "Квартал",
+            "Полугодие",
+            "Год"
+          ],
+          "title": "Segment",
+          "type": "string"
+        },
+        "field": {
+          "maxLength": 512,
+          "minLength": 1,
+          "pattern": "^[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*(?:\\.[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*)*$",
+          "title": "Field",
+          "type": "string"
+        },
+        "regular": {
+          "title": "Regular",
+          "type": "boolean"
+        },
+        "extended": {
+          "title": "Extended",
+          "type": "boolean"
+        },
+        "initialization": {
+          "title": "Initialization",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "segment",
+        "field",
+        "regular",
+        "extended",
+        "initialization"
+      ],
+      "title": "Segmentation",
+      "type": "object",
+      "anyOf": [
+        {
+          "properties": {
+            "regular": {
+              "const": true
+            }
+          },
+          "required": [
+            "regular"
+          ]
+        },
+        {
+          "properties": {
+            "extended": {
+              "const": true
+            }
+          },
+          "required": [
+            "extended"
+          ]
+        },
+        {
+          "properties": {
+            "initialization": {
+              "const": true
+            }
+          },
+          "required": [
+            "initialization"
+          ]
+        }
+      ]
+    },
+    "TemplateDefinition": {
+      "additionalProperties": false,
+      "description": "Native metadata source, including tabular sections and virtual tables.",
+      "properties": {
+        "connectionName": {
+          "default": "",
+          "maxLength": 150,
+          "title": "Connectionname",
+          "type": "string"
+        },
+        "projectName": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Projectname",
+          "type": "string"
+        },
+        "object": {
+          "maxLength": 512,
+          "pattern": "^[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*(?:\\.[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*){1,2}$",
+          "title": "Object",
+          "type": "string"
+        },
+        "tableName": {
+          "maxLength": 100,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+          "title": "Tablename",
+          "type": "string"
+        },
+        "segmentation": {
+          "items": {
+            "$ref": "#/$defs/Segmentation"
+          },
+          "maxItems": 500,
+          "title": "Segmentation",
+          "type": "array"
+        },
+        "periodicity": {
+          "anyOf": [
+            {
+              "enum": [
+                "",
+                "Час",
+                "День",
+                "Неделя",
+                "Месяц",
+                "Квартал",
+                "Полугодие",
+                "Период",
+                "Запись",
+                "Регистратор",
+                "Секунда",
+                "Минута",
+                "Декада",
+                "Авто"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Periodicity"
+        },
+        "selectedFields": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 500,
+          "title": "Selectedfields",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "includeGuids": {
+          "default": true,
+          "title": "Includeguids",
+          "type": "boolean"
+        },
+        "includeMetadataTypes": {
+          "default": true,
+          "title": "Includemetadatatypes",
+          "type": "boolean"
+        },
+        "guidColumnNames": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Guidcolumnnames",
+          "type": "object"
+        },
+        "maxItemsPerBatch": {
+          "default": 0,
+          "maximum": 1000000,
+          "minimum": 0,
+          "title": "Maxitemsperbatch",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "projectName",
+        "object",
+        "tableName",
+        "segmentation"
+      ],
+      "title": "TemplateDefinition",
+      "type": "object",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "segmentation": {
+                "contains": {
+                  "properties": {
+                    "field": {
+                      "const": "Ссылка"
+                    },
+                    "segment": {
+                      "const": "По значению"
+                    }
+                  },
+                  "required": [
+                    "field",
+                    "segment"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "segmentation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "maxItemsPerBatch": {
+                "const": 1000
+              }
+            },
+            "required": [
+              "maxItemsPerBatch"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "description": "JSON request, distinct from Extractor serialized Type/Value project data.",
+  "properties": {
+    "schemaVersion": {
+      "const": 1,
+      "title": "Schemaversion",
+      "type": "integer"
+    },
+    "definition": {
+      "$ref": "#/$defs/TemplateDefinition"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "definition"
+  ],
+  "title": "ProjectTemplateRequest",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:denvic:extractor1c:project-template-request:1"
+}

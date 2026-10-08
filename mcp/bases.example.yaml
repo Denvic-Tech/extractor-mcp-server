@@ -1,0 +1,13 @@
+# Set EXTRACTOR_PROJECTS_BASES_FILE to this YAML path.
+# Keep actual credentials in a protected local file; do not commit them.
+bases:
+  - base_id: erp
+    name: ERP
+    url: https://erp.example.test/hs/extractor-projects/v1
+    user: mcp
+    password: ""
+  - base_id: accounting
+    name: Accounting
+    url: https://accounting.example.test/hs/extractor-projects/v1
+    user: mcp
+    password: ""

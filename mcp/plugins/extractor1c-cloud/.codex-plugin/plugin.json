@@ -1,0 +1,23 @@
+{
+  "name": "extractor1c-cloud",
+  "version": "0.1.0",
+  "description": "Create and safely update Extractor 1C export projects through a hosted MCP server.",
+  "author": {
+    "name": "Extractor 1C team"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Extractor 1C Cloud",
+    "shortDescription": "Safely configure 1C exports from Codex or Claude.",
+    "longDescription": "Discovers 1C metadata, analyzes register relationships, previews exact changes and commits approved Extractor 1C project plans idempotently.",
+    "developerName": "Extractor 1C team",
+    "category": "Developer Tools",
+    "capabilities": ["Metadata discovery", "Project write", "Idempotent operations"],
+    "defaultPrompt": [
+      "Show Extractor 1C projects.",
+      "Prepare an accumulation-register export.",
+      "Verify an Extractor 1C project."
+    ]
+  },
+  "mcpServers": "./.mcp.json"
+}
