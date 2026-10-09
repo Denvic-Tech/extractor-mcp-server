@@ -1,24 +1,64 @@
 @startuml
-title MCP Экстрактора 1С: варианты развертывания
-left to right direction
+top to bottom direction
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 14
+skinparam defaultFontColor #23344D
 skinparam shadowing false
-skinparam componentStyle rectangle
-actor "ИИ-клиент" as AI
-node "Сервер MCP\nDocker или Python" as HOST {
-  component "MCP 3.2.0" as MCP
+skinparam roundcorner 18
+skinparam padding 16
+skinparam nodesep 45
+skinparam ranksep 45
+skinparam ArrowColor #75859A
+skinparam ArrowThickness 2
+skinparam ArrowFontSize 12
+skinparam rectangle {
+  BackgroundColor #F7F9FC
+  BorderColor #CBD5E1
+  BorderThickness 1
 }
-node "Сервер 1С" as ONE {
-  component "Web-публикация\nHTTP-сервис расширения" as WEB
-  component "Экстрактор 1С\nОдна или несколько баз" as EX
+skinparam package {
+  Style rectangle
+  BackgroundColor #FFFFFF
+  BorderColor #DAE2EC
+  BorderThickness 1
+  FontSize 15
+  FontStyle bold
 }
-node "Сервер DCC v2" as DCC
-AI --> MCP : MCP: HTTP или stdio
-MCP --> WEB : Без DCC: HTTP(S)
-WEB --> EX
-MCP --> DCC : Через DCC: HTTPS
-EX --> DCC : 1С опрашивает задачи\nи отправляет результаты
+skinparam note {
+  BackgroundColor #F8FAFC
+  BorderColor #E2E8F0
+  FontColor #536479
+  FontSize 12
+}
+skinparam titleFontSize 22
+skinparam titleFontColor #172B4D
+
+title Экстрактор 1С · два маршрута подключения
+
+rectangle "<b>ИИ-клиент</b>\n\nС поддержкой MCP" as AI #F1F5F9
+rectangle "<b>MCP-сервер</b>\n\nЛокальный Python\nили Docker" as MCP #EAF0FF
+
+package "1 · Напрямую к 1С" as DIRECT #F1FAF5 {
+  rectangle "<b>Web-публикация 1С</b>\n\nHTTP-сервис\nЭкстрактора" as WEB #FFFFFF
+  rectangle "<b>Базы 1С</b>\n\nЭкстрактор 1С в BI\nСписок в bases.yaml" as BASE_HTTP #FFFFFF
+  WEB -[#2E8B64]-> BASE_HTTP : Выполнение команд
+}
+
+package "2 · Через DCC v2" as RELAY #F0F6FF {
+  rectangle "<b>DCC v2</b>\n\nЗадачи, результаты\nи метаданные" as DCC #FFFFFF
+  rectangle "<b>Базы 1С</b>\n\nЭкстрактор 1С в BI\nЗарегистрированы в DCC" as BASE_DCC #FFFFFF
+  DCC -[hidden]down-> BASE_DCC
+  BASE_DCC -[#3975C6,norank]-> DCC : <b>1С инициирует обмен</b>\nЗабирает задачи\nВозвращает результаты
+}
+
+AI --> MCP : stdio или HTTP(S)
+MCP -[#2E8B64]-> WEB : direct_http\nHTTP(S)
+MCP -[#3975C6]-> DCC : dcc\nHTTPS
+WEB -[hidden]right-> DCC
+
 note bottom of MCP
-  Выбирается один маршрут:
-  direct_http (по умолчанию) или dcc
+  Для конкретной базы
+  выбирается один маршрут
 end note
 @enduml

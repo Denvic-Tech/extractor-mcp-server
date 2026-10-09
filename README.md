@@ -11,9 +11,9 @@ MCP позволяет ИИ-клиенту читать метаданные 1С
 
 ## 1. Схема развертывания и выбор маршрута
 
-![Верхнеуровневая схема развертывания](docs/diagrams/mcp-deployment.svg)
+![Два маршрута MCP: напрямую через web-публикацию 1С или через DCC v2](docs/diagrams/mcp-deployment-brand.png)
 
-[Исходник PlantUML](docs/diagrams/mcp-deployment.puml).
+[Техническая схема PlantUML](docs/diagrams/mcp-deployment.puml).
 
 | Режим | Движение команд | Перечень баз |
 |---|---|---|

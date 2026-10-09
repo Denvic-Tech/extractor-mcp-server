@@ -1,12 +1,13 @@
 {
   "product": "Extractor 1C MCP",
   "version": "3.2.0",
-  "sourceCommit": "fe0cbf42b41fa04c763228887fd0c7d33031aba5",
+  "sourceCommit": "f6e52efea3c1b443e8cf30d988ed5a120b775c71",
   "repository": "https://github.com/Denvic-Tech/extractor-mcp-server",
   "managedFiles": [
     ".dockerignore",
     ".gitignore",
     "README.md",
+    "docs/diagrams/mcp-deployment-brand.png",
     "docs/diagrams/mcp-deployment.png",
     "docs/diagrams/mcp-deployment.puml",
     "docs/diagrams/mcp-deployment.svg",

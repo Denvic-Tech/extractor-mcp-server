@@ -31,6 +31,21 @@ For requests to schedule daily or weekly exports, run every N minutes, pause or 
 
 MCP и EPA_Projects используют 3.2.0; Экстрактор - начиная с 3.16.1.xx. Вызови `list_bases`, выбери `base_id` и передавай его во все операции. В прямом HTTP-режиме базы перечислены в YAML на сервере; в DCC-режиме базы обнаруживаются через DCC, а 1С сама получает команды. DCC-маршрут не обращается к публикации 1С. `segmentation` передаётся массивом группировок с явным `field` и тремя Boolean-ролями; объект с `mode` не используется.
 
+### Mandatory route choice when the same base is available twice
+
+If `.env` contains a configured DCC connection and the same 1C base is available
+both through a direct web publication and as a DCC connector, before preparing
+a project or starting export ask: "This base is available directly through the
+1C web publication and through DCC. Which route should we use: direct or DCC?"
+Wait for the answer; do not choose by default or by server availability. Reuse
+an explicit choice for this base in the current conversation unless conditions
+change. Keep commands, data and status checks on the chosen route. Match bases
+using confirmed identifiers and registration details, not only display names.
+The current MCP instance exposes one configured route; DCC credentials alone
+do not activate a second route. If the selected route is unavailable, configure
+or select the appropriate MCP instance and check `list_bases` / `readiness`.
+Do not substitute another route or transfer preview plans between instances.
+
 ## Creating projects and changing their contents
 
 Ask for the partition choice unless already specified: documents by day or
