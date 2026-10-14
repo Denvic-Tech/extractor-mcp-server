@@ -5,15 +5,13 @@
 .local-backups/
 mcp/state/
 .test-tmp/
+.matrix*/
 # Python test, bytecode and build artifacts (also applies inside mcp/)
 pytest-cache-files-*/
 __pycache__/
 *.pyc
 *.pyo
-.pytest_cache/
-.pytest-tmp/
-.pytest-tmp-*/
-.pytest-template-*/
+.pytest*/
 .venv/
 env/
 venv/
