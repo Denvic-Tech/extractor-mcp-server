@@ -351,7 +351,7 @@ Unix: `.venv/bin/python`. Тесты запускайте с изолирова�
 - [Методы и архитектура MCP](docs/Справочник/mcp-server.md).
 - [Навык](mcp/skills/extractor1c/SKILL.md).
 - [JSON-контракт шаблона проекта](docs/Справочник/project-template-contract.md).
-- [Сегментация API 3.3.0](docs/Справочник/project-segments.md).
+- [Сегментация проектов](docs/Справочник/project-segments.md).
 - [Пример `.env`](mcp/.env.example) и [пример YAML](mcp/bases.example.yaml).
 - [Установщик](mcp/scripts/install.py) и [универсальный Compose](mcp/docker-compose.install.yml).
 

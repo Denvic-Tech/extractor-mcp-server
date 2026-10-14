@@ -1,6 +1,29 @@
 # Hosted project workflow
 
-API 3.2.2: сначала `list_bases`, выбери `base_id` и передавай его во все вызовы. Несколько HTTP-баз настраиваются YAML; DCC-базы обнаруживаются через DCC. Новую многоролевую сегментацию передавай массивом; описание - [partition-segments.md](partition-segments.md). Одно-сегментные примеры ниже остаются допустимым отдельным вариантом и не смешиваются с массивом.
+API 3.3.0: сначала `list_bases`, выбери `base_id` и передавай его во все вызовы. Несколько HTTP-баз настраиваются YAML; DCC-базы обнаруживаются через DCC. Новую многоролевую сегментацию передавай массивом; описание - [partition-segments.md](partition-segments.md). Одно-сегментные примеры ниже остаются допустимым отдельным вариантом и не смешиваются с массивом.
+
+## Receiver observations
+
+Read `readiness` for the selected base: `inspect_project_receiver` requires
+EPA 3.3.0+ in major 3 and capability `receiver_inspection`. Obtain the saved
+project reference and row mapping with `verify_project`, then call:
+
+```json
+{"project_guid":"b81d6354-710c-4199-8a4c-f11a6ab63d1b","project_row_id":"","checks":["schema"],"base_id":"<selected base>"}
+```
+
+If several rows exist, pass their specific saved identifier as `project_row_id`;
+an empty value does not select an arbitrary row. `checks` accepts unique `schema`,
+`count`, `sample`; default is `schema`. For `sample`, explicitly provide
+`sample_fields` (1..64 unique saved receiver columns or unambiguously mapped
+source fields) and integer `sample_limit` (1..100). Without `sample`, fields are
+empty and limit is 0.
+
+EPA uses the project's saved connection and table. Never add SQL or override
+the receiver. The response preserves counts as strings, typed values and NULL;
+limits and truncation are explicit. Keep per-check errors as diagnostics.
+`sourceEqualityVerified=false`: schema, count and samples do not prove source
+equality. This read does not create projects, initialize queues or start exports.
 
 
 Before preview of catalog or document rows, ask for the partition choice

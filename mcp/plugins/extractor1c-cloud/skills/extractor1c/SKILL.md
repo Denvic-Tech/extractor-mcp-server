@@ -34,7 +34,12 @@ For requests to schedule daily or weekly exports, run every N minutes, pause or 
 
 ## Транспорт и версия
 
-MCP и EPA_Projects используют 3.2.2; Экстрактор - начиная с 3.16.1.xx. Вызови `list_bases`, выбери `base_id` и передавай его во все операции. В прямом HTTP-режиме базы перечислены в YAML на сервере; в DCC-режиме базы обнаруживаются через DCC, а 1С сама получает команды. DCC-маршрут не обращается к публикации 1С. `segmentation` передаётся массивом группировок с явным `field` и тремя Boolean-ролями; объект с `mode` не используется.
+MCP и EPA_Projects используют 3.3.0; базовая серия Экстрактора — 3.16.2.xx. Фактическую версию и capabilities выбранной базы проверяй через `readiness`: обновление MCP не обновляет методы в 1С. Вызови `list_bases`, выбери `base_id` и передавай его во все операции. В прямом HTTP-режиме базы перечислены в YAML на сервере; в DCC-режиме базы обнаруживаются через DCC, а 1С сама получает команды. DCC-маршрут не обращается к публикации 1С. `segmentation` передаётся массивом группировок с явным `field` и тремя Boolean-ролями; объект с `mode` не используется.
+
+For receiver observations, use `inspect_project_receiver` only after readiness
+confirms EPA 3.3.0+ and capability `receiver_inspection`. Read the receiver section
+in [workflow.md](references/workflow.md) for exact arguments and limits. Receiver
+observations do not prove equality with the source.
 
 ### Mandatory route choice when the same base is available twice
 

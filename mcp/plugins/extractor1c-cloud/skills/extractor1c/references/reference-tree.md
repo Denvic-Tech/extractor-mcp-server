@@ -32,4 +32,4 @@ and Хозрасчетный.ДвиженияССубконто (debit/credit co
 Always preview the actual database. Preserve GUID/type, movement side and line
 number. Joining normalized subconto multiplies journal rows and their amounts.
 
-Read readiness.oneCMethodsVersion and oneCCapabilities from the selected deployed base. MCP and EPA_Projects version is 3.2.2, Extractor versions starting with 3.16.1.xx are supported. account_scope requires account_subconto_settings. Never substitute a local version for an unavailable deployed version. Segmentation uses an array; read [partition-segments.md](partition-segments.md). Platform 8.3.5 and compatibility mode 8.2 require separate runtime validation.
+Read readiness.oneCMethodsVersion and oneCCapabilities from the selected deployed base. MCP and EPA_Projects version is 3.3.0, Extractor versions starting with 3.16.2.xx are supported. account_scope requires account_subconto_settings. Never substitute a local version for an unavailable deployed version. Segmentation uses an array; read [partition-segments.md](partition-segments.md). Platform 8.3.5 and compatibility mode 8.2 require separate runtime validation.
