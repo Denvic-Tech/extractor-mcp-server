@@ -1,5 +1,6 @@
 """Isolation and conservative asynchronous reconciliation of selected bases."""
 import inspect
+from pathlib import Path
 from uuid import uuid4
 
 import pytest
@@ -68,6 +69,23 @@ def test_legacy_stdio_store_does_not_follow_a_changed_url_or_user(tmp_path, monk
     assert str(tmp_path / "legacy.sqlite") not in paths
 
 
+def test_relative_operation_store_is_anchored_to_env_file(tmp_path, monkeypatch):
+    installation = tmp_path / "installation"
+    installation.mkdir()
+    elsewhere = tmp_path / "agent-working-directory"
+    elsewhere.mkdir()
+    config = ApiSettings(_env_file=None, operation_db="state/operations.sqlite3")
+    monkeypatch.setattr(server, "ApiSettings", lambda **kwargs: config)
+    monkeypatch.setattr(server, "ENV_FILE", installation / ".env")
+    monkeypatch.chdir(elsewhere)
+    store = server.operation_store()
+    assert Path(store.path) == installation / "state/operations.sqlite3"
+    plan = store.create_plan("create", {"name": "saved"}, {}, 900)
+    server._operation_store.cache_clear()
+    monkeypatch.chdir(tmp_path)
+    assert server.operation_store().get_plan(plan.plan_id).payload == {"name": "saved"}
+
+
 def test_dcc_uncertain_write_recovers_same_operation_without_resubmission(tmp_path, monkeypatch):
     config = ApiSettings(_env_file=None, transport="dcc", operation_db=str(tmp_path / "ops.sqlite"))
     target = Target(config, "connector", "target-identity")
@@ -81,14 +99,14 @@ def test_dcc_uncertain_write_recovers_same_operation_without_resubmission(tmp_pa
         server._target.reset(token)
     operation_id = str(uuid4())
     submitted = []
-    def pending(selected, route, body, operation_id=None):
+    def pending(selected, route, body, operation_id=None, **kwargs):
         submitted.append(operation_id)
         raise DccOperationPending(operation_id)
     monkeypatch.setattr(server, "call_target", pending)
     with pytest.raises(ToolError, match=operation_id):
         server.create_project(plan.plan_id, operation_id, base_id="connector")
     monkeypatch.setattr(server, "get_target_operation", lambda selected, identity:
-                        {"operation_id": identity, "status": "completed", "result_ready": True,
+                        {"operation_id": identity, "task_id": identity, "status": "completed", "result_ready": True,
                          "http_status": 200, "method": "projects/create", "result": {"created": True}})
     result = server.get_operation_status(operation_id, base_id="connector")
     assert result["status"] == "completed"
@@ -109,6 +127,37 @@ def test_preview_plan_cannot_be_read_from_another_base(tmp_path, monkeypatch):
         server.get_project_plan(plan.plan_id, base_id="b")
 
 
+@pytest.mark.parametrize("remote_status", ["queued", "running", "recovery_required", "cancelled", "failed"])
+def test_remote_diagnostics_do_not_clear_uncertain_write(tmp_path, monkeypatch, remote_status):
+    config = ApiSettings(_env_file=None, transport="dcc", operation_db=str(tmp_path / "ops.sqlite"))
+    target = Target(config, "connector", "identity")
+    monkeypatch.setattr(server, "ApiSettings", lambda **kwargs: config)
+    monkeypatch.setattr(server, "resolve_target", lambda *args: target)
+    token = server._target.set(target)
+    try:
+        store = server.operation_store()
+        plan = store.create_plan("create", {"name": "project"}, {}, 900)
+    finally:
+        server._target.reset(token)
+    operation_id = str(uuid4())
+    calls = []
+    def pending(*args, **kwargs):
+        calls.append(kwargs["operation_id"])
+        raise DccOperationPending(operation_id)
+    monkeypatch.setattr(server, "call_target", pending)
+    with pytest.raises(ToolError):
+        server.create_project(plan.plan_id, operation_id, base_id="connector")
+    monkeypatch.setattr(server, "get_target_operation", lambda *args: {
+        "operation_id": operation_id, "task_id": operation_id, "method": "projects/create",
+        "status": remote_status, "diagnostic": "requires review", "result_ready": remote_status == "failed",
+        "http_status": 409 if remote_status == "failed" else None,
+        "result": {"error": "1C refused operation"} if remote_status == "failed" else None})
+    result = server.get_operation_status(operation_id, base_id="connector")
+    assert result["status"] == "indeterminate"
+    assert result["dcc"]["status"] == remote_status
+    assert calls == [operation_id]
+
+
 def test_pending_read_is_resumable_only_by_the_same_principal(tmp_path, monkeypatch):
     config = ApiSettings(_env_file=None, transport="dcc", operation_db=str(tmp_path / "ops.sqlite"))
     target = Target(config, "connector", "target")
@@ -123,7 +172,7 @@ def test_pending_read_is_resumable_only_by_the_same_principal(tmp_path, monkeypa
         with pytest.raises(ToolError, match=operation_id):
             server.list_projects(base_id="connector")
         monkeypatch.setattr(server, "get_target_operation", lambda *args:
-                            {"status": "completed", "result_ready": True, "http_status": 200,
+                            {"task_id": operation_id, "status": "completed", "result_ready": True, "http_status": 200,
                              "method": "projects/list", "result": []})
         assert server.get_operation_status(operation_id, base_id="connector")["result"] == []
     finally:
@@ -134,3 +183,36 @@ def test_pending_read_is_resumable_only_by_the_same_principal(tmp_path, monkeypa
             server.get_operation_status(operation_id, base_id="connector")
     finally:
         authenticated_principal.reset(principal)
+
+
+@pytest.mark.parametrize("action", ["read", "write"])
+def test_changed_relay_task_cannot_complete_after_mcp_restart(tmp_path, monkeypatch, action):
+    config = ApiSettings(_env_file=None, transport="dcc", operation_db=str(tmp_path / "ops.sqlite"))
+    target = Target(config, "connector", "restart-target")
+    monkeypatch.setattr(server, "ApiSettings", lambda **kwargs: config)
+    monkeypatch.setattr(server, "resolve_target", lambda *args: target)
+    operation, task = str(uuid4()), str(uuid4())
+    route = "projects/list" if action == "read" else "projects/create"
+    context = server._target.set(target)
+    try:
+        store = server.operation_store()
+        if action == "write":
+            plan = store.create_plan("create", {"name": "project"}, {}, 900)
+            store.begin(plan.plan_id, operation, "create")
+            store.mark_indeterminate(operation)
+        store.remember_relay(operation, route, task)
+    finally:
+        server._target.reset(context)
+    server._operation_store.cache_clear()
+    monkeypatch.setattr(server, "call_target", lambda *args, **kwargs: pytest.fail("No resubmission allowed"))
+    monkeypatch.setattr(server, "get_target_operation", lambda *args: {
+        "operation_id": operation, "task_id": str(uuid4()), "method": route,
+        "status": "completed", "result_ready": True, "http_status": 200, "result": {"ok": True}})
+    with pytest.raises(ToolError, match="identity changed"):
+        server.get_operation_status(operation, base_id="connector")
+    if action == "write":
+        context = server._target.set(target)
+        try:
+            assert server.operation_store().operation_status(operation)["status"] == "indeterminate"
+        finally:
+            server._target.reset(context)

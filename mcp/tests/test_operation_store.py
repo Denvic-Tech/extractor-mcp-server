@@ -32,6 +32,33 @@ def test_uncertain_write_cannot_be_retried_blindly(tmp_path):
     assert store.operation_status(operation_id)["status"] == "indeterminate"
 
 
+def test_relay_task_binding_survives_restart_and_rejects_replacement(tmp_path):
+    path = tmp_path / "relay.sqlite3"
+    operation_id, task_id = str(uuid.uuid4()), str(uuid.uuid4())
+    store = OperationStore(path)
+    store.remember_relay(operation_id, "projects/list", task_id)
+    reopened = OperationStore(path)
+    reopened.validate_relay_task(operation_id, "projects/list", task_id)
+    with pytest.raises(PlanConflict, match="identity changed"):
+        reopened.validate_relay_task(operation_id, "projects/list", str(uuid.uuid4()))
+    with pytest.raises(PlanConflict, match="identity changed"):
+        reopened.remember_relay(operation_id, "metadata/list", task_id)
+    reopened.validate_relay_task(operation_id, "projects/list", task_id)
+
+
+def test_legacy_pending_reads_migrate_without_losing_routes(tmp_path):
+    path = tmp_path / "old-relay.sqlite3"
+    operation_id, task_id = str(uuid.uuid4()), str(uuid.uuid4())
+    with sqlite3.connect(path) as connection:
+        connection.execute("CREATE TABLE relay_reads (operation_id TEXT PRIMARY KEY, route TEXT NOT NULL)")
+        connection.execute("INSERT INTO relay_reads VALUES (?, ?)", (operation_id, "projects/list"))
+    store = OperationStore(path)
+    assert store.relay_route(operation_id) == "projects/list"
+    store.validate_relay_task(operation_id, "projects/list", task_id)
+    with pytest.raises(PlanConflict):
+        OperationStore(path).validate_relay_task(operation_id, "projects/list", str(uuid.uuid4()))
+
+
 def test_existing_store_migration_preserves_operations_and_constraints(tmp_path):
     path = tmp_path / "legacy.sqlite3"
     store = OperationStore(path)

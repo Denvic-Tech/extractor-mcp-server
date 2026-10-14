@@ -3,6 +3,7 @@
 .env.*
 !.env.example
 .local-backups/
+mcp/state/
 .test-tmp/
 # Python test, bytecode and build artifacts (also applies inside mcp/)
 pytest-cache-files-*/

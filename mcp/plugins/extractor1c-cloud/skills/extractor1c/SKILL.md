@@ -17,6 +17,11 @@ read [reference-tree.md](references/reference-tree.md). Present tree as a tree.
 Prefer the `Обороты` virtual table for accumulation-register exports when
 available and suitable; see references/accumulation-registers.md.
 
+For `РегистрСведений.<Name>.СрезПоследних`, always offer **Месяц** (Month)
+as the first default partition-segment option. Agree on an unspecified choice
+before preview; do not automatically choose Day. Preserve explicit choices,
+existing project settings and running exports. This applies to HTTP and DCC.
+
 Use `analyze_reference_graph` for outgoing links of any entity and document
 sections. Expand selected dotted paths with `expand_paths`. Periodic information
 registers are skipped. Analytics keys follow exact metadata targets, never name heuristics.
@@ -29,7 +34,7 @@ For requests to schedule daily or weekly exports, run every N minutes, pause or 
 
 ## Транспорт и версия
 
-MCP и EPA_Projects используют 3.2.0; Экстрактор - начиная с 3.16.1.xx. Вызови `list_bases`, выбери `base_id` и передавай его во все операции. В прямом HTTP-режиме базы перечислены в YAML на сервере; в DCC-режиме базы обнаруживаются через DCC, а 1С сама получает команды. DCC-маршрут не обращается к публикации 1С. `segmentation` передаётся массивом группировок с явным `field` и тремя Boolean-ролями; объект с `mode` не используется.
+MCP и EPA_Projects используют 3.2.2; Экстрактор - начиная с 3.16.1.xx. Вызови `list_bases`, выбери `base_id` и передавай его во все операции. В прямом HTTP-режиме базы перечислены в YAML на сервере; в DCC-режиме базы обнаруживаются через DCC, а 1С сама получает команды. DCC-маршрут не обращается к публикации 1С. `segmentation` передаётся массивом группировок с явным `field` и тремя Boolean-ролями; объект с `mode` не используется.
 
 ### Mandatory route choice when the same base is available twice
 

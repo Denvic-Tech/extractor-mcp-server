@@ -8,6 +8,7 @@ from dataclasses import dataclass
 import hashlib
 import time
 from pathlib import Path
+from collections.abc import Callable
 
 import yaml
 from urllib.parse import quote, urlsplit
@@ -16,7 +17,7 @@ from uuid import UUID, uuid4
 import requests
 from pydantic import TypeAdapter
 
-from .projects_api import ApiSettings, LICENSE_ERRORS, ProjectsApiClient, ProjectsApiError, ROUTES, SCHEMAS
+from .projects_api import ApiSettings, LICENSE_ERRORS, ProjectsApiClient, ProjectsApiError, ROUTES, SCHEMAS, public_api_error
 
 
 @dataclass(frozen=True)
@@ -28,8 +29,9 @@ class Target:
 
 class DccOperationPending(ProjectsApiError):
     """Waiting expired or submission outcome is unknown; resume the same ID."""
-    def __init__(self, operation_id):
+    def __init__(self, operation_id: str, task_id: str | None = None):
         self.operation_id = operation_id
+        self.task_id = task_id
         super().__init__(202, "DCC operation pending; query the same operation ID before retry")
 
 
@@ -99,12 +101,13 @@ def resolve_target(settings, base_id=None):
     raise ValueError("Unknown or inaccessible base_id")
 
 
-def call_target(target, route, body, operation_id=None):
+def call_target(target, route, body, operation_id=None,
+                on_accepted: Callable[[str, str, str], None] | None = None):
     if target.settings.transport == "direct_http":
         with requests.Session() as session:
             return ProjectsApiClient(target.settings, session=session).call(route, body)
     with DccClient(target.settings) as api:
-        return api.call(target.base_id, route, body, operation_id)
+        return api.call(target.base_id, route, body, operation_id, on_accepted=on_accepted)
 
 
 def get_target_operation(target, operation_id):
@@ -147,7 +150,7 @@ class DccClient:
         if self._owns_session:
             self.session.close()
 
-    def _request(self, method, path, **kwargs):
+    def _request(self, method, path, *, _retry_auth=True, **kwargs):
         try:
             response = self.session.request(method, self.url + path, timeout=self.settings.timeout,
                 allow_redirects=False, verify=self.settings.ca_bundle or True,
@@ -155,6 +158,12 @@ class DccClient:
                 **kwargs)
         except requests.RequestException:
             raise ProjectsApiError(502, "DCC transport unavailable; verify operation state before retry") from None
+        # An expired token is rejected before the route executes. Refresh once;
+        # an operation submission retains its original body and Idempotency-Key.
+        if response.status_code == 401 and _retry_auth and kwargs.get("headers", {}).get("Authorization", "").startswith("Bearer "):
+            self.token = None
+            headers = {**kwargs["headers"], **self._headers()}
+            return self._request(method, path, _retry_auth=False, **{**kwargs, "headers": headers})
         try:
             data = response.json()
         except ValueError:
@@ -248,10 +257,13 @@ class DccClient:
             if (known and route in {"projects/create", "projects/update", "projects/schedule/set"}
                     and status == known[0] and result.get("writeApplied") is False):
                 raise ProjectsApiError(status, known[1], code=result["code"], write_applied=False)
+            if route == "projects/receiver/inspect":
+                raise public_api_error(status, result, "1C receiver observation failed")
             raise ProjectsApiError(status, "1C operation failed; verify state before retry")
         return True, result
 
-    def call(self, base_id, route, body, operation_id=None):
+    def call(self, base_id, route, body, operation_id=None,
+             on_accepted: Callable[[str, str, str], None] | None = None):
         if route not in ROUTES:
             raise ValueError("Unknown API operation")
         payload = TypeAdapter(SCHEMAS[route]).validate_python(body).model_dump(exclude_none=True)
@@ -269,18 +281,27 @@ class DccClient:
             if exc.status >= 500:
                 raise DccOperationPending(operation_id) from None
             raise
+        if on_accepted is not None:
+            # Persist the accepted task before the first GET. A process crash
+            # during waiting must not discard its identity.
+            on_accepted(operation_id, route, accepted["task_id"])
         deadline = time.monotonic() + self.settings.dcc_wait_timeout
         while True:
             try:
                 state = self.get_operation(base_id, operation_id)
+                if state["task_id"] != accepted["task_id"]:
+                    raise ProjectsApiError(502, "DCC operation task identity changed")
             except ProjectsApiError as exc:
                 if exc.status >= 500:
-                    raise DccOperationPending(operation_id) from None
+                    raise DccOperationPending(operation_id, accepted["task_id"]) from None
                 raise
-            ready, result = operation_result(state, route)
+            try:
+                ready, result = operation_result(state, route)
+            except DccOperationPending:
+                raise DccOperationPending(operation_id, accepted["task_id"]) from None
             if ready:
                 return result
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                raise DccOperationPending(operation_id)
+                raise DccOperationPending(operation_id, accepted["task_id"])
             time.sleep(min(self.settings.dcc_poll_interval, remaining))

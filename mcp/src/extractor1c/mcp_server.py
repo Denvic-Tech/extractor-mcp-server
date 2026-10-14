@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import os
 import re
 from contextlib import asynccontextmanager
@@ -12,9 +13,10 @@ from functools import lru_cache, wraps
 from hashlib import sha256
 import inspect
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, ParamSpec, TypeVar
 
 import requests
+from pydantic import StrictInt
 from fastapi import FastAPI
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
@@ -31,6 +33,7 @@ from .mcp_auth import BearerAuthMiddleware, authenticated_principal
 from .transport import (resolve_target, call_target, list_bases as transport_list_bases,
                         get_target_operation, DccOperationPending, operation_result)
 from .reference_graph import analyze_reference_graph as analyze_reference_graph_data
+from .dcc_metadata import DccMetadataClient, MetadataResource
 from .connections import resolve_project_connection, select_connection
 from .operation_store import OperationRejected, OperationStore, OperationStoreError
 from .skill_catalog import get_skill_data, list_skills_data
@@ -39,6 +42,8 @@ from .projects_api import (
     ApiSettings, ProjectsApiClient, ProjectsApiError,
     ProjectDefinition, GroupProjectDefinition, ProjectPreview, ProjectRowChange, ProjectUpdate,
     ProjectSchedulePreview, ProjectScheduleSet, ProjectExportRef, ProjectExportStart, ProjectExportStatus,
+    ProjectExportCancelRef, ProjectExportCancel,
+    ProjectReceiverInspect, ReceiverCheck,
 )
 
 ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
@@ -88,6 +93,37 @@ WRITE = ToolAnnotations(readOnlyHint=False, destructiveHint=True, idempotentHint
 _target = ContextVar("extractor_target", default=None)
 _operation_id = ContextVar("extractor_operation_id", default=None)
 
+_Parameters = ParamSpec("_Parameters")
+_Result = TypeVar("_Result")
+
+
+def threaded_tool(
+    *, annotations: ToolAnnotations, forbid_unknown: bool = False,
+) -> Callable[[Callable[_Parameters, _Result]], Callable[_Parameters, _Result]]:
+    """Register blocking tools off the event loop; keep direct Python calls intact.
+
+    DCC polling uses synchronous HTTP and sleep. ContextVars propagate into the
+    worker, keeping the authenticated principal and selected base isolated.
+    """
+    def register(function: Callable[_Parameters, _Result]) -> Callable[_Parameters, _Result]:
+        @wraps(function)
+        async def execute(*args: _Parameters.args, **kwargs: _Parameters.kwargs) -> _Result:
+            return await asyncio.to_thread(function, *args, **kwargs)
+
+        mcp.tool(annotations=annotations)(execute)
+        if forbid_unknown:
+            # FastMCP's default argument model ignores extras. Close only tools
+            # opting into a strict boundary, before any backend call executes.
+            registered = mcp._tool_manager.get_tool(function.__name__)
+            assert registered is not None
+            argument_model = registered.fn_metadata.arg_model
+            argument_model.model_config = {**argument_model.model_config, "extra": "forbid"}
+            argument_model.model_rebuild(force=True)
+            registered.parameters = argument_model.model_json_schema()
+        return function
+
+    return register
+
 
 def base_tool(function):
     """Expose base selection and bind all nested calls to one authorized target."""
@@ -117,13 +153,18 @@ def _operation_store(path: str) -> OperationStore:
 
 def operation_store() -> OperationStore:
     settings = ApiSettings(_env_file=ENV_FILE)
+    path = Path(settings.operation_db).expanduser()
+    if not path.is_absolute():
+        # Anchor state to the installation config, independent of an AI
+        # client's working directory or the directory used to start Python.
+        path = ENV_FILE.parent / path
+    path = path.resolve()
     target = _target.get()
     principal = authenticated_principal.get()
     if target is not None:
         digest = sha256((target.identity + "\0" + principal).encode()).hexdigest()
-        path = Path(settings.operation_db)
         return _operation_store(str(path.with_name(path.stem + "-" + digest + path.suffix)))
-    return _operation_store(settings.operation_db)
+    return _operation_store(str(path))
 
 
 class LicenseRejectedToolError(ToolError):
@@ -139,22 +180,47 @@ def call_api(route: str, body: dict) -> Any:
     try:
         target = _target.get()
         if target is not None:
-            return call_target(target, route, body, operation_id=_operation_id.get())
+            on_accepted = operation_store().remember_relay if target.settings.transport == "dcc" else None
+            return call_target(target, route, body, operation_id=_operation_id.get(), on_accepted=on_accepted)
         with requests.Session() as session:
             session.trust_env = False
             return ProjectsApiClient(settings, session).call(route, body)
     except DccOperationPending as exc:
-        operation_store().remember_relay(exc.operation_id, route)
+        operation_store().remember_relay(exc.operation_id, route, exc.task_id)
         raise ToolError(f"DCC operation pending: operation_id={exc.operation_id}; query get_operation_status on the same base_id.") from None
     except ProjectsApiError as exc:
         if exc.rejected_before_write:
             raise LicenseRejectedToolError(exc.rejection()) from None
-        raise ToolError(f"1C API HTTP {exc.status}; check publication, permissions and credentials.") from None
+        details = f"1C API HTTP {exc.status}; {exc}"
+        if exc.code:
+            details += f"; code={exc.code}"
+        if exc.error_id:
+            details += f"; errorId={exc.error_id}"
+        raise ToolError(details) from None
     except requests.RequestException as exc:
         raise ToolError(f"1C connection failed ({type(exc).__name__}).") from None
 
 
-@mcp.tool(annotations=READ)
+def _read_dcc_metadata(
+    resource: MetadataResource,
+    snapshot_id: str | None = None,
+    *,
+    params: dict[str, Any] | None = None,
+    body: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Read the selected DCC base's snapshot; errors never select another route."""
+    target = _target.get()
+    if target is None or target.settings.transport != "dcc":
+        raise ToolError("Metadata snapshots require DCC transport")
+    try:
+        with DccMetadataClient(target.settings) as api:
+            return api.read(target.base_id, resource, snapshot_id=snapshot_id, params=params, body=body)
+    except (ValueError, ProjectsApiError) as exc:
+        status = exc.status if isinstance(exc, ProjectsApiError) else 422
+        raise ToolError(f"DCC metadata HTTP {status}; check snapshot and parameters; no transport fallback.") from None
+
+
+@threaded_tool(annotations=READ)
 def list_bases() -> list[dict]:
     """List configured direct bases or all DCC connectors accessible to this installation."""
     try:
@@ -163,13 +229,13 @@ def list_bases() -> list[dict]:
         raise ToolError("Cannot list bases; check transport configuration and access") from None
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 def health() -> dict:
     """Check local configuration; does not test the 1C connection."""
     settings = ApiSettings(_env_file=ENV_FILE)
     return {
         "configured": (bool(settings.dcc_url and settings.dcc_user and settings.dcc_password)
-                       if settings.transport == "dcc" else bool(settings.bases or (settings.url and settings.user))),
+                       if settings.transport == "dcc" else bool(settings.bases or settings.bases_file or (settings.url and settings.user))),
         "transport": settings.transport,
         "tlsVerification": not settings.allow_http_dev,
         "mutualTls": bool(settings.client_cert and settings.client_key),
@@ -177,7 +243,7 @@ def health() -> dict:
     }
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 @base_tool
 def readiness() -> dict:
     """Verify that the MCP service can reach and authenticate to the 1C API."""
@@ -215,13 +281,13 @@ def readiness() -> dict:
             "message": AI_SKILL_REQUIREMENTS}
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 def list_skills() -> dict:
     """List project skills from Markdown files. Call this to find skill IDs and documents to read with get_skill."""
     return list_skills_data()
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 def get_skill(skill_id: str, document: str = "SKILL.md") -> dict:
     """Read the full Markdown text of a project skill or one of its listed reference documents."""
     try:
@@ -230,38 +296,61 @@ def get_skill(skill_id: str, document: str = "SKILL.md") -> dict:
         raise ToolError(str(exc)) from None
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 @base_tool
 def list_metadata() -> Any:
     """Read all 1C metadata objects. Prefer search_metadata for hosted clients."""
     return call_api("metadata/list", {})
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
+@base_tool
+def get_metadata_snapshot(snapshot_id: str | None = None) -> dict[str, Any]:
+    """Read DCC snapshot provenance; reuse snapshotId for paging and project plans."""
+    return _read_dcc_metadata("snapshot", snapshot_id)
+
+
+@threaded_tool(annotations=READ)
 @base_tool
 def search_metadata(query: str = "", kinds: list[str] | None = None,
-                    cursor: int = 0, limit: int = 50) -> Any:
+                    cursor: int = 0, limit: int = 50,
+                    snapshot_id: str | None = None) -> Any:
     """Search and page metadata names without returning the complete metadata catalog."""
     try:
+        if _target.get().settings.transport == "dcc":
+            result = _read_dcc_metadata("objects", snapshot_id,
+                params={"query": query, "kinds": kinds or [], "cursor": cursor, "limit": limit})
+            descriptions = result["items"]
+            if any(not isinstance(item, dict) or not isinstance(item.get("fullName"), str) for item in descriptions):
+                raise ToolError("Invalid DCC metadata object names")
+            return {**result, "items": [item["fullName"] for item in descriptions],
+                    "objectDescriptions": descriptions}
+        if snapshot_id is not None:
+            raise ValueError("snapshot_id requires DCC transport")
         return search_metadata_data(call_api, query, kinds, cursor, limit)
     except ValueError as exc:
         raise ToolError(str(exc)) from None
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 @base_tool
 def describe_object(object: str) -> Any:
     """Read every field of a 1C metadata object. Prefer describe_object_fields."""
     return call_api("metadata/describe", {"object": object})
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 @base_tool
 def describe_object_fields(object: str, name_filter: str = "",
                            reference_only: bool = False, cursor: int = 0,
-                           limit: int = 100) -> Any:
+                           limit: int = 100, snapshot_id: str | None = None) -> Any:
     """Read a compact, filtered page of object fields and exact metadata targets."""
     try:
+        if _target.get().settings.transport == "dcc":
+            return _read_dcc_metadata("fields", snapshot_id, params={"object": object,
+                "name_filter": name_filter, "reference_only": reference_only, "cursor": cursor, "limit": limit})
+        if snapshot_id is not None:
+            raise ValueError("snapshot_id requires DCC transport")
         return describe_object_page(
             call_api, object, name_filter, reference_only, cursor, limit
         )
@@ -269,13 +358,14 @@ def describe_object_fields(object: str, name_filter: str = "",
         raise ToolError(str(exc)) from None
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 @base_tool
 def analyze_reference_graph(object: str, expand_paths: list[str] | None = None,
                             max_depth: int = 4, max_nodes: int = 500,
                             max_edges: int = 2000,
                             include_tabular_sections: bool = True,
-                            account_scope: dict | None = None) -> Any:
+                            account_scope: dict | None = None,
+                            snapshot_id: str | None = None) -> Any:
     """Find outgoing references and dotted snowflake paths for any 1C entity.
 
     Expand selected paths and nonperiodic information registers. Skip periodic
@@ -283,6 +373,12 @@ def analyze_reference_graph(object: str, expand_paths: list[str] | None = None,
     Return exact polymorphic branches, join hints, cycles and explicit limits.
     """
     try:
+        if _target.get().settings.transport == "dcc" and account_scope is None:
+            return _read_dcc_metadata("reference-graph", snapshot_id, body={"object": object,
+                "expand_paths": expand_paths or [], "max_depth": max_depth, "max_nodes": max_nodes,
+                "max_edges": max_edges, "include_tabular_sections": include_tabular_sections})
+        if snapshot_id is not None:
+            raise ValueError("snapshot_id requires DCC snapshot graph without live account_scope")
         return analyze_reference_graph_data(
             call_api, object, expand_paths, max_depth, max_nodes, max_edges,
             include_tabular_sections,
@@ -292,48 +388,48 @@ def analyze_reference_graph(object: str, expand_paths: list[str] | None = None,
         raise ToolError(str(exc)) from None
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 @base_tool
 def list_connections() -> Any:
     """Read live connections of all types. None: ask to configure 1C. One: use it. Many: ask and reuse the user's choice in this conversation."""
     return call_api("connections/list", {})
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 @base_tool
 def list_projects() -> Any:
     """Read projects visible through the 1C API."""
     return call_api("projects/list", {})
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 @base_tool
 def verify_project(project_name: str) -> Any:
     """Read the complete project configuration and state token."""
     return call_api("projects/verify", {"projectName": project_name})
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 @base_tool
 def verify_project_summary(project_name: str, table_name: str = "") -> Any:
     """Read a compact project summary without returning the large state token."""
     return verify_project_summary_data(call_api, project_name, table_name)
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 @base_tool
-def preview_project(definition: ProjectPreview) -> Any:
+def preview_project(definition: ProjectPreview, metadata_snapshot_id: str | None = None) -> Any:
     """Preview a create/row change and issue a short-lived planId when approved."""
-    return _preview_project_definition(definition)
+    return _preview_project_definition(definition, metadata_snapshot_id)
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 def get_project_template_schema() -> dict:
     """Return JSON Schema for template requests; does not access a base or create a plan."""
     return project_template_schema()
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 def validate_project_template(request: ProjectTemplateRequest) -> dict:
     """Validate JSON syntax/semantics only; metadata and receiver need target preview."""
     return {"valid": True, "schemaVersion": 1, "validationLevel": "request",
@@ -342,15 +438,17 @@ def validate_project_template(request: ProjectTemplateRequest) -> dict:
             "nextStep": "preview_project_template"}
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 @base_tool
-def preview_project_template(request: ProjectTemplateRequest) -> Any:
+def preview_project_template(request: ProjectTemplateRequest, metadata_snapshot_id: str | None = None) -> Any:
     """Validate in target 1C through configured transport, reusing ordinary create plans."""
-    return _preview_project_definition(request.native_definition())
+    return _preview_project_definition(request.native_definition(), metadata_snapshot_id)
 
 
-def _preview_project_definition(definition: ProjectPreview) -> Any:
+def _preview_project_definition(definition: ProjectPreview, metadata_snapshot_id: str | None = None) -> Any:
     """Resolve receiver and store the exact approved native preview input once."""
+    metadata_evidence = (_read_dcc_metadata("snapshot", metadata_snapshot_id)
+                         if metadata_snapshot_id is not None else None)
     try:
         payload, selection = resolve_project_connection(definition.model_dump(exclude_none=True), call_api)
     except ValueError as exc:
@@ -359,11 +457,16 @@ def _preview_project_definition(definition: ProjectPreview) -> Any:
         return {"approved": False, "planId": None, "expiresAt": None,
                 "connectionSelection": selection}
     preview = call_api("projects/preview", payload)
+    if metadata_evidence is not None:
+        # Provenance belongs to the approved plan, never to the 1C business payload.
+        preview = {**preview, "metadataEvidence": metadata_evidence}
     summary = preview_summary(preview, allow_existing_table=isinstance(definition, ProjectRowChange))
     action = "create" if isinstance(definition, (ProjectDefinition, GroupProjectDefinition)) else "update"
     summary["connectionName"] = selection["connectionName"]
     result = {"approved": summary["approved"], "action": action, "summary": summary,
               "connectionSelection": selection}
+    if metadata_evidence is not None:
+        result["metadataEvidence"] = metadata_evidence
     if summary["approved"]:
         settings = ApiSettings(_env_file=ENV_FILE)
         plan = operation_store().create_plan(
@@ -375,7 +478,7 @@ def _preview_project_definition(definition: ProjectPreview) -> Any:
     return result
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 @base_tool
 def preview_project_properties(update: ProjectUpdate) -> Any:
     """Preview a project-property update and bind it to the verified state."""
@@ -384,12 +487,8 @@ def preview_project_properties(update: ProjectUpdate) -> Any:
     preview = {
         "projectName": update.projectName,
         "stateMatches": state_matches,
-        "changes": {
-            "comment": update.comment,
-            "disabled": update.disabled,
-            "includeGuids": update.includeGuids,
-            "includeMetadataTypes": update.includeMetadataTypes,
-        },
+        "changes": {key: value for key, value in update.model_dump().items()
+                    if key not in {"projectName", "expectedState"}},
     }
     if not state_matches:
         return {"approved": False, "action": "update", "planId": None,
@@ -402,14 +501,14 @@ def preview_project_properties(update: ProjectUpdate) -> Any:
             "expiresAt": plan.expires_at, "summary": preview}
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 @base_tool
 def get_project_schedule(project_guid: str) -> Any:
     """Read the project's actual scheduled job, activity, time context and blockers."""
     return call_api("projects/schedule/get", {"projectGuid": project_guid})
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 @base_tool
 def preview_project_schedule(change: ProjectSchedulePreview) -> Any:
     """Preview daily/weekly/interval scheduling; omit schedule to pause/resume unchanged."""
@@ -434,14 +533,14 @@ def preview_project_schedule(change: ProjectSchedulePreview) -> Any:
     return result
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 @base_tool
 def preview_project_export(project_guid: str) -> Any:
     """Preview an immediate whole-project export; no export starts during preview."""
     return _preview_project_execution(project_guid, "export")
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 @base_tool
 def preview_project_initialization(project_guid: str) -> Any:
     """Preview queue initialization: eligible rows, native handlers and immediate effects."""
@@ -469,7 +568,7 @@ def _preview_project_execution(project_guid: str, action: str) -> Any:
     return result
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 @base_tool
 def get_project_export_status(project_guid: str, task_id: str | None = None) -> Any:
     """Read an export/initialization task by taskId; without it read latest export. Never consumes messages."""
@@ -477,36 +576,111 @@ def get_project_export_status(project_guid: str, task_id: str | None = None) -> 
     return call_api("projects/export/status", request.model_dump())
 
 
-@mcp.tool(annotations=WRITE)
+@threaded_tool(annotations=WRITE)
 @base_tool
 def start_project_export(plan_id: str, operation_id: str) -> Any:
     """Start the exact previewed project export now. Poll the returned taskId for its outcome."""
     return _commit(plan_id, operation_id, "export")
 
 
-@mcp.tool(annotations=WRITE)
+@threaded_tool(annotations=WRITE)
 @base_tool
 def initialize_project_queue(plan_id: str, operation_id: str) -> Any:
     """Run native queue initialization for the approved project; poll get_project_export_status by taskId."""
     return _commit(plan_id, operation_id, "initialization")
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
+@base_tool
+def preview_project_export_cancellation(project_guid: str, task_id: str) -> Any:
+    """Preview cooperative cancellation of this exact task; never reset lost jobs."""
+    payload = ProjectExportCancelRef(projectGuid=project_guid, taskId=task_id).model_dump()
+    preview = call_api("projects/export/cancel/preview", payload)
+    if not isinstance(preview, dict):
+        raise ToolError("Invalid cancellation preview; no plan was created")
+    result = {"approved": False, "action": "cancel", "planId": None,
+              "expiresAt": None, "summary": preview}
+    if preview.get("approved") is not True:
+        return result
+    try:
+        payload = ProjectExportCancel(
+            **payload, expectedTaskState=preview.get("expectedTaskState")
+        ).model_dump()
+    except ValueError:
+        raise ToolError("Cancellation preview supplied no valid task state; no plan was created") from None
+    plan = operation_store().create_plan(
+        "cancel", payload, preview, ApiSettings(_env_file=ENV_FILE).plan_ttl_seconds
+    )
+    result.update(approved=True, planId=plan.plan_id, expiresAt=plan.expires_at)
+    return result
+
+
+@threaded_tool(annotations=WRITE)
+@base_tool
+def cancel_project_export(plan_id: str, operation_id: str) -> Any:
+    """Request stop for the approved task. Requested means acknowledged, not finished."""
+    return _commit(plan_id, operation_id, "cancel")
+
+
+@threaded_tool(annotations=READ, forbid_unknown=True)
+@base_tool
+def inspect_project_receiver(
+    project_guid: str,
+    project_row_id: str = "",
+    checks: list[ReceiverCheck] | None = None,
+    sample_fields: list[str] | None = None,
+    sample_limit: StrictInt = 0,
+) -> Any:
+    """Read saved-row receiver schema/count/explicit bounded samples through EPA.
+
+    Requires published 1C methods 3.3.0+. This never starts export, changes a
+    project or runs Python SQL; receiver observation is not source equality.
+    """
+    payload = ProjectReceiverInspect(
+        projectGuid=project_guid, rowIdentifier=project_row_id,
+        checks=["schema"] if checks is None else checks,
+        sampleFields=[] if sample_fields is None else sample_fields,
+        sampleLimit=sample_limit,
+    ).model_dump()
+    try:
+        published = call_api("service/readiness", {})
+    except ToolError as exc:
+        if re.search(r"1C API HTTP (?:404|405)\b", str(exc)):
+            raise ToolError("Receiver inspection requires published 1C methods 3.3.0+; update EPA") from None
+        raise
+    version = published.get("methodsVersion") if isinstance(published, dict) else None
+    if not isinstance(version, str) or not re.fullmatch(r"\d+\.\d+\.\d+", version):
+        raise ToolError("Cannot confirm receiver inspection support; update published EPA methods")
+    major, minor, patch = map(int, version.split("."))
+    if major != 3 or (major, minor, patch) < (3, 3, 0):
+        raise ToolError("Receiver inspection requires published 1C methods 3.3.0+; update EPA")
+    capabilities = published.get("capabilities")
+    if not isinstance(capabilities, list) or "receiver_inspection" not in capabilities:
+        raise ToolError("Receiver inspection is not advertised by the selected EPA publication; update EPA")
+    # Readiness confirmed the feature. A receiver 404 can describe a missing
+    # saved project/row; preserve the business code and diagnostic identifier.
+    return call_api("projects/receiver/inspect", payload)
+
+
+@threaded_tool(annotations=READ)
 @base_tool
 def get_project_plan(plan_id: str, cursor: int = 0, limit: int = 100) -> Any:
     """Read an approved plan and a paged view of its preview fields."""
     try:
         plan = operation_store().get_plan(plan_id)
-        if plan.action in {"schedule", "export", "initialization"}:
+        if plan.action in {"schedule", "export", "initialization", "cancel"}:
             return {"planId": plan.plan_id, "action": plan.action,
                     "expiresAt": plan.expires_at, "summary": plan.preview}
-        return {
+        result = {
             "planId": plan.plan_id,
             "action": plan.action,
             "expiresAt": plan.expires_at,
             "summary": preview_summary(plan.preview, allow_existing_table="currentTableName" in plan.payload),
             "fields": preview_fields_page(plan.preview, cursor, limit),
         }
+        if isinstance(plan.preview, dict) and "metadataEvidence" in plan.preview:
+            result["metadataEvidence"] = plan.preview["metadataEvidence"]
+        return result
     except (OperationStoreError, ValueError) as exc:
         raise ToolError(str(exc)) from None
 
@@ -521,7 +695,8 @@ def _commit(plan_id: str, operation_id: str, action: str) -> Any:
                 "replayed": True, "result": replay}
     route = {"create": "projects/create", "update": "projects/update",
              "schedule": "projects/schedule/set", "export": "projects/export/start",
-             "initialization": "projects/initialization/start"}[action]
+             "initialization": "projects/initialization/start",
+             "cancel": "projects/export/cancel"}[action]
     try:
         token = _operation_id.set(operation_id)
         try:
@@ -541,6 +716,18 @@ def _commit(plan_id: str, operation_id: str, action: str) -> Any:
 
 
 def _validate_execution_result(action, payload, operation_id, result):
+    if action == "cancel":
+        valid = isinstance(result, dict) and result.get("cancelStatus") == "requested"
+        valid = valid and str(result.get("taskId", "")).casefold() == payload["taskId"].casefold()
+        valid = valid and str(result.get("projectGuid", "")).casefold() == payload["projectGuid"].casefold()
+        if valid:
+            try:
+                ProjectExportCancelRef(projectGuid=payload["projectGuid"], taskId=result.get("backgroundJobId"))
+            except ValueError:
+                valid = False
+        if not valid:
+            operation_store().mark_indeterminate(operation_id, result)
+            raise ToolError("Cancellation is indeterminate; read the original task status before another request")
     if action in {"export", "initialization"}:
         # Only explicit, well-formed outcomes can complete the launch operation.
         # An acknowledged start is not a completed export.
@@ -564,28 +751,28 @@ def _validate_execution_result(action, payload, operation_id, result):
             raise ToolError("Project execution is indeterminate; read get_operation_status and task status before any new start")
 
 
-@mcp.tool(annotations=WRITE)
+@threaded_tool(annotations=WRITE)
 @base_tool
 def create_project(plan_id: str, operation_id: str) -> Any:
     """Create the exact approved plan; operationId makes completed calls replay-safe."""
     return _commit(plan_id, operation_id, "create")
 
 
-@mcp.tool(annotations=WRITE)
+@threaded_tool(annotations=WRITE)
 @base_tool
 def update_project(plan_id: str, operation_id: str) -> Any:
     """Apply the exact approved update plan; verify the project afterwards."""
     return _commit(plan_id, operation_id, "update")
 
 
-@mcp.tool(annotations=WRITE)
+@threaded_tool(annotations=WRITE)
 @base_tool
 def set_project_schedule(plan_id: str, operation_id: str) -> Any:
     """Apply the approved schedule plan; enabling can start export. Read back afterwards."""
     return _commit(plan_id, operation_id, "schedule")
 
 
-@mcp.tool(annotations=READ)
+@threaded_tool(annotations=READ)
 @base_tool
 def get_operation_status(operation_id: str) -> Any:
     """Read a durable write-operation status without retrying the write."""
@@ -599,6 +786,11 @@ def get_operation_status(operation_id: str) -> Any:
                 raise
             route = store.relay_route(operation_id)
             state = get_target_operation(target, operation_id)
+            if state.get("method") is not None and state["method"] != route:
+                raise ProjectsApiError(502, "DCC operation method mismatch")
+            store.validate_relay_task(operation_id, route, state["task_id"])
+            if state.get("status") in {"failed", "cancelled", "recovery_required", "uncertain"}:
+                return {"operationId": operation_id, "status": state["status"], "dcc": _dcc_state_details(state)}
             ready, result = operation_result(state, route)
             return {"operationId": operation_id, "status": "completed" if ready else state["status"],
                     "result": result if ready else None}
@@ -608,22 +800,38 @@ def get_operation_status(operation_id: str) -> Any:
             route = {"create": "projects/create", "update": "projects/update",
                      "schedule": "projects/schedule/set", "export": "projects/export/start",
                      "initialization": "projects/initialization/start"}[local["action"]]
+            if state.get("method") is not None and state["method"] != route:
+                raise ProjectsApiError(502, "DCC operation method mismatch")
+            store.validate_relay_task(operation_id, route, state["task_id"])
+            if state.get("status") in {"cancelled", "recovery_required", "uncertain"}:
+                return {**local, "dcc": _dcc_state_details(state)}
             try:
                 ready, result = operation_result(state, route)
             except ProjectsApiError as exc:
                 if not exc.rejected_before_write:
+                    if state.get("status") == "failed":
+                        # Keep the durable uncertainty block: an application error
+                        # alone does not prove that a side effect never occurred.
+                        return {**local, "dcc": _dcc_state_details(state)}
                     raise
                 store.reconcile(operation_id, exc.rejection(), rejected=True)
             else:
                 if ready:
                     _validate_execution_result(local["action"], plan.payload, operation_id, result)
                     store.reconcile(operation_id, result)
-            local = store.operation_status(operation_id)
+            local = {**store.operation_status(operation_id), "dcc": _dcc_state_details(state)}
         return local
     except OperationStoreError as exc:
         raise ToolError(str(exc)) from None
     except (ProjectsApiError, requests.RequestException, ValueError):
         raise ToolError("Cannot read DCC operation; retain the same operation_id and base_id") from None
+
+
+def _dcc_state_details(state: dict[str, Any]) -> dict[str, Any]:
+    """Expose operation diagnostics to its owner without copying the input payload."""
+    fields = ("operation_id", "task_id", "method", "status", "result_ready", "http_status",
+              "result", "diagnostic", "last_connector_contact", "completed_at", "expires_at")
+    return {key: state[key] for key in fields if key in state}
 
 
 mcp_app = mcp.streamable_http_app()

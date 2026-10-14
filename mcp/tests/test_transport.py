@@ -92,6 +92,58 @@ def test_timeout_preserves_operation_id_and_does_not_resubmit():
     assert sum(method == "POST" and url.endswith("/operations") for method, url, _ in session.calls) == 1
 
 
+def test_changed_task_identity_keeps_original_operation_pending():
+    operation = str(uuid4())
+    task = str(uuid4())
+    api, _ = client([{"data": {"operation_id": operation, "task_id": task, "status": "queued"}},
+        {"data": {"operation_id": operation, "task_id": str(uuid4()), "status": "completed",
+                  "result_ready": True, "http_status": 200, "result": {}}}])
+    with pytest.raises(DccOperationPending) as caught:
+        api.call("base", "metadata/list", {}, operation)
+    assert caught.value.operation_id == operation
+    assert caught.value.task_id == task
+
+
+def test_accepted_task_is_persisted_before_waiting_can_be_interrupted(tmp_path):
+    from extractor1c.operation_store import OperationStore, PlanConflict
+
+    operation, task = str(uuid4()), str(uuid4())
+    api, session = client([{"data": {"operation_id": operation, "task_id": task, "status": "queued"}}])
+    path = tmp_path / "accepted.sqlite3"
+    store = OperationStore(path)
+
+    def persist_then_stop(operation_id, route, task_id):
+        store.remember_relay(operation_id, route, task_id)
+        raise RuntimeError("Process interrupted before waiting")
+
+    with pytest.raises(RuntimeError, match="interrupted"):
+        api.call("base", "projects/list", {}, operation, on_accepted=persist_then_stop)
+    assert len(session.calls) == 2  # login + one submission; no GET yet
+    with pytest.raises(PlanConflict):
+        OperationStore(path).validate_relay_task(operation, "projects/list", str(uuid4()))
+
+
+def test_expired_token_refreshes_once_with_same_submission_identity():
+    operation = str(uuid4())
+    responses = [Response({"data": {"access_token": "old"}}), Response({}, 401),
+        Response({"data": {"access_token": "new"}}),
+        Response({"data": {"operation_id": operation, "task_id": operation, "status": "queued"}}),
+        Response({"data": {"operation_id": operation, "task_id": operation, "status": "completed",
+                           "result_ready": True, "http_status": 200, "result": []}})]
+    class ExpiringSession(Session):
+        def request(self, method, url, **kwargs):
+            self.calls.append((method, url, kwargs))
+            return next(self.responses)
+    session = ExpiringSession(responses)
+    api = DccClient(settings(), session=session)
+    assert api.call("base", "metadata/list", {}, operation) == []
+    submissions = [kwargs for _, url, kwargs in session.calls if url.endswith("/operations")]
+    assert len(submissions) == 2
+    assert submissions[0]["json"] == submissions[1]["json"]
+    assert submissions[0]["headers"]["Idempotency-Key"] == submissions[1]["headers"]["Idempotency-Key"] == operation
+    assert submissions[1]["headers"]["Authorization"] == "Bearer new"
+
+
 def test_submission_transport_failure_carries_same_operation_id():
     operation = str(uuid4())
     api, _ = client([requests.ConnectionError("secret must not leak")])

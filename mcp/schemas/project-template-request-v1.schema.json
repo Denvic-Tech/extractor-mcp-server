@@ -2,7 +2,7 @@
   "$defs": {
     "Segmentation": {
       "additionalProperties": false,
-      "description": "One native grouping with independently selected execution roles (API 3.2.0).",
+      "description": "One native grouping with independently selected execution roles (API 3.2.2).",
       "properties": {
         "segment": {
           "enum": [

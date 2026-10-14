@@ -2,7 +2,7 @@
 
 Отдельного YAML-рецепта нет. Запрос JSON проверяется моделью Pydantic;
 JSON Schema строится из этой же модели и опубликована в
-[`mcp/schemas/project-template-request-v1.schema.json`](../mcp/schemas/project-template-request-v1.schema.json).
+[`mcp/schemas/project-template-request-v1.schema.json`](../../mcp/schemas/project-template-request-v1.schema.json).
 
 Инструменты MCP:
 

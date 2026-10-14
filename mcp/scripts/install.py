@@ -134,7 +134,7 @@ def main() -> int:
         print(".env или bases.yaml уже существует. Ничего не изменено. См. --overwrite.")
         return 1
     try:
-        print("Установка MCP 3.2.0. Пароли вводятся скрыто. Базу 1С установщик не изменяет.")
+        print("Установка MCP 3.2.2. Пароли вводятся скрыто. Базу 1С установщик не изменяет.")
         deployment = "docker" if yes("Запускать в Docker?") else "local"
         mode = "dcc" if yes("Использовать DCC v2?") else "direct_http"
         connection = {}

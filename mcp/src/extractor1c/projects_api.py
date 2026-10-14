@@ -4,9 +4,8 @@
 import base64
 import io
 import json
-from pathlib import Path
-import tempfile
-from typing import Literal
+import re
+from typing import Any, Literal
 from urllib.parse import urlsplit
 import zipfile
 
@@ -19,7 +18,9 @@ ROUTES = frozenset({"metadata/list", "metadata/describe", "connections/list", "p
                     "projects/preview", "projects/create", "projects/update", "projects/verify",
                     "projects/schedule/get", "projects/schedule/preview", "projects/schedule/set",
                     "projects/export/preview", "projects/export/start", "projects/export/status",
-                    "projects/initialization/preview", "projects/initialization/start"})
+                    "projects/initialization/preview", "projects/initialization/start",
+                    "projects/export/cancel/preview", "projects/export/cancel",
+                    "projects/receiver/inspect"})
 
 
 class ApiSettings(BaseSettings):
@@ -48,9 +49,7 @@ class ApiSettings(BaseSettings):
     ca_bundle: str = ""
     client_cert: str = ""
     client_key: str = ""
-    operation_db: str = Field(
-        default_factory=lambda: str(Path(tempfile.gettempdir()) / "extractor1c-operations.sqlite3")
-    )
+    operation_db: str = "state/operations.sqlite3"
     plan_ttl_seconds: int = Field(default=900, ge=60, le=86400)
 
     @model_validator(mode="after")
@@ -123,7 +122,7 @@ class ProjectConnection(StrictRequest):
 # //(Денис 2026-10-03. Версия MCP 1.2.0
 # Опциональная трёхролевая сегментация, закрытые схемы и совместимость старых запросов.
 class Segmentation(StrictRequest):
-    """One native grouping with independently selected execution roles (API 3.2.0)."""
+    """One native grouping with independently selected execution roles (API 3.2.2)."""
     segment: Literal["По значению", "Первая буква", "Первые две буквы", "Произвольная подстрока",
                      "Час", "День", "Неделя", "Месяц", "Квартал", "Полугодие", "Год"]
     field: str = Field(min_length=1, max_length=512,
@@ -220,10 +219,21 @@ class GroupProjectDefinition(ProjectName, ProjectConnection):
 
 class ProjectUpdate(ProjectName):
     expectedState: str = Field(min_length=1, max_length=524288)
-    comment: str = Field(max_length=1000)
-    disabled: StrictBool
-    includeGuids: StrictBool = False
-    includeMetadataTypes: StrictBool = False
+    comment: str | None = Field(default=None, max_length=1000)
+    disabled: StrictBool | None = None
+    includeGuids: StrictBool | None = None
+    includeMetadataTypes: StrictBool | None = None
+
+    @model_serializer
+    def to_payload(self) -> dict[str, object]:
+        return {name: value for name, value in self.__dict__.items() if value is not None}
+
+    @model_validator(mode="after")
+    def changes_requested(self):
+        if all(getattr(self, name) is None for name in (
+                "comment", "disabled", "includeGuids", "includeMetadataTypes")):
+            raise ValueError("Specify at least one project property to change")
+        return self
 
 
 class ProjectScheduleRef(StrictRequest):
@@ -234,12 +244,50 @@ class ProjectExportRef(ProjectScheduleRef):
     """An existing project, never executable code or an arbitrary HTTP URL."""
 
 
+ReceiverCheck = Literal["schema", "count", "sample"]
+
+
+class ProjectReceiverInspect(ProjectExportRef):
+    """Read a receiver bound to a saved project row; no connection or SQL overrides."""
+    rowIdentifier: str = ""
+    checks: list[ReceiverCheck] = Field(default_factory=lambda: ["schema"], min_length=1)
+    sampleFields: list[str] = Field(default_factory=list, max_length=64)
+    sampleLimit: StrictInt = Field(default=0, ge=0, le=100)
+
+    @model_validator(mode="after")
+    def valid_receiver_checks(self):
+        if len(set(self.checks)) != len(self.checks):
+            raise ValueError("Duplicate receiver checks")
+        if (self.rowIdentifier and not self.rowIdentifier.strip()) or any(
+            ord(char) < 32 for char in self.rowIdentifier
+        ):
+            raise ValueError("Invalid project row identifier")
+        if any(not name.strip() or any(ord(char) < 32 for char in name) for name in self.sampleFields):
+            raise ValueError("Invalid mapped sample field name")
+        if len(set(self.sampleFields)) != len(self.sampleFields):
+            raise ValueError("Duplicate sample fields")
+        if "sample" in self.checks:
+            if not self.sampleFields or self.sampleLimit == 0:
+                raise ValueError("Sample requires explicit fields and sampleLimit 1..100")
+        elif self.sampleFields or self.sampleLimit != 0:
+            raise ValueError("Sample fields and limit require the sample check")
+        return self
+
+
 class ProjectExportStart(ProjectExportRef):
     expectedProjectState: str = Field(min_length=1, max_length=524288)
 
 
 class ProjectExportStatus(ProjectExportRef):
     taskId: str | None = Field(default=None, pattern=r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
+
+class ProjectExportCancelRef(ProjectExportRef):
+    taskId: str = Field(pattern=r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
+
+class ProjectExportCancel(ProjectExportCancelRef):
+    expectedTaskState: str = Field(min_length=1, max_length=524288)
 
 
 class ScheduleDefinition(StrictRequest):
@@ -332,7 +380,10 @@ SCHEMAS = {"metadata/list": EmptyRequest, "metadata/describe": DescribeObjectReq
            "projects/export/start": ProjectExportStart,
            "projects/export/status": ProjectExportStatus,
            "projects/initialization/preview": ProjectExportRef,
-           "projects/initialization/start": ProjectExportStart}
+           "projects/initialization/start": ProjectExportStart,
+           "projects/export/cancel/preview": ProjectExportCancelRef,
+           "projects/export/cancel": ProjectExportCancel,
+           "projects/receiver/inspect": ProjectReceiverInspect}
 
 
 LICENSE_ERRORS = {
@@ -344,11 +395,41 @@ LICENSE_ERRORS = {
 }
 
 
+PUBLIC_API_ERRORS = {
+    "RECEIVER_PROJECT_NOT_FOUND": "Receiver inspection project not found",
+    "RECEIVER_ROW_NOT_FOUND": "Receiver inspection project row not found",
+    "RECEIVER_ROW_SELECTION_REQUIRED": "Select a saved project row for receiver inspection",
+    "RECEIVER_ACCESS_DENIED": "Receiver inspection access denied",
+    "RECEIVER_ADDRESS_UNSUPPORTED": "Saved receiver address is unsupported",
+    "RECEIVER_NON_SQL_UNSUPPORTED": "Receiver inspection requires a supported SQL receiver",
+    "RECEIVER_REQUEST_INVALID": "Invalid receiver inspection request",
+    "RECEIVER_SAMPLE_FIELD_UNKNOWN": "Sample field was not found in the saved mapping",
+    "RECEIVER_SAMPLE_FIELD_AMBIGUOUS": "Sample field is ambiguous in the saved mapping",
+    "RECEIVER_SAMPLE_TYPE_UNSUPPORTED": "Mapped sample field type is unsupported",
+    "RECEIVER_RESPONSE_TOO_LARGE": "Receiver inspection response exceeds the bounded limit",
+    "RECEIVER_TABLE_ABSENT": "Saved receiver table does not exist",
+    "RECEIVER_QUERY_FAILED": "Receiver observation failed; inspect the diagnostic identifier",
+    "RECEIVER_INSPECTION_FAILED": "Receiver inspection failed; inspect the diagnostic identifier",
+    "SQL_ROW_EXECUTION_UNRESOLVED": "Project execution is active or unknown; resolve the original task before changing columns",
+    "SQL_ROW_DDL_INDETERMINATE": "SQL columns may have changed; reconcile the schema and project before retry",
+    "SQL_ROW_COLUMN_CONFLICT": "Receiver columns conflict with the requested project mapping",
+    "SQL_ROW_SCHEMA_UNAVAILABLE": "Receiver schema could not be verified; no column change was approved",
+    "PERIOD_FIELD_UNAVAILABLE": "Period field is unavailable; choose source periodicity or another segment field",
+    "PROJECT_NOT_FOUND": "Project not found",
+    "PROJECT_CHANGED": "Project changed; preview again",
+    "SCHEMA_CHANGE_UNSUPPORTED": "Column changes for this receiver must be configured in 1C",
+    "MULTI_ROW_UPDATE_UNSUPPORTED": "This operation does not support multiple project rows",
+    "GUID_COLUMN_REQUIRED": "The selected source field must be a GUID column",
+    "FIELD_NOT_FOUND": "The requested field was not found",
+}
+
+
 class ProjectsApiError(RuntimeError):
-    def __init__(self, status, message, *, code=None, write_applied=None):
+    def __init__(self, status, message, *, code=None, write_applied=None, error_id=None):
         self.status = status
         self.code = code
         self.write_applied = write_applied
+        self.error_id = error_id
         super().__init__(message)
 
     @property
@@ -359,6 +440,19 @@ class ProjectsApiError(RuntimeError):
     def rejection(self):
         return {"httpStatus": self.status, "code": self.code,
                 "error": str(self), "writeApplied": False}
+
+
+def public_api_error(status: int, result: Any, default_message: str) -> ProjectsApiError:
+    """Preserve only published codes and UUID diagnostics, never driver text."""
+    error_id = result.get("errorId") if isinstance(result, dict) else None
+    if not isinstance(error_id, str) or not re.fullmatch(
+            r"[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}", error_id):
+        error_id = None
+    code = result.get("code") if isinstance(result, dict) else None
+    if not isinstance(code, str) or code not in PUBLIC_API_ERRORS:
+        code = None
+    return ProjectsApiError(status, PUBLIC_API_ERRORS.get(code, default_message),
+                            code=code, error_id=error_id)
 
 
 class ProjectsApiClient:
@@ -383,10 +477,15 @@ class ProjectsApiClient:
         if route not in ROUTES:
             raise ValueError("Unknown API operation")
         payload = TypeAdapter(SCHEMAS[route]).validate_python(body).model_dump(exclude_none=True)
+        # Reuse the published verify URL without exposing a client-controlled router.
+        wire_route = route
+        if route == "projects/receiver/inspect":
+            wire_route = "projects/verify"
+            payload = {**payload, "receiverInspection": True}
         auth = base64.b64encode(f"{self.settings.user}:{self.settings.password}".encode("utf-8")).decode("ascii")
         # No automatic retry and no redirect carrying Basic credentials.
         response = self.session.post(
-            self.settings.url.rstrip("/") + "/" + route, json=payload,
+            self.settings.url.rstrip("/") + "/" + wire_route, json=payload,
             headers={"Authorization": "Basic " + auth, "Accept": "application/json"},
             timeout=self.settings.timeout, allow_redirects=False,
             verify=self.verify, cert=self.cert,
@@ -404,7 +503,8 @@ class ProjectsApiClient:
                         and response.status_code == known[0] and result.get("writeApplied") is False):
                     # Never expose arbitrary upstream text or classify a generic 403/503 as safe.
                     raise ProjectsApiError(known[0], known[1], code=result["code"], write_applied=False)
-            raise ProjectsApiError(response.status_code, "Projects API request failed; verify state before retry")
+            raise public_api_error(response.status_code, result,
+                                   "Projects API request failed; verify state before retry")
         return result
 
     @staticmethod

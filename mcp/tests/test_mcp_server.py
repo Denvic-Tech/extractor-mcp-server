@@ -98,7 +98,7 @@ def test_mcp_protocol_and_backend_dispatch():
             "clientInfo": {"name": "test", "version": "1"},
         })
         assert initialized["serverInfo"]["name"] == "extractor1c"
-        assert initialized["serverInfo"]["version"] == "3.2.0"
+        assert initialized["serverInfo"]["version"] == "3.3.0"
         assert "preview_project" in initialized["instructions"]
         assert "list_skills" in initialized["instructions"]
         assert "get_skill" in initialized["instructions"]
@@ -118,7 +118,38 @@ def test_mcp_protocol_and_backend_dispatch():
         assert ready["message"] in initialized["instructions"]
         listed = rpc(http, "tools/list", {})
         tools = {tool["name"]: tool for tool in listed["tools"]}
-        assert len(tools) == 31
+        assert len(tools) == 35
+        assert tools["inspect_project_receiver"]["annotations"]["readOnlyHint"] is True
+        assert tools["inspect_project_receiver"]["inputSchema"]["additionalProperties"] is False
+        assert set(tools["inspect_project_receiver"]["inputSchema"]["properties"]) == {
+            "project_guid", "project_row_id", "checks", "sample_fields", "sample_limit", "base_id",
+        }
+        with patch("extractor1c.mcp_server.call_api") as receiver_backend:
+            invalid_receiver = rpc(http, "tools/call", {"name": "inspect_project_receiver", "arguments": {
+                "project_guid": str(uuid.uuid4()), "sample_limit": True,
+            }})
+        assert invalid_receiver["isError"]
+        receiver_backend.assert_not_called()
+        with patch("extractor1c.mcp_server.call_api") as receiver_backend:
+            unknown_receiver_argument = rpc(http, "tools/call", {"name": "inspect_project_receiver", "arguments": {
+                "project_guid": str(uuid.uuid4()), "sql": "SELECT 1",
+            }})
+        assert unknown_receiver_argument["isError"]
+        receiver_backend.assert_not_called()
+        with patch("extractor1c.mcp_server.call_api", side_effect=[
+            {"methodsVersion": "3.3.0", "capabilities": ["receiver_inspection"]},
+            {"sourceEqualityVerified": False, "checks": {"count": {"status": "ok", "result": {"count": "9223372036854775807", "exact": True}}}},
+        ]) as receiver_backend:
+            receiver_result = rpc(http, "tools/call", {"name": "inspect_project_receiver", "arguments": {
+                "project_guid": str(uuid.uuid4()), "checks": ["count"],
+            }})
+        assert not receiver_result["isError"]
+        assert json.loads(receiver_result["content"][0]["text"])["sourceEqualityVerified"] is False
+        assert [call.args[0] for call in receiver_backend.call_args_list] == ["service/readiness", "projects/receiver/inspect"]
+        assert tools["preview_project_export_cancellation"]["annotations"]["readOnlyHint"] is True
+        assert tools["cancel_project_export"]["annotations"]["readOnlyHint"] is False
+        assert set(tools["cancel_project_export"]["inputSchema"]["properties"]) == {"plan_id", "operation_id", "base_id"}
+        assert "get_metadata_snapshot" in tools
         assert {"get_project_template_schema", "validate_project_template", "preview_project_template"} <= set(tools)
         schema_result = rpc(http, "tools/call", {"name": "get_project_template_schema", "arguments": {}})
         assert not schema_result["isError"]
@@ -126,7 +157,7 @@ def test_mcp_protocol_and_backend_dispatch():
         assert "analyze_accumulation_register" not in tools
         assert tools["analyze_reference_graph"]["annotations"]["readOnlyHint"] is True
         assert set(tools["analyze_reference_graph"]["inputSchema"]["properties"]) == {
-            "object", "expand_paths", "max_depth", "max_nodes", "max_edges", "include_tabular_sections", "account_scope", "base_id",
+            "object", "expand_paths", "max_depth", "max_nodes", "max_edges", "include_tabular_sections", "account_scope", "snapshot_id", "base_id",
         }
         with patch("extractor1c.mcp_server.call_api", return_value=[]):
             graph_result = rpc(http, "tools/call", {

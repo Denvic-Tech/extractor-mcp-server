@@ -40,7 +40,7 @@ class OperationRejected(OperationStoreError):
 @dataclass(frozen=True)
 class Plan:
     plan_id: str
-    action: Literal["create", "update", "schedule", "export", "initialization"]
+    action: Literal["create", "update", "schedule", "export", "initialization", "cancel"]
     payload: dict[str, Any]
     payload_hash: str
     preview: Any
@@ -87,7 +87,7 @@ class OperationStore:
                 """
                 CREATE TABLE IF NOT EXISTS plans (
                     plan_id TEXT PRIMARY KEY,
-                    action TEXT NOT NULL CHECK (action IN ('create', 'update', 'schedule', 'export', 'initialization')),
+                    action TEXT NOT NULL CHECK (action IN ('create', 'update', 'schedule', 'export', 'initialization', 'cancel')),
                     payload_json TEXT NOT NULL,
                     payload_hash TEXT NOT NULL,
                     preview_json TEXT NOT NULL,
@@ -98,7 +98,7 @@ class OperationStore:
                 CREATE TABLE IF NOT EXISTS operations (
                     operation_id TEXT PRIMARY KEY,
                     plan_id TEXT NOT NULL,
-                    action TEXT NOT NULL CHECK (action IN ('create', 'update', 'schedule', 'export', 'initialization')),
+                    action TEXT NOT NULL CHECK (action IN ('create', 'update', 'schedule', 'export', 'initialization', 'cancel')),
                     payload_hash TEXT NOT NULL,
                     status TEXT NOT NULL CHECK (status IN ('in_progress', 'completed', 'indeterminate', 'rejected')),
                     result_json TEXT,
@@ -117,7 +117,7 @@ class OperationStore:
                 schema = connection.execute(
                     "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?", (table,)
                 ).fetchone()[0]
-                if all(repr(action) in schema for action in ("schedule", "export", "initialization")) and (table == "plans" or "'rejected'" in schema):
+                if all(repr(action) in schema for action in ("schedule", "export", "initialization", "cancel")) and (table == "plans" or "'rejected'" in schema):
                     continue
                 upgraded = schema.replace(
                     "'create', 'update'", "'create', 'update', 'schedule'"
@@ -126,6 +126,8 @@ class OperationStore:
                     upgraded = upgraded.replace("'schedule'", "'schedule', 'export'")
                 if "'initialization'" not in upgraded:
                     upgraded = upgraded.replace("'export'", "'export', 'initialization'")
+                if "'cancel'" not in upgraded:
+                    upgraded = upgraded.replace("'initialization'", "'initialization', 'cancel'")
                 if table == "operations" and "'rejected'" not in schema:
                     upgraded = upgraded.replace("'indeterminate'", "'indeterminate', 'rejected'")
                 # Names here are a fixed internal allowlist, never user input.
@@ -139,6 +141,12 @@ class OperationStore:
                 )
                 connection.execute(f"DROP TABLE {table}_backup")
             connection.execute("CREATE INDEX IF NOT EXISTS operations_plan_id ON operations(plan_id)")
+            connection.execute(
+                "CREATE TABLE IF NOT EXISTS relay_reads "
+                "(operation_id TEXT PRIMARY KEY, route TEXT NOT NULL, task_id TEXT)"
+            )
+            if not any(row["name"] == "task_id" for row in connection.execute("PRAGMA table_info(relay_reads)")):
+                connection.execute("ALTER TABLE relay_reads ADD COLUMN task_id TEXT")
             if connection.execute("PRAGMA foreign_key_check").fetchall():
                 raise OperationStoreError("Operation store migration failed foreign key validation")
             connection.commit()
@@ -148,7 +156,7 @@ class OperationStore:
         with self._connect() as connection:
             return connection.execute("SELECT 1").fetchone()[0] == 1
 
-    def create_plan(self, action: Literal["create", "update", "schedule", "export", "initialization"], payload: dict[str, Any],
+    def create_plan(self, action: Literal["create", "update", "schedule", "export", "initialization", "cancel"], payload: dict[str, Any],
                     preview: Any, ttl_seconds: int) -> Plan:
         now = time.time()
         plan = Plan(
@@ -188,7 +196,7 @@ class OperationStore:
         return plan
 
     def begin(self, plan_id: str, operation_id: str,
-              expected_action: Literal["create", "update", "schedule", "export", "initialization"]) -> tuple[Plan, Any | None]:
+              expected_action: Literal["create", "update", "schedule", "export", "initialization", "cancel"]) -> tuple[Plan, Any | None]:
         plan_id = validate_uuid(plan_id, "planId")
         operation_id = validate_uuid(operation_id, "operationId")
         now = time.time()
@@ -248,6 +256,17 @@ class OperationStore:
                     raise OperationIndeterminate(
                         "An unresolved export or initialization launch exists for this project; reconcile it before another start"
                     )
+            if expected_action == "cancel":
+                pending = connection.execute(
+                    "SELECT p.payload_json FROM operations o JOIN plans p ON p.plan_id=o.plan_id "
+                    "WHERE o.action='cancel' AND o.status IN ('in_progress', 'indeterminate')"
+                ).fetchall()
+                task = plan.payload["taskId"].casefold()
+                project = plan.payload["projectGuid"].casefold()
+                if any(json.loads(row[0])["taskId"].casefold() == task
+                       and json.loads(row[0])["projectGuid"].casefold() == project for row in pending):
+                    connection.rollback()
+                    raise OperationIndeterminate("An unresolved cancellation exists for this task")
             connection.execute(
                 "INSERT INTO operations VALUES (?, ?, ?, ?, 'in_progress', NULL, ?, ?)",
                 (operation_id, plan_id, expected_action, plan.payload_hash, now, now),
@@ -306,21 +325,44 @@ class OperationStore:
             "updatedAt": row["updated_at"],
         }
 
-    def remember_relay(self, operation_id: str, route: str) -> None:
-        """Bind a pending read to this already partitioned caller/base store."""
+    def remember_relay(self, operation_id: str, route: str, task_id: str | None = None) -> None:
+        """Persist an immutable relay method/task in the caller/base partition."""
         operation_id = validate_uuid(operation_id, "operationId")
+        if task_id is not None:
+            task_id = validate_uuid(task_id, "taskId")
         with self._connect() as connection:
-            connection.execute("CREATE TABLE IF NOT EXISTS relay_reads (operation_id TEXT PRIMARY KEY, route TEXT NOT NULL)")
-            connection.execute("INSERT OR IGNORE INTO relay_reads VALUES (?, ?)", (operation_id, route))
+            connection.execute("BEGIN IMMEDIATE")
+            existing = connection.execute(
+                "SELECT route, task_id FROM relay_reads WHERE operation_id = ?", (operation_id,)
+            ).fetchone()
+            if existing is None:
+                connection.execute(
+                    "INSERT INTO relay_reads (operation_id, route, task_id) VALUES (?, ?, ?)",
+                    (operation_id, route, task_id),
+                )
+            else:
+                if existing["route"] != route or (
+                    task_id is not None and existing["task_id"] not in {None, task_id}
+                ):
+                    connection.rollback()
+                    raise PlanConflict("DCC operation method or task identity changed")
+                if task_id is not None and existing["task_id"] is None:
+                    connection.execute(
+                        "UPDATE relay_reads SET task_id = ? WHERE operation_id = ?", (task_id, operation_id)
+                    )
+            connection.commit()
 
     def relay_route(self, operation_id: str) -> str:
         operation_id = validate_uuid(operation_id, "operationId")
         with self._connect() as connection:
-            connection.execute("CREATE TABLE IF NOT EXISTS relay_reads (operation_id TEXT PRIMARY KEY, route TEXT NOT NULL)")
             row = connection.execute("SELECT route FROM relay_reads WHERE operation_id = ?", (operation_id,)).fetchone()
         if row is None:
             raise OperationStoreError("Operation not found")
         return row["route"]
+
+    def validate_relay_task(self, operation_id: str, route: str, task_id: str) -> None:
+        """Bind the first recovered task, or reject a task changed after restart."""
+        self.remember_relay(operation_id, route, task_id)
 
     def reconcile(self, operation_id: str, result: Any, *, rejected: bool = False) -> None:
         """Resolve an uncertain relay request only from its matching upstream record."""
