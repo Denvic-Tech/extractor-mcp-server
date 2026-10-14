@@ -1,7 +1,7 @@
 {
   "product": "Extractor 1C MCP",
   "version": "3.3.0",
-  "sourceCommit": "b71b899f1d4ecd74f02d544a029360d5afa3219a",
+  "sourceCommit": "49163c5a9eb7b7b793df9893dc31d743ad4abd71",
   "repository": "https://github.com/Denvic-Tech/extractor-mcp-server",
   "managedFiles": [
     ".dockerignore",
