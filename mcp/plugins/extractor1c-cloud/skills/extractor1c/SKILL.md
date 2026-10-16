@@ -5,6 +5,17 @@ description: Create, inspect, verify and update Extractor 1C projects, run expor
 
 # Extractor 1C Cloud
 
+Before preparing a project, select the receiver connection and verify it from
+the executing 1C server through the native Extractor driver. MCP readiness
+confirms access to 1C, not access from 1C to the receiver. Use a supported
+connection check, or a successful schema inspection of an existing project
+using that same connection. If neither is available, ask for the native 1C
+connection check; do not invent an MCP tool or create a diagnostic project.
+On timeout or authentication failure, stop dependent project preparation,
+report the known 1C host, receiver endpoint and errorId, and resume only after
+a successful check or the user's explicit selection of another connection.
+Do not retry preview with altered fields or segments to bypass a network error.
+
 When developing or fixing Extractor MCP or its 1C API, read
 [development-tests.md](references/development-tests.md). Run the full automated
 suite after code changes and all ten live test projects after changes to project
@@ -34,7 +45,7 @@ For requests to schedule daily or weekly exports, run every N minutes, pause or 
 
 ## Транспорт и версия
 
-MCP и EPA_Projects используют 3.3.0; базовая серия Экстрактора — 3.16.2.xx. Фактическую версию и capabilities выбранной базы проверяй через `readiness`: обновление MCP не обновляет методы в 1С. Вызови `list_bases`, выбери `base_id` и передавай его во все операции. В прямом HTTP-режиме базы перечислены в YAML на сервере; в DCC-режиме базы обнаруживаются через DCC, а 1С сама получает команды. DCC-маршрут не обращается к публикации 1С. `segmentation` передаётся массивом группировок с явным `field` и тремя Boolean-ролями; объект с `mode` не используется.
+MCP и EPA_Projects используют 3.3.1; базовая серия Экстрактора — 3.16.2.xx. Фактическую версию и capabilities выбранной базы проверяй через `readiness`: обновление MCP не обновляет методы в 1С. Вызови `list_bases`, выбери `base_id` и передавай его во все операции. В прямом HTTP-режиме базы перечислены в YAML на сервере; в DCC-режиме базы обнаруживаются через DCC, а 1С сама получает команды. DCC-маршрут не обращается к публикации 1С. `segmentation` передаётся массивом группировок с явным `field` и тремя Boolean-ролями; объект с `mode` не используется.
 
 For receiver observations, use `inspect_project_receiver` only after readiness
 confirms EPA 3.3.0+ and capability `receiver_inspection`. Read the receiver section

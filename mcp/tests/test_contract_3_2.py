@@ -4,7 +4,7 @@ from extractor1c.projects_api import ProjectDefinition, GroupProjectDefinition
 
 
 def test_server_versions_are_synchronized():
-    assert __version__ == app.version == mcp._mcp_server.version == "3.3.0"
+    assert __version__ == app.version == mcp._mcp_server.version == "3.3.1"
 
 
 def test_nested_rows_use_the_same_array_serialization():

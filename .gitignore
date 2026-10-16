@@ -3,9 +3,14 @@
 .env.*
 !.env.example
 .local-backups/
+.local*
+*.local
+*.local.*
 mcp/state/
 .test-tmp/
 .matrix*/
+# Keep test run receipts and reports local; test source directories stay tracked.
+**/test-results/
 # Python test, bytecode and build artifacts (also applies inside mcp/)
 pytest-cache-files-*/
 __pycache__/

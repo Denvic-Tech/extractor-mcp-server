@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Callable, ParamSpec, TypeVar
 
 import requests
-from pydantic import StrictInt
+from pydantic import StrictBool, StrictInt
 from fastapi import FastAPI
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
@@ -41,7 +41,9 @@ from .project_template import ProjectTemplateRequest, project_template_schema
 from .projects_api import (
     ApiSettings, ProjectsApiClient, ProjectsApiError,
     ProjectDefinition, GroupProjectDefinition, ProjectPreview, ProjectRowChange, ProjectUpdate,
+    ProjectReceiverRepair,
     ProjectSchedulePreview, ProjectScheduleSet, ProjectExportRef, ProjectExportStart, ProjectExportStatus,
+    ProjectQueryDiagnostics,
     ProjectExportCancelRef, ProjectExportCancel,
     ProjectReceiverInspect, ReceiverCheck,
 )
@@ -81,6 +83,8 @@ SERVER_INSTRUCTIONS += """ For immediate export call preview_project_export, sho
 SERVER_INSTRUCTIONS += """ Queue initialization is separate from export: use preview_project_initialization, show eligible queue rows, handler counts, current HTTP user and effects, then initialize_project_queue with the approved planId and operationId. Native initialization handlers may clear or refill queues; existing schedules may consume prepared data. Do not initialize merely because export was requested. Poll get_project_export_status using the returned taskId (taskType initialization); without taskId it still reads latest export. A finished launch means native synchronous fallback ended: inspect its status, not just launchStatus. Uncertain initialization and export operations block both kinds of new launch for the same project."""
 
 SERVER_INSTRUCTIONS += """ Call list_bases before base-specific work. Pass the same base_id to discovery, preview, commit and status tools. Direct HTTP bases come from the configured YAML bases_file or environment settings; DCC bases are all accessible connectors advertising extractor-1c/2.0 and the mcp command. There is no automatic transport fallback. If DCC waiting expires, query get_operation_status with the same operation_id and base_id; never submit another write to replace an uncertain request."""
+
+SERVER_INSTRUCTIONS += """ For bounded native query/history diagnostics use get_project_export_status with the original task_id and include_diagnostics=true only when the selected EPA advertises query_diagnostics. This reads project history within a task time window; it is incomplete and cannot prove exact task correlation, typed parameters or replay. Keep native timestamp units and log text semantics. Ordinary status omits diagnostics and works with older EPA. Never replace unavailable diagnostics with arbitrary code or query execution."""
 
 mcp = FastMCP("extractor1c", instructions=SERVER_INSTRUCTIONS,
               host="127.0.0.1", port=8001,
@@ -447,6 +451,12 @@ def preview_project_template(request: ProjectTemplateRequest, metadata_snapshot_
 
 def _preview_project_definition(definition: ProjectPreview, metadata_snapshot_id: str | None = None) -> Any:
     """Resolve receiver and store the exact approved native preview input once."""
+    repair = isinstance(definition, ProjectReceiverRepair)
+    if repair:
+        published = call_api("service/readiness", {})
+        capabilities = published.get("capabilities") if isinstance(published, dict) else None
+        if not isinstance(capabilities, list) or "mysql_receiver_repair" not in capabilities:
+            raise ToolError("MySQL receiver repair requires the mysql_receiver_repair EPA capability; update EPA")
     metadata_evidence = (_read_dcc_metadata("snapshot", metadata_snapshot_id)
                          if metadata_snapshot_id is not None else None)
     try:
@@ -456,11 +466,23 @@ def _preview_project_definition(definition: ProjectPreview, metadata_snapshot_id
     if selection["status"] != "selected":
         return {"approved": False, "planId": None, "expiresAt": None,
                 "connectionSelection": selection}
+    if repair and not any(choice["name"] == selection["connectionName"]
+                          and choice.get("type", "").casefold() == "mysql"
+                          for choice in selection["choices"]):
+        raise ToolError("Receiver repair requires the saved MySQL connection")
     preview = call_api("projects/preview", payload)
+    if repair and (not isinstance(preview, dict)
+                   or preview.get("receiverRepair") != definition.receiverRepair
+                   or preview.get("textColumns") != definition.textColumns
+                   or preview.get("table") != definition.currentTableName):
+        raise ToolError("Invalid receiver repair preview; no plan was created")
     if metadata_evidence is not None:
         # Provenance belongs to the approved plan, never to the 1C business payload.
         preview = {**preview, "metadataEvidence": metadata_evidence}
-    summary = preview_summary(preview, allow_existing_table=isinstance(definition, ProjectRowChange))
+    summary = preview_summary(
+        preview, allow_existing_table=isinstance(definition, (ProjectRowChange, ProjectReceiverRepair)),
+        repair_missing_table=repair,
+    )
     action = "create" if isinstance(definition, (ProjectDefinition, GroupProjectDefinition)) else "update"
     summary["connectionName"] = selection["connectionName"]
     result = {"approved": summary["approved"], "action": action, "summary": summary,
@@ -568,12 +590,39 @@ def _preview_project_execution(project_guid: str, action: str) -> Any:
     return result
 
 
-@threaded_tool(annotations=READ)
+@threaded_tool(annotations=READ, forbid_unknown=True)
 @base_tool
-def get_project_export_status(project_guid: str, task_id: str | None = None) -> Any:
-    """Read an export/initialization task by taskId; without it read latest export. Never consumes messages."""
-    request = ProjectExportStatus(projectGuid=project_guid, taskId=task_id)
-    return call_api("projects/export/status", request.model_dump())
+def get_project_export_status(
+    project_guid: str, task_id: str | None = None, include_diagnostics: StrictBool = False,
+) -> Any:
+    """Read task status; optionally include bounded, approximate native history.
+
+    Diagnostics require task_id and the query_diagnostics EPA capability.
+    History is not an exact task trace or typed parameter replay. Ordinary
+    status remains compatible with older EPA and never consumes messages.
+    """
+    request = ProjectExportStatus(
+        projectGuid=project_guid, taskId=task_id, includeDiagnostics=include_diagnostics,
+    )
+    if request.includeDiagnostics:
+        try:
+            published = call_api("service/readiness", {})
+        except ToolError as exc:
+            if re.search(r"1C API HTTP (?:404|405)\b", str(exc)):
+                raise ToolError("Query diagnostics are unsupported; update published EPA methods") from None
+            raise
+        capabilities = published.get("capabilities") if isinstance(published, dict) else None
+        if not isinstance(capabilities, list) or "query_diagnostics" not in capabilities:
+            raise ToolError("Query diagnostics require the query_diagnostics EPA capability; update EPA")
+    result = call_api("projects/export/status", request.model_dump())
+    if request.includeDiagnostics:
+        try:
+            if not isinstance(result, dict):
+                raise ValueError("Expected task status with diagnostics")
+            ProjectQueryDiagnostics.model_validate(result.get("diagnostics"))
+        except ValueError:
+            raise ToolError("Invalid query diagnostics response from the selected EPA publication") from None
+    return result
 
 
 @threaded_tool(annotations=WRITE)
@@ -675,7 +724,10 @@ def get_project_plan(plan_id: str, cursor: int = 0, limit: int = 100) -> Any:
             "planId": plan.plan_id,
             "action": plan.action,
             "expiresAt": plan.expires_at,
-            "summary": preview_summary(plan.preview, allow_existing_table="currentTableName" in plan.payload),
+            "summary": preview_summary(
+                plan.preview, allow_existing_table="currentTableName" in plan.payload,
+                repair_missing_table="receiverRepair" in plan.payload,
+            ),
             "fields": preview_fields_page(plan.preview, cursor, limit),
         }
         if isinstance(plan.preview, dict) and "metadataEvidence" in plan.preview:

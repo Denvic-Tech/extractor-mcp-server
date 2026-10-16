@@ -257,9 +257,15 @@ class OperationStore:
                         "An unresolved export or initialization launch exists for this project; reconcile it before another start"
                     )
             if expected_action == "cancel":
+                # Do not overlap requests that are still being sent. A previous
+                # uncertain stop signal may be requested again only through a
+                # new previewed plan: EPA rechecks the exact task state and stop
+                # flag under its task lock before setting the same signal.
+                # Keep the old operation immutable; launching work is different
+                # and retains the stronger uncertainty guard above.
                 pending = connection.execute(
                     "SELECT p.payload_json FROM operations o JOIN plans p ON p.plan_id=o.plan_id "
-                    "WHERE o.action='cancel' AND o.status IN ('in_progress', 'indeterminate')"
+                    "WHERE o.action='cancel' AND o.status='in_progress'"
                 ).fetchall()
                 task = plan.payload["taskId"].casefold()
                 project = plan.payload["projectGuid"].casefold()

@@ -10,7 +10,10 @@ from urllib.parse import urlsplit
 import zipfile
 
 import requests
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, TypeAdapter, model_serializer, model_validator
+from pydantic import (
+    BaseModel, ConfigDict, Field, SerializerFunctionWrapHandler, StrictBool,
+    StrictInt, TypeAdapter, model_serializer, model_validator,
+)
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ROUTES = frozenset({"metadata/list", "metadata/describe", "connections/list", "projects/list",
@@ -280,6 +283,57 @@ class ProjectExportStart(ProjectExportRef):
 
 class ProjectExportStatus(ProjectExportRef):
     taskId: str | None = Field(default=None, pattern=r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+    includeDiagnostics: StrictBool = False
+
+    @model_validator(mode="after")
+    def diagnostics_require_task(self) -> "ProjectExportStatus":
+        if self.includeDiagnostics and self.taskId is None:
+            raise ValueError("Query diagnostics require an explicit taskId")
+        return self
+
+    @model_serializer(mode="wrap")
+    def compatible_status_payload(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+        payload = handler(self)
+        # Older EPA publications reject unknown arguments. Ordinary status must
+        # retain its exact previous wire shape, even when false was explicit.
+        if not self.includeDiagnostics:
+            payload.pop("includeDiagnostics", None)
+        return payload
+
+
+class QueryDiagnosticEvent(StrictRequest):
+    """Native history text, with native timestamp units and explicit redaction."""
+    atMs: StrictInt
+    order: StrictInt
+    rowIdentifier: str
+    table: str
+    partition: str
+    kind: Literal["query_text", "query_parameters", "serialized_parameters", "error"]
+    text: str = Field(max_length=4000)
+    textTruncated: StrictBool
+    textRedacted: StrictBool
+
+
+class ProjectQueryDiagnostics(StrictRequest):
+    """Bounded project history is approximate evidence, never a complete trace."""
+    available: StrictBool
+    scope: Literal["project_history"]
+    correlation: Literal["time_window", "unavailable"]
+    complete: StrictBool
+    parametersFormat: Literal["native_log_text"]
+    events: list[QueryDiagnosticEvent] = Field(max_length=100)
+    warnings: list[str]
+    truncated: StrictBool
+
+    @model_validator(mode="after")
+    def history_is_incomplete(self) -> "ProjectQueryDiagnostics":
+        if self.complete:
+            raise ValueError("Project history cannot claim a complete task trace")
+        if self.available and (self.correlation != "time_window" or not self.events):
+            raise ValueError("Available diagnostics require time-correlated history events")
+        if self.correlation == "unavailable" and self.events:
+            raise ValueError("Uncorrelated history events cannot describe the selected task")
+        return self
 
 
 class ProjectExportCancelRef(ProjectExportRef):
@@ -361,10 +415,31 @@ class ProjectRowChange(ProjectName):
         return self
 
 
+class ProjectReceiverRepair(ProjectName):
+    """Repair one absent MySQL receiver; never accept SQL or native templates."""
+
+    expectedState: str = Field(min_length=1, max_length=524288)
+    currentTableName: str = Field(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$", max_length=100)
+    receiverRepair: Literal["create_missing_mysql"]
+    textColumns: list[str] = Field(
+        min_length=1, max_length=50,
+        description="Saved ordinary string columns selected for TEXT. Preserve the native GUID/UUID mapping and unchanged key/segment fields; EPA checks source field semantics, not column spelling.",
+    )
+
+    @model_validator(mode="after")
+    def valid_text_columns(self) -> "ProjectReceiverRepair":
+        if any(not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,99}", name)
+               for name in self.textColumns):
+            raise ValueError("TEXT columns must be saved Latin receiver identifiers")
+        if len({name.casefold() for name in self.textColumns}) != len(self.textColumns):
+            raise ValueError("Duplicate TEXT column")
+        return self
+
+
 # Project-level and row-level changes share the same public preview/update
 # operations; the closed union still validates each concrete payload strictly.
-ProjectChange = ProjectUpdate | ProjectRowsAppend | ProjectRowChange
-ProjectPreview = ProjectDefinition | GroupProjectDefinition | ProjectRowsAppend | ProjectRowChange
+ProjectChange = ProjectUpdate | ProjectRowsAppend | ProjectRowChange | ProjectReceiverRepair
+ProjectPreview = ProjectDefinition | GroupProjectDefinition | ProjectRowsAppend | ProjectRowChange | ProjectReceiverRepair
 
 
 SCHEMAS = {"metadata/list": EmptyRequest, "metadata/describe": DescribeObjectRequest,
@@ -414,6 +489,10 @@ PUBLIC_API_ERRORS = {
     "SQL_ROW_DDL_INDETERMINATE": "SQL columns may have changed; reconcile the schema and project before retry",
     "SQL_ROW_COLUMN_CONFLICT": "Receiver columns conflict with the requested project mapping",
     "SQL_ROW_SCHEMA_UNAVAILABLE": "Receiver schema could not be verified; no column change was approved",
+    "MYSQL_RECEIVER_TEXT_COLUMN_UNSUPPORTED": "Selected receiver column does not support the requested TEXT mapping",
+    "MYSQL_RECEIVER_TABLE_EXISTS": "Receiver table already exists; missing-table repair refused",
+    "MYSQL_RECEIVER_CREATE_FAILED": "Receiver table creation failed; inspect the diagnostic identifier and receiver schema before retry",
+    "MYSQL_RECEIVER_REPAIR_UNSUPPORTED": "Saved MySQL receiver repair is unsupported",
     "PERIOD_FIELD_UNAVAILABLE": "Period field is unavailable; choose source periodicity or another segment field",
     "PROJECT_NOT_FOUND": "Project not found",
     "PROJECT_CHANGED": "Project changed; preview again",

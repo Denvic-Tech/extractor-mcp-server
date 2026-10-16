@@ -41,7 +41,9 @@ def resolve_project_connection(payload: dict, call_api) -> tuple[dict, dict]:
             raise ValueError("Existing project connection cannot be changed by a row update")
         requested = current
     selection = select_connection(call_api("connections/list", {}), requested)
-    if selection["status"] == "selected":
+    # Repair is bound to the saved connection, but its closed native payload
+    # has no connectionName: adding it would change the five-key contract.
+    if selection["status"] == "selected" and "receiverRepair" not in payload:
         target["connectionName"] = selection["connectionName"]
         for row in rows:
             row["connectionName"] = selection["connectionName"]

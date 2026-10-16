@@ -98,7 +98,7 @@ def test_mcp_protocol_and_backend_dispatch():
             "clientInfo": {"name": "test", "version": "1"},
         })
         assert initialized["serverInfo"]["name"] == "extractor1c"
-        assert initialized["serverInfo"]["version"] == "3.3.0"
+        assert initialized["serverInfo"]["version"] == "3.3.1"
         assert "preview_project" in initialized["instructions"]
         assert "list_skills" in initialized["instructions"]
         assert "get_skill" in initialized["instructions"]
@@ -119,6 +119,24 @@ def test_mcp_protocol_and_backend_dispatch():
         listed = rpc(http, "tools/list", {})
         tools = {tool["name"]: tool for tool in listed["tools"]}
         assert len(tools) == 35
+        repair_schema = tools["preview_project"]["inputSchema"]["$defs"]["ProjectReceiverRepair"]
+        assert repair_schema["additionalProperties"] is False
+        assert set(repair_schema["properties"]) == {
+            "projectName", "expectedState", "currentTableName", "receiverRepair", "textColumns",
+        }
+        for invalid_repair in (
+            {"sql": "CREATE TABLE x"}, {"code": "Выполнить(Вход)"},
+            {"connectionName": "another"}, {"textColumns": ["x", "X"]},
+            {"textColumns": ["x;DROP"]},
+        ):
+            with patch("extractor1c.mcp_server.call_api") as repair_backend:
+                rejected_repair = rpc(http, "tools/call", {"name": "preview_project", "arguments": {
+                    "definition": {"projectName": "Existing", "expectedState": "saved",
+                                   "currentTableName": "Articles", "receiverRepair": "create_missing_mysql",
+                                   "textColumns": ["Description"], **invalid_repair},
+                }})
+            assert rejected_repair["isError"]
+            repair_backend.assert_not_called()
         assert tools["inspect_project_receiver"]["annotations"]["readOnlyHint"] is True
         assert tools["inspect_project_receiver"]["inputSchema"]["additionalProperties"] is False
         assert set(tools["inspect_project_receiver"]["inputSchema"]["properties"]) == {
@@ -171,6 +189,22 @@ def test_mcp_protocol_and_backend_dispatch():
         assert tools["initialize_project_queue"]["annotations"]["readOnlyHint"] is False
         assert set(tools["initialize_project_queue"]["inputSchema"]["properties"]) == {"plan_id", "operation_id", "base_id"}
         assert tools["get_project_export_status"]["annotations"]["readOnlyHint"] is True
+        assert tools["get_project_export_status"]["inputSchema"]["additionalProperties"] is False
+        assert set(tools["get_project_export_status"]["inputSchema"]["properties"]) == {
+            "project_guid", "task_id", "include_diagnostics", "base_id",
+        }
+        for bad_status_arguments in (
+            {"include_diagnostics": {"sql": "SELECT 1"}},
+            {"include_diagnostics": "true"},
+            {"sql": "SELECT 1"},
+        ):
+            with patch("extractor1c.mcp_server.call_api") as status_backend:
+                invalid_status = rpc(http, "tools/call", {
+                    "name": "get_project_export_status",
+                    "arguments": {"project_guid": str(uuid.uuid4()), **bad_status_arguments},
+                })
+            assert invalid_status["isError"]
+            status_backend.assert_not_called()
         assert tools["preview_project_export"]["annotations"]["readOnlyHint"] is True
         assert tools["start_project_export"]["annotations"]["readOnlyHint"] is False
         assert set(tools["start_project_export"]["inputSchema"]["properties"]) == {"plan_id", "operation_id", "base_id"}

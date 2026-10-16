@@ -161,10 +161,11 @@ def verify_project_summary(call_api: CallApi, project_name: str,
     }
 
 
-def preview_summary(value: Any, allow_existing_table: bool = False) -> dict[str, Any]:
+def preview_summary(value: Any, allow_existing_table: bool = False,
+                    repair_missing_table: bool = False) -> dict[str, Any]:
     if not isinstance(value, dict):
         return {"approved": True, "rowCount": 0, "fieldCount": 0}
-    if isinstance(value.get("changes"), dict):
+    if not repair_missing_table and isinstance(value.get("changes"), dict):
         return {
             "approved": value.get("stateMatches") is not False,
             "projectName": value.get("projectName"),
@@ -208,7 +209,37 @@ def preview_summary(value: Any, allow_existing_table: bool = False) -> dict[str,
         conflict = True
     if any((row["tableExists"] and not allow_existing_table) or row["projectTableExists"] for row in row_summaries):
         conflict = True
-    return {
+    if repair_missing_table:
+        # The saved project row must exist; the physical receiver must not.
+        # A partial/old preview cannot authorize a create-absent repair.
+        conflict = (value.get("conflict") is not False
+                    or value.get("stateMatches") is not True
+                    or value.get("projectExists") is not True
+                    or value.get("tableExists") is not False
+                    or value.get("approved") is False
+                    or len(rows) != 1)
+        for row in rows:
+            if (not isinstance(row, dict) or row.get("tableExists") is not False
+                    or row.get("projectTableExists") is not True
+                    or row.get("physicalTableExists", False) is not False):
+                conflict = True
+                continue
+            fields = row.get("fields")
+            if not isinstance(fields, list) or not fields:
+                conflict = True
+                continue
+            for field in fields:
+                if (not isinstance(field, dict)
+                        or any(not isinstance(field.get(key), str) or not field[key]
+                               for key in ("source", "target", "type"))
+                        or any(type(field.get(key)) is not int or field[key] < 0
+                               for key in ("precision", "scale"))
+                        or any(type(field.get(key)) is not bool for key in (
+                            "nullable", "segmentField", "extendedSegmentField", "initializationSegmentField"))):
+                    conflict = True
+        if value.get("physicalTableExists", False) is not False:
+            conflict = True
+    result = {
         "approved": not conflict,
         "projectName": value.get("projectName"),
         "rowCount": len(row_summaries),
@@ -216,6 +247,9 @@ def preview_summary(value: Any, allow_existing_table: bool = False) -> dict[str,
         "stateMatches": value.get("stateMatches"),
         "rows": row_summaries,
     }
+    if repair_missing_table:
+        result.update(receiverRepair=value.get("receiverRepair"), textColumns=value.get("textColumns"))
+    return result
 
 
 def preview_fields_page(value: Any, cursor: int = 0, limit: int = 100) -> dict[str, Any]:

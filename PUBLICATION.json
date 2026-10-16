@@ -1,7 +1,7 @@
 {
   "product": "Extractor 1C MCP",
-  "version": "3.3.0",
-  "sourceCommit": "6e2651a40cf56680df5faaa13ebf2cbb0ffb629b",
+  "version": "3.3.1",
+  "sourceCommit": "f8ca274de061068f7f994d82e00488249f511a1e",
   "repository": "https://github.com/Denvic-Tech/extractor-mcp-server",
   "managedFiles": [
     ".dockerignore",
@@ -50,6 +50,7 @@
     "mcp/skills/extractor1c/references/20-deployment-architecture.md",
     "mcp/skills/extractor1c/references/21-dcc-metadata.md",
     "mcp/skills/extractor1c/references/22-receiver-preflight.md",
+    "mcp/skills/extractor1c/references/23-project-dialog.md",
     "mcp/src/extractor1c/__init__.py",
     "mcp/src/extractor1c/cloud_tools.py",
     "mcp/src/extractor1c/connections.py",

@@ -32,6 +32,23 @@ def test_uncertain_write_cannot_be_retried_blindly(tmp_path):
     assert store.operation_status(operation_id)["status"] == "indeterminate"
 
 
+@pytest.mark.parametrize("old_action", ["export", "initialization"])
+@pytest.mark.parametrize("new_action", ["export", "initialization"])
+def test_uncertain_launch_still_blocks_fresh_launch_plan(tmp_path, old_action, new_action):
+    store = OperationStore(tmp_path / "operations.sqlite3")
+    project = str(uuid.uuid4())
+    plan = store.create_plan(old_action, {"projectGuid": project}, {}, 300)
+    operation_id = str(uuid.uuid4())
+    store.begin(plan.plan_id, operation_id, old_action)
+    store.mark_indeterminate(operation_id)
+    previous = store.operation_status(operation_id)
+    other = store.create_plan(new_action, {"projectGuid": project}, {}, 300)
+    with pytest.raises(OperationIndeterminate, match="unresolved export or initialization"):
+        store.begin(other.plan_id, str(uuid.uuid4()), new_action)
+    assert store.operation_status(operation_id) == previous
+    assert store.get_plan(other.plan_id).operation_id is None
+
+
 def test_relay_task_binding_survives_restart_and_rejects_replacement(tmp_path):
     path = tmp_path / "relay.sqlite3"
     operation_id, task_id = str(uuid.uuid4()), str(uuid.uuid4())
