@@ -2,7 +2,54 @@
 
 API 3.3.1: сначала `list_bases`, выбери `base_id` и передавай его во все вызовы. Несколько HTTP-баз настраиваются YAML; DCC-базы обнаруживаются через DCC. Новую многоролевую сегментацию передавай массивом; описание - [partition-segments.md](partition-segments.md). Одно-сегментные примеры ниже остаются допустимым отдельным вариантом и не смешиваются с массивом.
 
+## SQL operations and plan-based receivers
+
+Check the selected base's actual readiness and the connected tools' input schemas.
+With `direct_sql_operations` and matching tool schemas, SQL supports the existing
+`create_project(definition=..., operation_id=...)`,
+`update_project(change=..., operation_id=...)`,
+`initialize_project_queue(project_guid=..., operation_id=...)` and
+`start_project_export(project_guid=..., operation_id=...)` without a separate preview.
+Every write requires an immutable UUID `operation_id`; updates retain a fresh
+`expectedState`. Direct input and `plan_id` are mutually exclusive. Native receiver,
+state and blocker checks remain inside the operation.
+
+Kafka, AMQP and 1C Bus require the corresponding preview plan. DCC transport and
+Extractor's internal change queue do not make a SQL receiver a message receiver.
+SQL preview remains available when requested or needed to inspect generated fields.
+If the connected server lacks the capability or direct input schema, do not send
+an unsupported direct call. A request to run SQL without preview requires upgrading
+that installation. Use its documented legacy plan workflow only when that mode
+was explicitly selected or authorized; never silently substitute mandatory preview.
+Do not claim this capability is deployed merely because this skill describes it.
+Keep operation/task IDs, errors and actual status. Reconcile an uncertain original
+operation; do not replay it with a new ID. Acknowledged launch is not export success.
+
 ## Receiver observations
+
+For data-conversion/export diagnostics, use the native row setting
+“Расширенная проверка данных”. Read its current value before enabling it
+through an available native route within authorized diagnostics, preserving
+other settings. Inspect the native export log after the authorized run;
+respect correlation/truncation limits and do not invent an unsupported MCP
+parameter or treat this flag as proof of a fix.
+
+For documents and registers, before project preparation ask whether to show reference
+presentations: Yes or No, offering No. Reuse an existing explicit answer.
+For Yes, enable presentations; for No, set the native “Do not export” flag
+(`НеСоздаватьПоле`) while retaining mapping rows, GUIDs
+and compound-reference types. Do not substitute `selectedFields` row removal
+for this flag; use the native wizard mechanism supported by the actual API.
+Use the native Extractor wizard wherever supported. Export all reference GUIDs
+through its native `УникальныйИдентификатор` calculation and disable
+“Экранировать” for their SQL mappings. Keep native types, lengths and compound
+reference types; identify GUID fields from their actual calculation/source.
+
+For an information register, confirm LastSlice availability before choosing
+`СрезПоследних`. Offer Month as the default segment. If monthly segments are
+large (item prices, goods or batches), ask for an additional field and verify
+it against the selected infobase metadata before project preparation. Preserve explicit
+choices and running exports.
 
 Read `readiness` for the selected base: `inspect_project_receiver` requires
 EPA 3.3.0+ in major 3 and capability `receiver_inspection`. Obtain the saved
@@ -26,7 +73,7 @@ limits and truncation are explicit. Keep per-check errors as diagnostics.
 equality. This read does not create projects, initialize queues or start exports.
 
 
-Before preview of catalog or document rows, ask for the partition choice
+Before preparing catalog or document rows, ask for the partition choice
 following [partition-segments.md](partition-segments.md). Do not automatically
 choose document day partitioning or catalog name prefixes.
 
@@ -40,7 +87,7 @@ names/types and ask which to use for subsequent project development; reuse an
 explicit prior answer without asking again.
 
 Keep the choice in the current conversation and pass its `connectionName` on
-subsequent projects. Recheck the live list before preview. If the choice was
+subsequent projects. Recheck the live list before project preparation. If the choice was
 removed, ask again; duplicate names require renaming in 1C. Do not share this
 choice between users or infobases. There is no server-global default; a fresh
 conversation without saved context must select again.
@@ -53,7 +100,7 @@ reports transport readiness, while connectionSelection reports selection state.
 Existing projects retain their verified connectionName during row updates.
 
 There is no ClickHouse type filter. Field types and target capabilities come
-from the native Extractor driver and must be verified in preview. The legacy
+from the native Extractor driver: verify saved settings/schema after a direct write, or inspect an optional preview before it. The legacy
 column-alteration operation still uses ClickHouse SQL; for other drivers it
 rejects before DDL and asks for column configuration in 1C. This is an operation
 limitation, not a restriction on choosing or creating projects.
@@ -88,7 +135,7 @@ launch export and return task identifiers without polling export completion.
 
 Prefer compact tools so hosted agents do not receive entire metadata catalogs or state tokens. Use cursors until `nextCursor` is null.
 
-The preview is a server-side immutable plan with a short lifetime. A write accepts the plan ID, not the original definition. A completed `operationId` can be repeated safely and returns the stored result. An in-progress or indeterminate operation must be reconciled with `get_operation_status` and `verify_project_summary`.
+When the plan-based workflow is used, preview is a server-side immutable plan with a short lifetime and that write accepts its plan ID. SQL direct mode instead accepts the typed definition/change or project GUID described above. A completed `operationId` can be repeated safely and returns the stored result. An in-progress or indeterminate operation must be reconciled with `get_operation_status` and `verify_project_summary`.
 
 Before building `selectedFields`, call `describe_object_fields`. Intersect the minimal candidates for the object kind with the actual metadata field names. Include only confirmed fields and generated GUID or segment fields whose source exists. Do not use failed previews to discover missing attributes.
 
@@ -111,7 +158,7 @@ Reuse explicit choices and parameters already supplied in the current task. No a
 
 Ask only for missing parameters of the chosen schedule: daily time; weekly days and time; or an interval and daily window required by the API. Read and present the 1C time context. Do not separately ask for the execution user; use API-provided settings.
 
-Apply selected actions in order: initialize, wait for success, run manually, then configure scheduling. Wait for export completion only if selected; otherwise an acknowledged launch is sufficient. If a later action is currently blocked by the API, report that instead of silently waiting. Skip unselected actions. Each selected action uses its own preview and planId/operationId, followed by launch confirmation or task-result verification according to the waiting choice, or schedule readback. Stop dependent actions on an error or uncertain outcome and explain why. Enabling a schedule may itself start export; show this in preview. Do not repeat approval requests when the preview matches the user's existing authorization.
+Apply selected actions in order: initialize, wait for success, run manually, then configure scheduling. Wait for export completion only if selected; otherwise an acknowledged launch is sufficient. If a later action is currently blocked by the API, report that instead of silently waiting. Skip unselected actions. SQL direct initialization/export use separate operation UUIDs without mandatory preview; message receivers and explicitly chosen legacy plan mode use their respective plans. Scheduling still requires its own preview and plan. Follow each action with launch confirmation, task-result verification according to the waiting choice, or schedule readback. Stop dependent actions on an error or uncertain outcome and explain why. Enabling a schedule may itself start export; show this in preview. Do not repeat approval requests when the preview matches the user's existing authorization.
 
 Ask about waiting only when a run is selected and the preference is unknown. Yes means poll the task until a terminal result. No means return the acknowledged launch with taskId and available backgroundJobId, without polling until completion. Report started, not successfully completed; status can be requested later. Not waiting does not cancel the launch. Do not repeat an already stated wait/no-wait preference.
 
@@ -177,11 +224,11 @@ Check that `preview_project_export`, `start_project_export` and `get_project_exp
 
 1. Find the project with `list_projects`, then read `verify_project(project_name).projectRef`.
 2. Read `get_project_export_status(project_guid)` for an overview. Without a task ID it selects the latest export, prioritizing a running record.
-3. Call `preview_project_export(project_guid)`. Show `summary.projectName`, `current`, `executionUser`, `activation` and `blockers`. The whole project runs immediately with its saved rows, handlers and queue. The schedule is unchanged and the queue is not reset. The execution user is the current HTTP user, not the schedule account.
-4. If `approved:true` and the user authorized this run, call `start_project_export(plan_id, operation_id)` using the returned plan and a new UUID. Do not ask again when existing explicit authorization covers the preview.
+3. For SQL with the confirmed direct capability/schema, use the authorized `start_project_export(project_guid=..., operation_id=...)` without preview. Native checks stay inside the operation. The whole project uses its saved rows, handlers and queue; the schedule is unchanged and the queue is not reset.
+4. For Kafka, AMQP, 1C Bus or an explicitly chosen legacy plan mode, call `preview_project_export`, inspect current state, execution user, activation and blockers, then apply the exact returned `plan_id` with a new operation UUID if authorized. Do not ask again for authorization already supplied. Show execution identity only when actually provided.
 5. Save `result.taskId` and `result.backgroundJobId`. If waiting is selected, poll `get_project_export_status(project_guid, task_id)` with that task ID; otherwise return the launch confirmation and IDs without further polling. Space out polls and report progress during long runs.
 
-`launchStatus: started` confirms task/job creation, not export success. `already_running` or `initializing` returns an existing task; no new export started. `rejected` is a refusal before launch and needs a fresh preview after the cause is resolved. Execution statuses `succeeded`, `failed`, `cancelled` are terminal; `pending` and `running` are not. `unknown` and `not_found` never prove success. Native cleanup may remove tasks older than three days. Start/end timestamps are UTC milliseconds. Status reads never delete job messages.
+`launchStatus: started` confirms task/job creation, not export success. `already_running` or `initializing` returns an existing task; no new export started. `rejected` is a refusal before launch and needs the cause resolved before a new authorized operation; plan mode also needs a fresh preview. Reconcile an uncertain original operation first. Execution statuses `succeeded`, `failed`, `cancelled` are terminal; `pending` and `running` are not. `unknown` and `not_found` never prove success. Native cleanup may remove tasks older than three days. Start/end timestamps are UTC milliseconds. Status reads never delete job messages.
 
 `get_operation_status` tracks the MCP request. Its `completed` may even contain a rejected launch; inspect the result. Export task IDs, background job IDs and scheduled job IDs are distinct.
 
@@ -189,11 +236,11 @@ On a lost response or unknown outcome, read operation status and the known task.
 
 ## Queue initialization
 
-The native HTTP export launch has no separate initialization mode. Use `preview_project_initialization(project_guid)` and `initialize_project_queue(plan_id, operation_id)`; our API invokes the unchanged native `ИнициализироватьПроект`.
+The native HTTP export launch has no separate initialization mode. Use direct `initialize_project_queue(project_guid=..., operation_id=...)` for SQL with the confirmed capability/schema; use `preview_project_initialization` and its `plan_id` for message receivers or an explicitly chosen legacy plan mode. The API invokes native `ИнициализироватьПроект`.
 
 1. Resolve the existing project's `projectRef` with `verify_project`.
-2. Preview initialization. Show `queueRows`, `eligibleRowCount`, `initializationHandlerCount`, `current`, `currentInitialization`, execution user, blockers and activation.
-3. With `approved:true` and user authorization, apply the returned plan using a new operation UUID. Existing authorization remains valid when the preview matches it.
+2. For direct SQL, perform the authorized initialization with a new operation UUID; the native operation validates enabled rows, handlers, current state and blockers.
+3. For message receivers or explicitly chosen legacy plan mode, preview initialization, inspect queue/eligible rows, handlers, current state, execution user, blockers and activation, then apply the exact plan if authorized. Existing explicit authorization remains valid.
 4. Poll `get_project_export_status(project_guid, task_id)` with the returned task ID. Its taskType is initialization; omitting the ID still reads the latest export.
 
 Only enabled rows with queue usage run their enabled native primary-initialization handlers. Those handlers may clear or refill queues and execute stored logic. The API does not start export afterwards; an existing schedule may consume the prepared queue. No eligible rows or handlers means a blocked plan. The current HTTP user needs project modification rights or the native initialization role `Экс_ИнициализацияОчередиПроектов`.
@@ -201,3 +248,13 @@ Only enabled rows with queue usage run their enabled native primary-initializati
 `started` requires task polling. The native implementation can fall back to synchronous execution: `finished` carries a separate `status` (succeeded, failed or cancelled), not unconditional success. already_running, initializing and rejected do not prove a new initialization started. Successful handlers do not guarantee a nonempty queue.
 
 Uncertain initialization and export outcomes block both launch types for the same project, including new plan and operation IDs. Read known task and operation status and reconcile; never delete the store or retry under a new ID. Completed request status alone does not mean initialization succeeded.
+
+## Standalone enumeration GUID
+
+For an explicitly selected `Перечисление.<Name>` source, `includeGuids` must
+control the native enumeration GUID calculation. The native wizard and base
+settings determine its function, calculation name and SQL type; never compute
+or convert UUIDs in MCP. Verify actual saved fields with `verify_project`, or use an optional native preview. This does not
+automatically enable GUIDs of enum-valued attributes in documents, registers
+or other sources. Do not create an empty extra enumeration row; a separate
+row requires an explicitly selected enumeration.

@@ -142,6 +142,33 @@ class Segmentation(StrictRequest):
 # \\\Денис 2026-10-03. Версия MCP 1.2.0)
 
 
+class RowSettings(StrictRequest):
+    """Explicit native row attributes; omitted values preserve native settings."""
+
+    maxQueueRecords: StrictInt | None = Field(default=None, ge=0, le=9999999999)
+    queueBatchSize: StrictInt | None = Field(default=None, ge=0, le=9999999999)
+    maxThreads: StrictInt | None = Field(default=None, ge=0, le=99)
+    threadWaitTimeout: StrictInt | None = Field(default=None, ge=0, le=9999999999)
+    bufferSize: StrictInt | None = Field(default=None, ge=-9999999999, le=9999999999)
+    blockSize: StrictInt | None = Field(default=None, ge=0, le=9999999999)
+    deleteInBlocks: StrictBool | None = None
+    deleteBlockSize: StrictInt | None = Field(default=None, ge=0, le=9999999999)
+    advancedDataCheck: StrictBool | None = None
+    parameterExpansionThreshold: StrictInt | None = Field(default=None, ge=0, le=9999999999)
+
+    @model_validator(mode="before")
+    @classmethod
+    def explicit_nonnull_settings(cls, value: object) -> object:
+        if isinstance(value, dict) and (not value or any(v is None for v in value.values())):
+            raise ValueError("Specify non-null native row settings; omit unchanged properties")
+        return value
+
+    @model_serializer(mode="wrap")
+    def explicit_payload(self, handler: SerializerFunctionWrapHandler) -> dict[str, int | bool]:
+        return {key: value for key, value in handler(self).items()
+                if key in self.model_fields_set}
+
+
 class ProjectDefinition(ObjectRequest, ProjectName, ProjectConnection):
     tableName: str = Field(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$", max_length=100)
     segment: Literal["", "День", "Месяц", "Первые две буквы", "По значению"] = ""
@@ -154,9 +181,16 @@ class ProjectDefinition(ObjectRequest, ProjectName, ProjectConnection):
     includeMetadataTypes: StrictBool = True
     maxItemsPerBatch: StrictInt = Field(default=0, ge=0, le=1000000)
     selectedFields: list[str] = Field(default_factory=list, max_length=500)
+    rowSettings: RowSettings | None = None
 
     @model_validator(mode="after")
     def segment_matches(self):
+        if "rowSettings" in self.model_fields_set and self.rowSettings is None:
+            raise ValueError("rowSettings must be omitted or a nonempty object")
+        if (self.rowSettings is not None and self.rowSettings.queueBatchSize is not None
+                and "maxItemsPerBatch" in self.model_fields_set
+                and self.maxItemsPerBatch != self.rowSettings.queueBatchSize):
+            raise ValueError("maxItemsPerBatch and rowSettings.queueBatchSize refer to the same native property")
         # //(Денис 2026-10-03. Версия MCP 1.2.0
         # Один источник выбора: новый контракт не смешивается с прежними параметрами.
         if self.segmentation is not None:
@@ -186,6 +220,11 @@ class ProjectDefinition(ObjectRequest, ProjectName, ProjectConnection):
             payload.pop("segmentField", None)
         if self.periodicity is None:
             payload.pop("periodicity", None)
+        if self.rowSettings is None:
+            payload.pop("rowSettings", None)
+        elif (self.rowSettings.queueBatchSize is not None
+              and "maxItemsPerBatch" not in self.model_fields_set):
+            payload.pop("maxItemsPerBatch", None)
         return payload
 
     def valid_mapping_fields(self):
@@ -415,6 +454,14 @@ class ProjectRowChange(ProjectName):
         return self
 
 
+class ProjectRowSettingsChange(ProjectName):
+    """Patch saved row attributes without rebuilding mappings or receiver DDL."""
+
+    expectedState: str = Field(min_length=1, max_length=524288)
+    currentTableName: str = Field(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$", max_length=100)
+    rowSettings: RowSettings
+
+
 class ProjectReceiverRepair(ProjectName):
     """Repair one absent MySQL receiver; never accept SQL or native templates."""
 
@@ -438,24 +485,74 @@ class ProjectReceiverRepair(ProjectName):
 
 # Project-level and row-level changes share the same public preview/update
 # operations; the closed union still validates each concrete payload strictly.
-ProjectChange = ProjectUpdate | ProjectRowsAppend | ProjectRowChange | ProjectReceiverRepair
-ProjectPreview = ProjectDefinition | GroupProjectDefinition | ProjectRowsAppend | ProjectRowChange | ProjectReceiverRepair
+ProjectChange = ProjectUpdate | ProjectRowsAppend | ProjectRowChange | ProjectReceiverRepair | ProjectRowSettingsChange
+ProjectPreview = ProjectDefinition | GroupProjectDefinition | ProjectRowsAppend | ProjectRowChange | ProjectReceiverRepair | ProjectRowSettingsChange
+
+
+class DirectSqlRequest(StrictRequest):
+    """Internal wire marker; public tool definitions never accept this override."""
+    directSql: Literal[True]
+
+    @model_validator(mode="before")
+    @classmethod
+    def strict_direct_marker(cls, value: object) -> object:
+        if isinstance(value, dict) and value.get("directSql") is not True:
+            raise ValueError("directSql must be Boolean true")
+        return value
+
+
+class DirectProjectDefinition(ProjectDefinition, DirectSqlRequest):
+    pass
+
+
+class DirectGroupProjectDefinition(GroupProjectDefinition, DirectSqlRequest):
+    pass
+
+
+class DirectProjectUpdate(ProjectUpdate, DirectSqlRequest):
+    pass
+
+
+class DirectProjectRowsAppend(ProjectRowsAppend, DirectSqlRequest):
+    pass
+
+
+class DirectProjectRowChange(ProjectRowChange, DirectSqlRequest):
+    pass
+
+
+class DirectProjectReceiverRepair(ProjectReceiverRepair, DirectSqlRequest):
+    pass
+
+
+class DirectProjectRowSettingsChange(ProjectRowSettingsChange, DirectSqlRequest):
+    pass
+
+
+class DirectProjectStart(ProjectExportRef, DirectSqlRequest):
+    # SQL starts calculate the native plan inside the operation. An explicit
+    # state, when supplied by an internal caller, still requests native CAS.
+    expectedProjectState: str | None = Field(default=None, min_length=1, max_length=524288)
+
+
+DirectProjectChange = (DirectProjectUpdate | DirectProjectRowsAppend | DirectProjectRowChange
+                       | DirectProjectReceiverRepair | DirectProjectRowSettingsChange)
 
 
 SCHEMAS = {"metadata/list": EmptyRequest, "metadata/describe": DescribeObjectRequest,
            "service/readiness": EmptyRequest, "accounts/subconto/describe": AccountAnalyticsRequest,
            "connections/list": EmptyRequest, "projects/list": EmptyRequest,
            "projects/preview": ProjectPreview,
-           "projects/create": ProjectDefinition | GroupProjectDefinition,
-           "projects/update": ProjectChange, "projects/verify": ProjectName,
+           "projects/create": ProjectDefinition | GroupProjectDefinition | DirectProjectDefinition | DirectGroupProjectDefinition,
+           "projects/update": ProjectChange | DirectProjectChange, "projects/verify": ProjectName,
            "projects/schedule/get": ProjectScheduleRef,
            "projects/schedule/preview": ProjectSchedulePreview,
            "projects/schedule/set": ProjectScheduleSet,
            "projects/export/preview": ProjectExportRef,
-           "projects/export/start": ProjectExportStart,
+           "projects/export/start": ProjectExportStart | DirectProjectStart,
            "projects/export/status": ProjectExportStatus,
            "projects/initialization/preview": ProjectExportRef,
-           "projects/initialization/start": ProjectExportStart,
+           "projects/initialization/start": ProjectExportStart | DirectProjectStart,
            "projects/export/cancel/preview": ProjectExportCancelRef,
            "projects/export/cancel": ProjectExportCancel,
            "projects/receiver/inspect": ProjectReceiverInspect}
@@ -467,6 +564,12 @@ LICENSE_ERRORS = {
     "SUPPORT_REQUIRED": (403, "Для записи проекта требуется действующий срок поддержки dateDue."),
     "SUPPORT_EXPIRED": (403, "Срок поддержки лицензии истек. Продлите поддержку для записи проекта."),
     "LICENSE_CHECK_UNAVAILABLE": (503, "Не удалось подтвердить право записи через штатные методы лицензирования."),
+}
+
+PREWRITE_ERRORS = {
+    **LICENSE_ERRORS,
+    "DIRECT_SQL_RECEIVER_REQUIRED": (422, "Direct operations require a native SQL receiver; use preview for message receivers."),
+    "DIRECT_SQL_STATE_CHANGED": (412, "Native project or SQL receiver changed before the operation; verify current state."),
 }
 
 
@@ -513,12 +616,13 @@ class ProjectsApiError(RuntimeError):
 
     @property
     def rejected_before_write(self):
-        return (self.code in LICENSE_ERRORS and self.write_applied is False
-                and self.status == LICENSE_ERRORS[self.code][0])
+        return (self.code in PREWRITE_ERRORS and self.write_applied is False
+                and self.status == PREWRITE_ERRORS[self.code][0])
 
     def rejection(self):
         return {"httpStatus": self.status, "code": self.code,
-                "error": str(self), "writeApplied": False}
+                "error": str(self), "writeApplied": False,
+                **({"errorId": self.error_id} if self.error_id else {})}
 
 
 def public_api_error(status: int, result: Any, default_message: str) -> ProjectsApiError:
@@ -577,11 +681,15 @@ class ProjectsApiClient:
             raise ProjectsApiError(502, "Invalid JSON from Projects API; verify state before retry") from exc
         if response.status_code != 200:
             if isinstance(result, dict) and isinstance(result.get("code"), str):
-                known = LICENSE_ERRORS.get(result["code"])
-                if (route in {"projects/create", "projects/update", "projects/schedule/set"} and known
+                known = PREWRITE_ERRORS.get(result["code"])
+                allowed = {"projects/create", "projects/update", "projects/schedule/set"} if result["code"] in LICENSE_ERRORS else {
+                    "projects/create", "projects/update", "projects/export/start", "projects/initialization/start"}
+                if (route in allowed and known
                         and response.status_code == known[0] and result.get("writeApplied") is False):
                     # Never expose arbitrary upstream text or classify a generic 403/503 as safe.
-                    raise ProjectsApiError(known[0], known[1], code=result["code"], write_applied=False)
+                    diagnostic = public_api_error(response.status_code, result, known[1])
+                    raise ProjectsApiError(known[0], known[1], code=result["code"], write_applied=False,
+                                           error_id=diagnostic.error_id)
             raise public_api_error(response.status_code, result,
                                    "Projects API request failed; verify state before retry")
         return result

@@ -110,6 +110,7 @@ def _project_rows(state: dict[str, Any]) -> list[dict[str, Any]]:
             "disabled": state.get("disabled"),
             "fields": state.get("fields", []),
             "sourceSettings": state.get("sourceSettings", {}),
+            **({"rowSettings": state["rowSettings"]} if "rowSettings" in state else {}),
         }]
     return []
 
@@ -132,6 +133,7 @@ def verify_project_summary(call_api: CallApi, project_name: str,
             "source": row.get("source"),
             "table": row.get("table"),
             "disabled": row.get("disabled", False),
+            **({"rowSettings": row["rowSettings"]} if "rowSettings" in row else {}),
             "fieldCount": len(fields),
             "guidFields": guid_fields,
             "grouping": settings.get("grouping", []),
@@ -171,6 +173,7 @@ def preview_summary(value: Any, allow_existing_table: bool = False,
             "projectName": value.get("projectName"),
             "stateMatches": value.get("stateMatches"),
             "changes": value["changes"],
+            **({"rowSettings": value["rowSettings"]} if "rowSettings" in value else {}),
             "rowCount": 0,
             "fieldCount": 0,
             "rows": [],
@@ -197,6 +200,7 @@ def preview_summary(value: Any, allow_existing_table: bool = False,
             "tableExists": bool(row.get("tableExists")),
             "projectTableExists": bool(row.get("projectTableExists")),
             "sourceSettings": compact_settings,
+            **({"rowSettings": row["rowSettings"]} if "rowSettings" in row else {}),
         })
     # //(Денис 2026-10-03. Версия MCP 1.2.0
     # Изменение существующей строки закономерно находит её проект и таблицу.

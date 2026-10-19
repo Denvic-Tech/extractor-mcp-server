@@ -6,7 +6,7 @@ information registers and enums. Show `tree` with each discovery path. Enums
 are terminal export candidates. Preserve polymorphic branches, repeated paths
 and cycle/identity references. Skip periodic information registers.
 Virtual register tables use base-register metadata for analysis; verify actual
-export columns separately through preview. Never equate a metadata link with
+export columns separately through saved native settings and receiver schema, or an optional preview. Never equate a metadata link with
 a verified join or observed usage in movements.
 
 For an accounting register or chart root pass
@@ -29,7 +29,7 @@ links with another graph analysis and selected expand_paths.
 
 For journal exports, native sources Хозрасчетный.Субконто (normalized rows)
 and Хозрасчетный.ДвиженияССубконто (debit/credit columns) were verified in ERP.
-Always preview the actual database. Preserve GUID/type, movement side and line
+Verify actual native settings in the selected database; preview is optional for capable SQL direct mode and required in the plan workflow. Preserve GUID/type, movement side and line
 number. Joining normalized subconto multiplies journal rows and their amounts.
 
 Read readiness.oneCMethodsVersion and oneCCapabilities from the selected deployed base. MCP and EPA_Projects version is 3.3.1, Extractor versions starting with 3.16.2.xx are supported. account_scope requires account_subconto_settings. Never substitute a local version for an unavailable deployed version. Segmentation uses an array; read [partition-segments.md](partition-segments.md). Platform 8.3.5 and compatibility mode 8.2 require separate runtime validation.

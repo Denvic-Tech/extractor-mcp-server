@@ -9,9 +9,13 @@
 одного объекта; nextCursor передаётся следующим cursor. Снимок не менять молча.
 Учитывай warnings, objectWarnings, metadataEnriched и неполноту графа.
 
-Для проекта передавай snapshotId как metadata_snapshot_id в preview_project
-или preview_project_template. План сохраняет metadataEvidence. Окончательный
-preview исполняется в целевой 1С задачей DCC; 1С забирает команду сама.
+При использовании preview передавай snapshotId как metadata_snapshot_id в
+preview_project или preview_project_template; план сохраняет metadataEvidence.
+Preview исполняется в целевой 1С задачей DCC; 1С забирает команду сама.
+SQL при capability direct_sql_operations использует прямые существующие операции
+без обязательного preview. DCC не меняет тип приёмника: Kafka, AMQP и 1С Шина
+по-прежнему требуют план. Не добавляй metadata_snapshot_id в прямой payload,
+если фактическая схема инструмента его не принимает.
 Прямого запроса MCP к 1С нет. Назначенные субконто с account_scope также требуют
 живой задачи; snapshot_id с этим режимом не смешивать.
 

@@ -6,6 +6,26 @@ import pytest
 from extractor1c.operation_store import OperationIndeterminate, OperationStore, PlanConflict
 
 
+def test_store_closes_connections_after_success_and_failure(tmp_path, monkeypatch):
+    connect = sqlite3.connect
+    connections = []
+
+    def tracked_connect(*args, **kwargs):
+        connection = connect(*args, **kwargs)
+        connections.append(connection)
+        return connection
+
+    monkeypatch.setattr(sqlite3, "connect", tracked_connect)
+    store = OperationStore(tmp_path / "operations.sqlite3")
+    assert store.ready()
+    with pytest.raises(PlanConflict):
+        plan = store.create_plan("create", {}, {}, 300)
+        store.begin(plan.plan_id, str(uuid.uuid4()), "update")
+    for connection in connections:
+        with pytest.raises(sqlite3.ProgrammingError, match="closed"):
+            connection.execute("SELECT 1")
+
+
 def test_plan_is_single_use_and_completed_result_is_replayable(tmp_path):
     store = OperationStore(tmp_path / "operations.sqlite3")
     assert store.ready() is True

@@ -4,6 +4,7 @@
 import json
 import uuid
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 import pytest
@@ -25,6 +26,39 @@ GRAPH_SCENARIOS = [
      "АналитикаУчетаНоменклатуры.Номенклатура.ЕдиницаИзмерения"),
     ({"object": "Документ.ЗаказКлиента"}, "Товары.Номенклатура"),
 ]
+
+
+def check_direct_sql_over_mcp(http):
+    """Exercise the actual registered schemas, not only Python wrappers."""
+    project = str(uuid.uuid4())
+    task = str(uuid.uuid4())
+    cases = [
+        ("create_project", "definition", {"object": "Справочник.Валюты", "projectName": "SQL", "tableName": "currency"}, {"ok": True}),
+        ("update_project", "change", {"projectName": "SQL", "expectedState": "state", "comment": "x"}, {"ok": True}),
+        ("start_project_export", "project_guid", project, {"launchStatus": "already_running", "taskId": task}),
+        ("initialize_project_queue", "project_guid", project, {"launchStatus": "finished", "taskId": task, "status": "succeeded"}),
+    ]
+    with TemporaryDirectory() as directory, patch("extractor1c.mcp_server.operation_store", return_value=OperationStore(Path(directory) / "ops.sqlite")):
+        for index, (name, key, value, response) in enumerate(cases):
+            arguments = {key: value, "operation_id": str(uuid.uuid4())}
+            for invalid in ({key: value}, {**arguments, "plan_id": str(uuid.uuid4())},
+                            {**arguments, "directSql": True}, {**arguments, "sql": "SELECT 1"}):
+                with patch("extractor1c.mcp_server.call_api") as backend:
+                    result = rpc(http, "tools/call", {"name": name, "arguments": invalid})
+                assert result["isError"]
+                backend.assert_not_called()
+            responses = ([{"capabilities": ["direct_sql_operations"]}] if index == 0 else []) + [response]
+            with patch("extractor1c.mcp_server.call_api", side_effect=responses) as backend:
+                result = rpc(http, "tools/call", {"name": name, "arguments": arguments})
+            assert not result["isError"], result
+            assert backend.call_count == (2 if index == 0 else 1)
+            assert backend.call_args.args[1]["directSql"] is True
+            assert all("preview" not in call.args[0] for call in backend.call_args_list)
+            with patch("extractor1c.mcp_server.call_api") as backend:
+                replay = rpc(http, "tools/call", {"name": name, "arguments": arguments})
+            assert not replay["isError"]
+            assert json.loads(replay["content"][0]["text"])["replayed"] is True
+            backend.assert_not_called()
 
 
 def check_reference_graph_scenarios_over_mcp(http):
@@ -187,7 +221,7 @@ def test_mcp_protocol_and_backend_dispatch():
         assert graph["nodes"][0]["expanded"] is True
         assert tools["preview_project_initialization"]["annotations"]["readOnlyHint"] is True
         assert tools["initialize_project_queue"]["annotations"]["readOnlyHint"] is False
-        assert set(tools["initialize_project_queue"]["inputSchema"]["properties"]) == {"plan_id", "operation_id", "base_id"}
+        assert set(tools["initialize_project_queue"]["inputSchema"]["properties"]) == {"plan_id", "operation_id", "project_guid", "base_id"}
         assert tools["get_project_export_status"]["annotations"]["readOnlyHint"] is True
         assert tools["get_project_export_status"]["inputSchema"]["additionalProperties"] is False
         assert set(tools["get_project_export_status"]["inputSchema"]["properties"]) == {
@@ -207,7 +241,7 @@ def test_mcp_protocol_and_backend_dispatch():
             status_backend.assert_not_called()
         assert tools["preview_project_export"]["annotations"]["readOnlyHint"] is True
         assert tools["start_project_export"]["annotations"]["readOnlyHint"] is False
-        assert set(tools["start_project_export"]["inputSchema"]["properties"]) == {"plan_id", "operation_id", "base_id"}
+        assert set(tools["start_project_export"]["inputSchema"]["properties"]) == {"plan_id", "operation_id", "project_guid", "base_id"}
         assert tools["get_project_schedule"]["annotations"]["readOnlyHint"] is True
         assert tools["preview_project_schedule"]["annotations"]["readOnlyHint"] is True
         assert tools["set_project_schedule"]["annotations"]["readOnlyHint"] is False
@@ -217,6 +251,7 @@ def test_mcp_protocol_and_backend_dispatch():
         assert tools["search_metadata"]["annotations"]["readOnlyHint"] is True
         assert tools["create_project"]["annotations"]["readOnlyHint"] is False
         assert tools["create_project"]["annotations"]["idempotentHint"] is True
+        check_direct_sql_over_mcp(http)
         assert tools["preview_project"]["annotations"]["readOnlyHint"] is True
         listed_skills = rpc(http, "tools/call", {"name": "list_skills", "arguments": {}})
         assert not listed_skills["isError"]

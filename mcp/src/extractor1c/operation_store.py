@@ -1,6 +1,8 @@
 """Durable preview plans and idempotency records for MCP write operations."""
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from hashlib import sha256
 import json
@@ -34,7 +36,7 @@ class OperationIndeterminate(OperationStoreError):
 class OperationRejected(OperationStoreError):
     def __init__(self, result):
         self.result = result
-        super().__init__(f"{result['code']}: {result['error']} Запись не выполнялась. Получите новый preview перед новой попыткой.")
+        super().__init__(f"{result['code']}: {result['error']} Запись не выполнялась. Для новой попытки требуется новая операция.")
 
 
 @dataclass(frozen=True)
@@ -74,12 +76,18 @@ class OperationStore:
             Path(self.path).expanduser().resolve().parent.mkdir(parents=True, exist_ok=True)
         self._initialize()
 
-    def _connect(self) -> sqlite3.Connection:
+    @contextmanager
+    def _connect(self) -> Iterator[sqlite3.Connection]:
         connection = sqlite3.connect(self.path, timeout=30, isolation_level=None)
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA foreign_keys = ON")
-        connection.execute("PRAGMA busy_timeout = 30000")
-        return connection
+        try:
+            connection.row_factory = sqlite3.Row
+            connection.execute("PRAGMA foreign_keys = ON")
+            connection.execute("PRAGMA busy_timeout = 30000")
+            # SQLite's transaction context does not close the connection.
+            with connection:
+                yield connection
+        finally:
+            connection.close()
 
     def _initialize(self) -> None:
         with self._connect() as connection:
@@ -243,19 +251,7 @@ class OperationStore:
             if plan.expires_at < now:
                 connection.rollback()
                 raise PlanExpired("Plan expired; run preview again")
-            if expected_action in {"export", "initialization"}:
-                # A fresh plan/operation must not bypass an uncertain launch.
-                # BEGIN IMMEDIATE serializes this check with competing starts.
-                pending = connection.execute(
-                    "SELECT p.payload_json FROM operations o JOIN plans p ON p.plan_id=o.plan_id "
-                    "WHERE o.action IN ('export', 'initialization') AND o.status IN ('in_progress', 'indeterminate')"
-                ).fetchall()
-                project = plan.payload["projectGuid"].casefold()
-                if any(json.loads(row[0])["projectGuid"].casefold() == project for row in pending):
-                    connection.rollback()
-                    raise OperationIndeterminate(
-                        "An unresolved export or initialization launch exists for this project; reconcile it before another start"
-                    )
+            self._guard_launch(connection, expected_action, plan.payload)
             if expected_action == "cancel":
                 # Do not overlap requests that are still being sent. A previous
                 # uncertain stop signal may be requested again only through a
@@ -280,6 +276,67 @@ class OperationStore:
             connection.execute(
                 "UPDATE plans SET operation_id = ? WHERE plan_id = ?",
                 (operation_id, plan_id),
+            )
+            connection.commit()
+        return plan, None
+
+    @staticmethod
+    def _guard_launch(connection: sqlite3.Connection, action: str, payload: dict[str, Any]) -> None:
+        # Both previewed and direct requests share one project mutex. The check
+        # runs under BEGIN IMMEDIATE, so a new ID cannot bypass an unknown start.
+        if action not in {"export", "initialization"}:
+            return
+        pending = connection.execute(
+            "SELECT p.payload_json FROM operations o JOIN plans p ON p.plan_id=o.plan_id "
+            "WHERE o.action IN ('export', 'initialization') AND o.status IN ('in_progress', 'indeterminate')"
+        ).fetchall()
+        project = payload["projectGuid"].casefold()
+        if any(json.loads(row[0])["projectGuid"].casefold() == project for row in pending):
+            raise OperationIndeterminate(
+                "An unresolved export or initialization launch exists for this project; reconcile it before another start"
+            )
+
+    def begin_direct(self, action: Literal["create", "update", "export", "initialization"],
+                     payload: dict[str, Any], operation_id: str) -> tuple[Plan, Any | None]:
+        """Atomically freeze one direct SQL request in the existing journal.
+
+        A retry compares the submitted body as well as action/context. It never
+        creates a fresh plan before checking the operation, and completed reads
+        need no 1C connection. Unknown requests remain immutable and unreplayed.
+        """
+        if action not in {"create", "update", "export", "initialization"}:
+            raise OperationStoreError("Unsupported direct operation action")
+        operation_id = validate_uuid(operation_id, "operationId")
+        frozen_json = canonical_json(payload)
+        digest = sha256(frozen_json.encode("utf-8")).hexdigest()
+        now = time.time()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            existing = connection.execute(
+                "SELECT * FROM operations WHERE operation_id = ?", (operation_id,)
+            ).fetchone()
+            if existing is not None:
+                plan = self.get_plan(existing["plan_id"])
+                if (existing["action"] != action or existing["payload_hash"] != digest
+                        or plan.preview != {"executionMode": "direct_sql", "previewPerformed": False}):
+                    raise PlanConflict("operationId was already used for another payload or execution mode")
+                if existing["status"] == "completed":
+                    return plan, json.loads(existing["result_json"])
+                if existing["status"] == "rejected":
+                    raise OperationRejected(json.loads(existing["result_json"]))
+                raise OperationIndeterminate(
+                    "Operation outcome is indeterminate; verify project state before any new write"
+                )
+            self._guard_launch(connection, action, payload)
+            plan = Plan(str(uuid.uuid4()), action, json.loads(frozen_json), digest,
+                        {"executionMode": "direct_sql", "previewPerformed": False}, now, now, operation_id)
+            connection.execute(
+                "INSERT INTO plans VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (plan.plan_id, action, frozen_json, digest, canonical_json(plan.preview), now, now, operation_id),
+            )
+            connection.execute(
+                "INSERT INTO operations VALUES (?, ?, ?, ?, 'in_progress', NULL, ?, ?)",
+                (operation_id, plan.plan_id, action, digest, now, now),
             )
             connection.commit()
         return plan, None

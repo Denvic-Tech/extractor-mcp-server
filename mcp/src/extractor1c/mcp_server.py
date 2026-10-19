@@ -7,16 +7,19 @@ import argparse
 import asyncio
 import os
 import re
+import time
+from collections import OrderedDict
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from functools import lru_cache, wraps
 from hashlib import sha256
 import inspect
 from pathlib import Path
+from threading import Lock
 from typing import Any, Callable, ParamSpec, TypeVar
 
 import requests
-from pydantic import StrictBool, StrictInt
+from pydantic import Field, StrictBool, StrictInt, TypeAdapter
 from fastapi import FastAPI
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
@@ -40,8 +43,8 @@ from .skill_catalog import get_skill_data, list_skills_data
 from .project_template import ProjectTemplateRequest, project_template_schema
 from .projects_api import (
     ApiSettings, ProjectsApiClient, ProjectsApiError,
-    ProjectDefinition, GroupProjectDefinition, ProjectPreview, ProjectRowChange, ProjectUpdate,
-    ProjectReceiverRepair,
+    ProjectDefinition, GroupProjectDefinition, ProjectChange, ProjectPreview, ProjectRowChange, ProjectUpdate,
+    ProjectReceiverRepair, ProjectRowSettingsChange, RowSettings,
     ProjectSchedulePreview, ProjectScheduleSet, ProjectExportRef, ProjectExportStart, ProjectExportStatus,
     ProjectQueryDiagnostics,
     ProjectExportCancelRef, ProjectExportCancel,
@@ -49,6 +52,49 @@ from .projects_api import (
 )
 
 ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
+
+# A capability read is an optimization, never authority to write. Native EPA
+# still checks the actual receiver immediately before side effects, including
+# after an extension downgrade. Keys contain only existing scoped identities;
+# no credential, endpoint or response is persisted or exposed in this cache.
+_direct_capabilities: OrderedDict[tuple[str, str], float] = OrderedDict()
+_direct_capabilities_lock = Lock()
+_DIRECT_CAPABILITY_TTL = 60.0
+
+
+def _capability_key() -> tuple[str, str] | None:
+    target = _target.get()
+    return (target.identity, authenticated_principal.get()) if target is not None else None
+
+
+def _forget_direct_capability() -> None:
+    with _direct_capabilities_lock:
+        _direct_capabilities.pop(_capability_key(), None)
+
+
+def _remember_direct_capability(build: Any) -> None:
+    capabilities = build.get("capabilities") if isinstance(build, dict) else None
+    key = _capability_key()
+    if key is None or not isinstance(capabilities, list) or "direct_sql_operations" not in capabilities:
+        return
+    with _direct_capabilities_lock:
+        _direct_capabilities[key] = time.monotonic() + _DIRECT_CAPABILITY_TTL
+        _direct_capabilities.move_to_end(key)
+        while len(_direct_capabilities) > 256:
+            _direct_capabilities.popitem(last=False)
+
+
+def _has_direct_capability() -> bool:
+    key = _capability_key()
+    with _direct_capabilities_lock:
+        until = _direct_capabilities.get(key)
+        if until is None:
+            return False
+        if until <= time.monotonic():
+            _direct_capabilities.pop(key)
+            return False
+        _direct_capabilities.move_to_end(key)
+        return True
 
 # FastMCP при host=127.0.0.1 сам включает localhost-only DNS-rebinding защиту
 # (allowed_hosts=127.0.0.1/localhost), из-за чего опубликованный по внешнему хосту
@@ -76,11 +122,11 @@ AI_SKILL_REQUIREMENTS = (
     "report the failure and stop dependent project work."
 )
 
-SERVER_INSTRUCTIONS = AI_SKILL_REQUIREMENTS + """ Use search_metadata and describe_object_fields for discovery. Before project writes call preview_project and obtain planId. Ask the user to approve the preview, then call create_project or update_project with that planId and a new UUID operationId. For schedules read get_project_schedule, call preview_project_schedule, show the time context, execution user and activation warning, obtain user approval, then set_project_schedule with only planId and a new UUID operationId and read get_project_schedule again. Enabling a schedule can start data export. A repeated operationId only replays a completed result; an indeterminate operation must be resolved with verify_project_summary (or get_project_schedule for schedules) before any new write. Add related project rows one at a time and verify after each write. Project creation configures export settings but does not run data export. Never send arbitrary code or SQL."""
+SERVER_INSTRUCTIONS = AI_SKILL_REQUIREMENTS + """ Use search_metadata and describe_object_fields for discovery. For SQL project writes use create_project(definition=...) or update_project(change=...) with a new UUID operation_id; direct mode requires the direct_sql_operations EPA capability and a native SQL receiver check. Updates retain expectedState. Preview is optional for SQL. For Kafka, AMQP and 1C Bus receivers preview_project is required: use its plan_id with operation_id. Do not ask for authorization again when the user already authorized the action. For schedules read get_project_schedule, call preview_project_schedule, show the time context, execution user and activation warning, obtain user approval, then set_project_schedule with only planId and a new UUID operationId and read get_project_schedule again. Enabling a schedule can start data export. A repeated operationId only replays a completed result; an indeterminate operation must be resolved with verify_project_summary (or get_project_schedule for schedules) before any new write. Add related project rows one at a time and verify after each write. Project creation configures export settings but does not run data export. Never send arbitrary code or SQL."""
 
-SERVER_INSTRUCTIONS += """ For immediate export call preview_project_export, show the whole project, current HTTP execution user and immediate activation, then after user authorization call start_project_export with only planId and a new UUID operationId. Poll get_project_export_status with the returned taskId. get_operation_status tracks the launch request, not export completion. Never retry an uncertain launch with another plan or operation ID: unresolved launches block further starts for that project in this operation store and require administrator reconciliation. Reading status alone does not clear this block. The latest task is not proof of which request started it."""
+SERVER_INSTRUCTIONS += """ For authorized immediate SQL export call start_project_export(project_guid=..., operation_id=...) directly; do not require a separate preview RPC. For Kafka, AMQP and 1C Bus use preview_project_export and then start_project_export(plan_id=..., operation_id=...). Native validation runs inside the direct SQL operation before launch. Poll get_project_export_status with the returned taskId. get_operation_status tracks the launch request, not export completion. Never retry an uncertain launch with another plan or operation ID: unresolved launches block further starts for that project in this operation store and require administrator reconciliation. Reading status alone does not clear this block. The latest task is not proof of which request started it."""
 
-SERVER_INSTRUCTIONS += """ Queue initialization is separate from export: use preview_project_initialization, show eligible queue rows, handler counts, current HTTP user and effects, then initialize_project_queue with the approved planId and operationId. Native initialization handlers may clear or refill queues; existing schedules may consume prepared data. Do not initialize merely because export was requested. Poll get_project_export_status using the returned taskId (taskType initialization); without taskId it still reads latest export. A finished launch means native synchronous fallback ended: inspect its status, not just launchStatus. Uncertain initialization and export operations block both kinds of new launch for the same project."""
+SERVER_INSTRUCTIONS += """ Queue initialization is separate from export. When explicitly authorized, initialize a SQL project directly with initialize_project_queue(project_guid=..., operation_id=...). For Kafka, AMQP and 1C Bus use preview_project_initialization and then initialize_project_queue(plan_id=..., operation_id=...). Never provide both a plan and direct input; operation_id is required in either mode. Native initialization handlers may clear or refill queues; existing schedules may consume prepared data. Do not initialize merely because export was requested. Poll get_project_export_status using the returned taskId (taskType initialization); without taskId it still reads latest export. A finished launch means native synchronous fallback ended: inspect its status, not just launchStatus. Uncertain initialization and export operations block both kinds of new launch for the same project."""
 
 SERVER_INSTRUCTIONS += """ Call list_bases before base-specific work. Pass the same base_id to discovery, preview, commit and status tools. Direct HTTP bases come from the configured YAML bases_file or environment settings; DCC bases are all accessible connectors advertising extractor-1c/2.0 and the mcp command. There is no automatic transport fallback. If DCC waiting expires, query get_operation_status with the same operation_id and base_id; never submit another write to replace an uncertain request."""
 
@@ -251,6 +297,9 @@ def health() -> dict:
 @base_tool
 def readiness() -> dict:
     """Verify that the MCP service can reach and authenticate to the 1C API."""
+    # An explicit readiness call always refreshes the selected identity. A
+    # missing capability or failed read must not leave an earlier positive hit.
+    _forget_direct_capability()
     store_ready = operation_store().ready()
     version_warning = None
     try:
@@ -278,6 +327,7 @@ def readiness() -> dict:
         selection = select_connection(connections)
     except ValueError as exc:
         raise ToolError(str(exc)) from None
+    _remember_direct_capability(build)
     return {"ready": store_ready, "operationStore": store_ready,
             "oneCMethodsVersion": build["methodsVersion"], "oneCCapabilities": build.get("capabilities", []),
             "oneCMethodsVersionWarning": version_warning,
@@ -451,6 +501,61 @@ def preview_project_template(request: ProjectTemplateRequest, metadata_snapshot_
 
 def _preview_project_definition(definition: ProjectPreview, metadata_snapshot_id: str | None = None) -> Any:
     """Resolve receiver and store the exact approved native preview input once."""
+    raw_payload = definition.model_dump(exclude_none=True)
+    rows = raw_payload.get("rows", [raw_payload.get("definition", raw_payload)])
+    uses_row_settings = isinstance(definition, ProjectRowSettingsChange) or any(
+        "rowSettings" in row for row in rows
+    )
+    if uses_row_settings:
+        published = call_api("service/readiness", {})
+        capabilities = published.get("capabilities") if isinstance(published, dict) else None
+        if not isinstance(capabilities, list) or "row_settings" not in capabilities:
+            raise ToolError("Native row settings require the row_settings EPA capability; update EPA")
+    if isinstance(definition, ProjectRowSettingsChange):
+        # This patch only changes saved row attributes. Do not discover or touch
+        # a receiver, rebuild mappings, or inject connection overrides.
+        preview = call_api("projects/preview", raw_payload)
+        if not isinstance(preview, dict):
+            raise ToolError("Invalid native row settings preview; no plan was created")
+        summary = preview_summary(preview)
+        if preview.get("stateMatches") is not True or preview.get("conflict") is not False:
+            summary["approved"] = False
+            return {"approved": False, "action": "update", "summary": summary,
+                    "planId": None, "expiresAt": None}
+        changes = preview.get("changes")
+        change = changes.get("rowSettings", {}) if isinstance(changes, dict) else {}
+        requested = raw_payload["rowSettings"]
+        identity_valid = (
+            preview.get("projectName") == definition.projectName
+            and preview.get("currentTableName") == definition.currentTableName
+            and isinstance(preview.get("projectRef"), str)
+            and re.fullmatch(r"[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}", preview["projectRef"])
+            and isinstance(preview.get("rowIdentifier"), str) and bool(preview["rowIdentifier"].strip())
+            and isinstance(preview.get("connectionName"), str)
+        )
+        try:
+            echoed = RowSettings.model_validate(change["requested"]).model_dump()
+            before = RowSettings.model_validate(change["before"]).model_dump()
+            after = RowSettings.model_validate(change["after"]).model_dump()
+            saved = RowSettings.model_validate(preview["rowSettings"]["saved"]).model_dump()
+            settings_valid = (
+                set(before) == set(RowSettings.model_fields)
+                and set(after) == set(RowSettings.model_fields)
+                and echoed == requested and saved == after
+                and all(after[key] == value and type(after[key]) is type(value)
+                        for key, value in requested.items())
+                and all(after[key] == value for key, value in before.items() if key not in requested)
+            )
+        except (KeyError, TypeError, ValueError):
+            settings_valid = False
+        if not identity_valid or not settings_valid:
+            raise ToolError("Invalid native row settings identity or changes; no plan was created")
+        settings = ApiSettings(_env_file=ENV_FILE)
+        plan = operation_store().create_plan("update", raw_payload, preview, settings.plan_ttl_seconds)
+        return {"approved": True, "action": "update", "summary": summary,
+                "connectionSelection": {"status": "selected", "connectionName": preview["connectionName"],
+                                        "choices": [], "source": "saved_project"},
+                "planId": plan.plan_id, "expiresAt": plan.expires_at}
     repair = isinstance(definition, ProjectReceiverRepair)
     if repair:
         published = call_api("service/readiness", {})
@@ -460,7 +565,7 @@ def _preview_project_definition(definition: ProjectPreview, metadata_snapshot_id
     metadata_evidence = (_read_dcc_metadata("snapshot", metadata_snapshot_id)
                          if metadata_snapshot_id is not None else None)
     try:
-        payload, selection = resolve_project_connection(definition.model_dump(exclude_none=True), call_api)
+        payload, selection = resolve_project_connection(raw_payload, call_api)
     except ValueError as exc:
         raise ToolError(str(exc)) from None
     if selection["status"] != "selected":
@@ -476,6 +581,31 @@ def _preview_project_definition(definition: ProjectPreview, metadata_snapshot_id
                    or preview.get("textColumns") != definition.textColumns
                    or preview.get("table") != definition.currentTableName):
         raise ToolError("Invalid receiver repair preview; no plan was created")
+    if uses_row_settings:
+        preview_rows = preview.get("rows", [preview]) if isinstance(preview, dict) else []
+        if not isinstance(preview_rows, list):
+            raise ToolError("Invalid native row settings readback; no plan was created")
+        for requested_row in rows:
+            requested_settings = requested_row.get("rowSettings")
+            if requested_settings is None:
+                continue
+            matching = [row for row in preview_rows if isinstance(row, dict)
+                        and (row.get("table") or row.get("tableName")) == requested_row["tableName"]]
+            try:
+                if len(matching) != 1:
+                    raise ValueError("Missing unique row settings preview")
+                native_row = matching[0]
+                saved = RowSettings.model_validate(native_row["rowSettings"]["saved"]).model_dump()
+                if (set(saved) != set(RowSettings.model_fields)
+                        or any(saved[key] != value or type(saved[key]) is not type(value)
+                               for key, value in requested_settings.items())):
+                    raise ValueError("Native row settings did not match the request")
+                batch = native_row["sourceSettings"]["maxItemsPerBatch"]
+                if ((batch is not None and type(batch) is not int)
+                        or (0 if batch is None else batch) != saved["queueBatchSize"]):
+                    raise ValueError("Native queue batch alias is inconsistent")
+            except (KeyError, TypeError, ValueError):
+                raise ToolError("Invalid native row settings readback; no plan was created") from None
     if metadata_evidence is not None:
         # Provenance belongs to the approved plan, never to the 1C business payload.
         preview = {**preview, "metadataEvidence": metadata_evidence}
@@ -625,18 +755,20 @@ def get_project_export_status(
     return result
 
 
-@threaded_tool(annotations=WRITE)
+@threaded_tool(annotations=WRITE, forbid_unknown=True)
 @base_tool
-def start_project_export(plan_id: str, operation_id: str) -> Any:
-    """Start the exact previewed project export now. Poll the returned taskId for its outcome."""
-    return _commit(plan_id, operation_id, "export")
+def start_project_export(plan_id: str | None = None, operation_id: str = Field(...), *,
+                         project_guid: str | None = None) -> Any:
+    """Start export by SQL project GUID or an approved plan; poll the returned taskId."""
+    return _write_project("export", plan_id, operation_id, project_guid)
 
 
-@threaded_tool(annotations=WRITE)
+@threaded_tool(annotations=WRITE, forbid_unknown=True)
 @base_tool
-def initialize_project_queue(plan_id: str, operation_id: str) -> Any:
-    """Run native queue initialization for the approved project; poll get_project_export_status by taskId."""
-    return _commit(plan_id, operation_id, "initialization")
+def initialize_project_queue(plan_id: str | None = None, operation_id: str = Field(...), *,
+                             project_guid: str | None = None) -> Any:
+    """Initialize a SQL project by GUID or use an approved plan; poll its taskId."""
+    return _write_project("initialization", plan_id, operation_id, project_guid)
 
 
 @threaded_tool(annotations=READ)
@@ -717,6 +849,9 @@ def get_project_plan(plan_id: str, cursor: int = 0, limit: int = 100) -> Any:
     """Read an approved plan and a paged view of its preview fields."""
     try:
         plan = operation_store().get_plan(plan_id)
+        if isinstance(plan.preview, dict) and plan.preview.get("executionMode") == "direct_sql":
+            return {"planId": plan.plan_id, "action": plan.action,
+                    "summary": plan.preview, "operationId": plan.operation_id}
         if plan.action in {"schedule", "export", "initialization", "cancel"}:
             return {"planId": plan.plan_id, "action": plan.action,
                     "expiresAt": plan.expires_at, "summary": plan.preview}
@@ -737,14 +872,31 @@ def get_project_plan(plan_id: str, cursor: int = 0, limit: int = 100) -> Any:
         raise ToolError(str(exc)) from None
 
 
-def _commit(plan_id: str, operation_id: str, action: str) -> Any:
+def _commit(plan_id: str | None, operation_id: str, action: str,
+            *, direct_payload: dict[str, Any] | None = None) -> Any:
     try:
-        plan, replay = operation_store().begin(plan_id, operation_id, action)
+        store = operation_store()
+        plan, replay = (store.begin(plan_id, operation_id, action) if direct_payload is None
+                        else store.begin_direct(action, direct_payload, operation_id))
     except OperationStoreError as exc:
         raise ToolError(str(exc)) from None
     if replay is not None:
         return {"planId": plan.plan_id, "operationId": operation_id,
                 "replayed": True, "result": replay}
+    if direct_payload is not None and not _has_direct_capability():
+        # Replay above is entirely local, including when 1C is offline. Only a
+        # newly frozen request needs the native SQL guard capability. A failed
+        # readiness read cannot have applied the later business operation.
+        try:
+            published = call_api("service/readiness", {})
+            capabilities = published.get("capabilities") if isinstance(published, dict) else None
+            if not isinstance(capabilities, list) or "direct_sql_operations" not in capabilities:
+                raise ToolError("Direct SQL operations require the direct_sql_operations EPA capability; update EPA")
+            _remember_direct_capability(published)
+        except Exception:
+            store.reject(operation_id, {"code": "DIRECT_SQL_CAPABILITY_UNAVAILABLE",
+                         "error": "Native direct SQL capability could not be confirmed.", "writeApplied": False})
+            raise
     route = {"create": "projects/create", "update": "projects/update",
              "schedule": "projects/schedule/set", "export": "projects/export/start",
              "initialization": "projects/initialization/start",
@@ -803,18 +955,42 @@ def _validate_execution_result(action, payload, operation_id, result):
             raise ToolError("Project execution is indeterminate; read get_operation_status and task status before any new start")
 
 
-@threaded_tool(annotations=WRITE)
-@base_tool
-def create_project(plan_id: str, operation_id: str) -> Any:
-    """Create the exact approved plan; operationId makes completed calls replay-safe."""
-    return _commit(plan_id, operation_id, "create")
+def _write_project(action: str, plan_id: str | None, operation_id: str, direct: Any) -> Any:
+    """Select exactly one closed input contract, before journal or network work."""
+    if (plan_id is None) == (direct is None):
+        raise ToolError("Specify exactly one of plan_id or the direct operation input")
+    if plan_id is not None:
+        return _commit(plan_id, operation_id, action)
+    try:
+        if action == "create":
+            request = TypeAdapter(ProjectDefinition | GroupProjectDefinition).validate_python(direct)
+        elif action == "update":
+            request = TypeAdapter(ProjectChange).validate_python(direct)
+        else:
+            request = ProjectExportRef(projectGuid=direct)
+        # The caller cannot set this marker in definition/change. It is added
+        # after strict validation, frozen in the journal, and checked against
+        # the actual native receiver immediately before any write or start.
+        payload = {**request.model_dump(exclude_none=True), "directSql": True}
+    except ValueError as exc:
+        raise ToolError(str(exc)) from None
+    return _commit(None, operation_id, action, direct_payload=payload)
 
 
-@threaded_tool(annotations=WRITE)
+@threaded_tool(annotations=WRITE, forbid_unknown=True)
 @base_tool
-def update_project(plan_id: str, operation_id: str) -> Any:
-    """Apply the exact approved update plan; verify the project afterwards."""
-    return _commit(plan_id, operation_id, "update")
+def create_project(plan_id: str | None = None, operation_id: str = Field(...), *,
+                   definition: ProjectDefinition | GroupProjectDefinition | None = None) -> Any:
+    """Create a SQL definition directly or an approved plan; operation_id is required."""
+    return _write_project("create", plan_id, operation_id, definition)
+
+
+@threaded_tool(annotations=WRITE, forbid_unknown=True)
+@base_tool
+def update_project(plan_id: str | None = None, operation_id: str = Field(...), *,
+                   change: ProjectChange | None = None) -> Any:
+    """Apply a SQL change with expectedState or an approved update plan."""
+    return _write_project("update", plan_id, operation_id, change)
 
 
 @threaded_tool(annotations=WRITE)

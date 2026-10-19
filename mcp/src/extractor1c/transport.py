@@ -17,7 +17,7 @@ from uuid import UUID, uuid4
 import requests
 from pydantic import TypeAdapter
 
-from .projects_api import ApiSettings, LICENSE_ERRORS, ProjectsApiClient, ProjectsApiError, ROUTES, SCHEMAS, public_api_error
+from .projects_api import ApiSettings, LICENSE_ERRORS, PREWRITE_ERRORS, ProjectsApiClient, ProjectsApiError, ROUTES, SCHEMAS, public_api_error
 
 
 @dataclass(frozen=True)
@@ -253,10 +253,15 @@ class DccClient:
         if type(status) is not int or not isinstance(result, (dict, list)):
             raise ProjectsApiError(502, "DCC operation has no structured 1C result")
         if status != 200:
-            known = LICENSE_ERRORS.get(result.get("code")) if isinstance(result, dict) else None
-            if (known and route in {"projects/create", "projects/update", "projects/schedule/set"}
+            code = result.get("code") if isinstance(result, dict) else None
+            known = PREWRITE_ERRORS.get(code)
+            allowed = {"projects/create", "projects/update", "projects/schedule/set"} if code in LICENSE_ERRORS else {
+                "projects/create", "projects/update", "projects/export/start", "projects/initialization/start"}
+            if (known and route in allowed
                     and status == known[0] and result.get("writeApplied") is False):
-                raise ProjectsApiError(status, known[1], code=result["code"], write_applied=False)
+                diagnostic = public_api_error(status, result, known[1])
+                raise ProjectsApiError(status, known[1], code=code, write_applied=False,
+                                       error_id=diagnostic.error_id)
             if route == "projects/receiver/inspect":
                 raise public_api_error(status, result, "1C receiver observation failed")
             raise ProjectsApiError(status, "1C operation failed; verify state before retry")
