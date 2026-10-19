@@ -5,6 +5,13 @@ description: Create, inspect, verify and update Extractor 1C projects, run expor
 
 # Extractor 1C Cloud
 
+Always enable the native wizard's field transliteration by default when creating
+projects or rows, without asking a separate question. Receiver mapping names must
+use Latin characters. Enable the existing `ТранслитерацияОбъектов` setting through
+the native Extractor settings, preserving other values. Use the existing wizard
+mechanism and preserve fields, types, GUID calculations and segment roles.
+Do not add a custom renaming system or invent a new API parameter for this setting.
+
 ## SQL operations and plan-based receivers
 
 For SQL, preview is optional when actual readiness confirms `direct_sql_operations`

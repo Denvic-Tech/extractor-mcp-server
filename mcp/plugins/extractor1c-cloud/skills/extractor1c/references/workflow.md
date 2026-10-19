@@ -1,5 +1,12 @@
 # Hosted project workflow
 
+Always enable the native wizard's field transliteration by default for new projects
+and rows; do not ask whether to enable it. Mapping target names must use Latin
+characters. Enable the existing `ТранслитерацияОбъектов` native Extractor setting,
+preserving other values. The API reads the native wizard settings; do not invent
+a new request parameter. Use the existing wizard mechanism, preserve all
+fields/types/roles and do not add a separate naming algorithm.
+
 API 3.3.1: сначала `list_bases`, выбери `base_id` и передавай его во все вызовы. Несколько HTTP-баз настраиваются YAML; DCC-базы обнаруживаются через DCC. Новую многоролевую сегментацию передавай массивом; описание - [partition-segments.md](partition-segments.md). Одно-сегментные примеры ниже остаются допустимым отдельным вариантом и не смешиваются с массивом.
 
 ## SQL operations and plan-based receivers
