@@ -44,7 +44,7 @@ from .project_template import ProjectTemplateRequest, project_template_schema
 from .projects_api import (
     ApiSettings, ProjectsApiClient, ProjectsApiError,
     ProjectDefinition, GroupProjectDefinition, ProjectChange, ProjectPreview, ProjectRowChange, ProjectUpdate,
-    ProjectReceiverRepair, ProjectRowSettingsChange, ProjectRowsAppend, RowSettings,
+    ProjectReceiverRepair, ProjectRowSettingsChange, ProjectRowsAppend, RowSettings, ProjectFieldMappingChange,
     ProjectSchedulePreview, ProjectScheduleSet, ProjectExportRef, ProjectExportStart, ProjectExportStatus,
     ProjectQueryDiagnostics,
     ProjectExportCancelRef, ProjectExportCancel,
@@ -503,6 +503,24 @@ def preview_project_template(request: ProjectTemplateRequest, metadata_snapshot_
 def _preview_project_definition(definition: ProjectPreview, metadata_snapshot_id: str | None = None) -> Any:
     """Resolve receiver and store the exact approved native preview input once."""
     raw_payload = definition.model_dump(exclude_none=True)
+    if isinstance(definition, ProjectFieldMappingChange):
+        # A saved-field patch is already bound to its receiver. Never rebuild
+        # the helper definition or add connection overrides to this contract.
+        _require_field_mapping_capability()
+        preview = call_api("projects/preview", raw_payload)
+        if (not isinstance(preview, dict)
+                or preview.get("projectName") != definition.projectName
+                or preview.get("currentTableName") != definition.currentTableName
+                or preview.get("requested") != raw_payload["fieldChanges"]):
+            raise ToolError("Invalid native field mapping preview; no plan was created")
+        summary = preview_summary(preview)
+        summary["approved"] = preview.get("stateMatches") is True and preview.get("conflict") is False
+        if not summary["approved"]:
+            return {"approved": False, "action": "update", "summary": summary, "planId": None}
+        settings = ApiSettings(_env_file=ENV_FILE)
+        plan = operation_store().create_plan("update", raw_payload, preview, settings.plan_ttl_seconds)
+        return {"approved": True, "action": "update", "summary": summary,
+                "planId": plan.plan_id, "expiresAt": plan.expires_at}
     rows = raw_payload.get("rows", [raw_payload.get("definition", raw_payload)])
     uses_row_settings = isinstance(definition, ProjectRowSettingsChange) or any(
         "rowSettings" in row for row in rows
@@ -884,7 +902,7 @@ def _commit(plan_id: str | None, operation_id: str, action: str,
     if replay is not None:
         return {"planId": plan.plan_id, "operationId": operation_id,
                 "replayed": True, "result": replay}
-    if direct_payload is not None and not _has_direct_capability():
+    if direct_payload is not None and (not _has_direct_capability() or "fieldChanges" in direct_payload):
         # Replay above is entirely local, including when 1C is offline. Only a
         # newly frozen request needs the native SQL guard capability. A failed
         # readiness read cannot have applied the later business operation.
@@ -893,6 +911,8 @@ def _commit(plan_id: str | None, operation_id: str, action: str,
             capabilities = published.get("capabilities") if isinstance(published, dict) else None
             if not isinstance(capabilities, list) or "direct_sql_operations" not in capabilities:
                 raise ToolError("Direct SQL operations require the direct_sql_operations EPA capability; update EPA")
+            if "fieldChanges" in direct_payload and "field_mapping" not in capabilities:
+                raise ToolError("Field mapping changes require the field_mapping EPA capability; update EPA")
             _remember_direct_capability(published)
         except Exception:
             store.reject(operation_id, {"code": "DIRECT_SQL_CAPABILITY_UNAVAILABLE",
@@ -921,6 +941,13 @@ def _commit(plan_id: str | None, operation_id: str, action: str,
 
 
 def _validate_execution_result(action, payload, operation_id, result):
+    if action == "update" and "fieldChanges" in payload:
+        if (not isinstance(result, dict) or result.get("ok") is not True
+                or result.get("projectName") != payload["projectName"]
+                or result.get("currentTableName") != payload["currentTableName"]
+                or result.get("requested") != payload["fieldChanges"]):
+            operation_store().mark_indeterminate(operation_id, result)
+            raise ToolError("Field mapping update is indeterminate; verify the original operation and saved fields")
     if action == "cancel":
         valid = isinstance(result, dict) and result.get("cancelStatus") == "requested"
         valid = valid and str(result.get("taskId", "")).casefold() == payload["taskId"].casefold()
@@ -954,6 +981,13 @@ def _validate_execution_result(action, payload, operation_id, result):
         if not valid:
             operation_store().mark_indeterminate(operation_id, result)
             raise ToolError("Project execution is indeterminate; read get_operation_status and task status before any new start")
+
+
+def _require_field_mapping_capability() -> None:
+    published = call_api("service/readiness", {})
+    capabilities = published.get("capabilities") if isinstance(published, dict) else None
+    if not isinstance(capabilities, list) or "field_mapping" not in capabilities:
+        raise ToolError("Field mapping changes require the field_mapping EPA capability; update EPA")
 
 
 def _write_project(action: str, plan_id: str | None, operation_id: str, direct: Any) -> Any:

@@ -132,7 +132,7 @@ def test_mcp_protocol_and_backend_dispatch():
             "clientInfo": {"name": "test", "version": "1"},
         })
         assert initialized["serverInfo"]["name"] == "extractor1c"
-        assert initialized["serverInfo"]["version"] == "3.3.2"
+        assert initialized["serverInfo"]["version"] == "3.3.3"
         assert "preview_project" in initialized["instructions"]
         assert "list_skills" in initialized["instructions"]
         assert "get_skill" in initialized["instructions"]

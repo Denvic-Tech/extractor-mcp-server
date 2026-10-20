@@ -462,6 +462,47 @@ class ProjectRowSettingsChange(ProjectName):
     rowSettings: RowSettings
 
 
+class FieldMappingChange(StrictRequest):
+    """Patch a saved mapping, keeping its type, calculation and segment roles."""
+
+    source: str = Field(min_length=1, max_length=512,
+                        pattern=r"^[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*(?:\.[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*)*$")
+    target: str | None = Field(default=None, pattern=r"^[A-Za-z_][A-Za-z0-9_]*$", max_length=100)
+    noExport: StrictBool | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def explicit_changes(cls, value: object) -> object:
+        if isinstance(value, dict):
+            changes = {key: item for key, item in value.items() if key != "source"}
+            if not changes or any(item is None for item in changes.values()):
+                raise ValueError("Specify target or noExport; omit unchanged properties")
+        return value
+
+    @model_serializer(mode="wrap")
+    def explicit_payload(self, handler: SerializerFunctionWrapHandler) -> dict[str, object]:
+        return {key: value for key, value in handler(self).items()
+                if key in self.model_fields_set}
+
+
+class ProjectFieldMappingChange(ProjectName):
+    """Change existing fields without rebuilding the native source or mapping."""
+
+    expectedState: str = Field(min_length=1, max_length=524288)
+    currentTableName: str = Field(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$", max_length=100)
+    fieldChanges: list[FieldMappingChange] = Field(min_length=1, max_length=500)
+
+    @model_validator(mode="after")
+    def unique_sources(self) -> "ProjectFieldMappingChange":
+        sources = [change.source for change in self.fieldChanges]
+        if len(set(sources)) != len(sources):
+            raise ValueError("Duplicate mapping sources")
+        targets = [change.target.casefold() for change in self.fieldChanges if change.target is not None]
+        if len(set(targets)) != len(targets):
+            raise ValueError("Duplicate target column names")
+        return self
+
+
 class ProjectReceiverRepair(ProjectName):
     """Repair one absent MySQL receiver; never accept SQL or native templates."""
 
@@ -485,8 +526,10 @@ class ProjectReceiverRepair(ProjectName):
 
 # Project-level and row-level changes share the same public preview/update
 # operations; the closed union still validates each concrete payload strictly.
-ProjectChange = ProjectUpdate | ProjectRowsAppend | ProjectRowChange | ProjectReceiverRepair | ProjectRowSettingsChange
-ProjectPreview = ProjectDefinition | GroupProjectDefinition | ProjectRowsAppend | ProjectRowChange | ProjectReceiverRepair | ProjectRowSettingsChange
+ProjectChange = (ProjectUpdate | ProjectRowsAppend | ProjectRowChange | ProjectReceiverRepair
+                 | ProjectRowSettingsChange | ProjectFieldMappingChange)
+ProjectPreview = (ProjectDefinition | GroupProjectDefinition | ProjectRowsAppend | ProjectRowChange
+                  | ProjectReceiverRepair | ProjectRowSettingsChange | ProjectFieldMappingChange)
 
 
 class DirectSqlRequest(StrictRequest):
@@ -529,6 +572,10 @@ class DirectProjectRowSettingsChange(ProjectRowSettingsChange, DirectSqlRequest)
     pass
 
 
+class DirectProjectFieldMappingChange(ProjectFieldMappingChange, DirectSqlRequest):
+    pass
+
+
 class DirectProjectStart(ProjectExportRef, DirectSqlRequest):
     # SQL starts calculate the native plan inside the operation. An explicit
     # state, when supplied by an internal caller, still requests native CAS.
@@ -536,7 +583,8 @@ class DirectProjectStart(ProjectExportRef, DirectSqlRequest):
 
 
 DirectProjectChange = (DirectProjectUpdate | DirectProjectRowsAppend | DirectProjectRowChange
-                       | DirectProjectReceiverRepair | DirectProjectRowSettingsChange)
+                       | DirectProjectReceiverRepair | DirectProjectRowSettingsChange
+                       | DirectProjectFieldMappingChange)
 
 
 SCHEMAS = {"metadata/list": EmptyRequest, "metadata/describe": DescribeObjectRequest,
@@ -574,6 +622,15 @@ PREWRITE_ERRORS = {
 
 
 PUBLIC_API_ERRORS = {
+    **{code: "Field mapping change failed; verify saved mapping and receiver schema before retry"
+       for code in (
+           "FIELD_MAPPING_STATE_CONFLICT", "FIELD_MAPPING_RECEIVER_UNSUPPORTED",
+           "FIELD_MAPPING_TABLE_ABSENT", "FIELD_MAPPING_SOURCE_UNKNOWN_OR_AMBIGUOUS",
+           "FIELD_MAPPING_SEGMENT_REQUIRED", "FIELD_MAPPING_TARGET_TOO_LONG",
+           "FIELD_MAPPING_TARGET_EXISTS", "FIELD_MAPPING_COLUMN_ABSENT",
+           "FIELD_MAPPING_COLUMN_TYPE_CONFLICT", "FIELD_MAPPING_TARGET_DUPLICATE",
+           "FIELD_MAPPING_DDL_INDETERMINATE",
+       )},
     "RECEIVER_PROJECT_NOT_FOUND": "Receiver inspection project not found",
     "RECEIVER_ROW_NOT_FOUND": "Receiver inspection project row not found",
     "RECEIVER_ROW_SELECTION_REQUIRED": "Select a saved project row for receiver inspection",

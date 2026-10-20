@@ -1,11 +1,10 @@
 # Hosted project workflow
 
-Always enable the native wizard's field transliteration by default for new projects
-and rows; do not ask whether to enable it. Mapping target names must use Latin
-characters. Enable the existing `ТранслитерацияОбъектов` native Extractor setting,
-preserving other values. The API reads the native wizard settings; do not invent
-a new request parameter. Use the existing wizard mechanism, preserve all
-fields/types/roles and do not add a separate naming algorithm.
+Ask the unresolved naming choice: native transliteration or English equivalents
+for table and field names. Preserve an explicit choice. The agent chooses English
+equivalents; the native wizard does not translate semantics automatically. Use
+the existing wizard for the source and `fieldChanges` for saved SQL mappings;
+preserve types, GUIDs and segment roles. See the naming and mapping section below.
 
 API 3.3.1: сначала `list_bases`, выбери `base_id` и передавай его во все вызовы. Несколько HTTP-баз настраиваются YAML; DCC-базы обнаруживаются через DCC. Новую многоролевую сегментацию передавай массивом; описание - [partition-segments.md](partition-segments.md). Одно-сегментные примеры ниже остаются допустимым отдельным вариантом и не смешиваются с массивом.
 
@@ -265,3 +264,57 @@ or convert UUIDs in MCP. Verify actual saved fields with `verify_project`, or us
 automatically enable GUIDs of enum-valued attributes in documents, registers
 or other sources. Do not create an empty extra enumeration row; a separate
 row requires an explicitly selected enumeration.
+
+## Имена полей и признак выгрузки
+
+Перед новым проектом предложи выбор, если он ещё не задан:
+1. Использовать штатную транслитерацию.
+2. Подбирать аналоги названий таблиц и полей на английском.
+
+Явный выбор пользователя сохраняй. Для английского варианта подбирай имена
+по смыслу, а не транслитом; GUID одной связи именуй одинаково во всех таблицах.
+Штатный помощник умеет транслитерацию (`ТранслитерацияОбъектов`) и ручное
+редактирование имён SQL-маппинга; автоматического перевода на английский в
+исходниках помощника не найдено. Не придумывай параметр языка или переводчик.
+`tableName` задаёт имя новой таблицы; переименование существующей таблицы этим
+контрактом не поддерживается. Не добавляй собственный конструктор источников.
+
+MCP 3.3.3 / EPA 3.3.1 с capability `field_mapping` поддерживает изменение любых
+сохранённых полей через существующие `preview_project` и `update_project`:
+
+```json
+{
+  "projectName": "Denis_Продажи",
+  "expectedState": "<свежий stateToken verify_project>",
+  "currentTableName": "denis_sales_items",
+  "fieldChanges": [
+    {"source": "Артикул", "target": "Article"},
+    {"source": "ЕдиницаИзмерения", "noExport": false}
+  ]
+}
+```
+
+Для SQL передавай этот объект в `update_project(change=..., operation_id=...)`.
+Preview необязателен; если нужен, передавай объект как `definition`, затем читай
+`get_project_plan`. Источник поля берётся из сохранённого `fields[].source`.
+Опущенное свойство сохраняется; `noExport:false` включает, `true` отключает
+выгрузку без удаления SQL-колонки. `target` - итоговый идентификатор латиницей.
+`guidColumnNames` остаётся только для GUID при формировании нового источника;
+не используй его для обычных полей. Patch не создаёт отсутствующее поле источника:
+сначала добавь поле штатным помощником через изменение строки проекта.
+
+Изменение маппинга сохраняет тип, точность, вычисления, экранирование, источник,
+сегменты и остальные строки. Сегмент нельзя отключить. Коллизии имён, неизвестные
+поля и активная/неопределённая выгрузка блокируют изменение до DDL.
+Для ClickHouse, PostgreSQL, MySQL и MS SQL используются штатные драйверы
+переименования/добавления колонок; фактическую поддержку версии проверяет драйвер.
+После включения уже существующей колонки проверь её тип; для ClickHouse API
+сверяет полный SQL-тип. Для остальных драйверов автоматическая сверка типов
+ограничена: проверь сохранённый маппинг и native-схему отдельно.
+
+После записи вызови `verify_project` и `inspect_project_receiver(checks=["schema"])`:
+проверь точные target/noExport, GUID, типы и роли. Для имени единицы измерения
+нужно включить исходное `ЕдиницаИзмерения`; его GUID сохраняется отдельным полем.
+Существующие строки заполнятся после отдельно разрешённой повторной выгрузки.
+DDL и запись 1С не атомарны: при неопределённом исходе сверяй прежнюю операцию,
+маппинг и физическую схему, не повторяй запись с новым ID.
