@@ -25,6 +25,14 @@ def select_connection(value: Any, requested: str = "") -> dict:
     return {"status": code, "connectionName": name, "choices": choices, "message": message}
 
 
+def bind_project_connection(payload: dict, name: str) -> None:
+    """Bind one validated choice at every native definition level."""
+    target = payload.get("definition", payload)
+    target["connectionName"] = name
+    for row in target.get("rows", [target]):
+        row["connectionName"] = name
+
+
 def resolve_project_connection(payload: dict, call_api) -> tuple[dict, dict]:
     """Resolve once before preview, binding the exact name into every plan row."""
     target = payload.get("definition", payload)
@@ -44,7 +52,5 @@ def resolve_project_connection(payload: dict, call_api) -> tuple[dict, dict]:
     # Repair is bound to the saved connection, but its closed native payload
     # has no connectionName: adding it would change the five-key contract.
     if selection["status"] == "selected" and "receiverRepair" not in payload:
-        target["connectionName"] = selection["connectionName"]
-        for row in rows:
-            row["connectionName"] = selection["connectionName"]
+        bind_project_connection(payload, selection["connectionName"])
     return payload, selection

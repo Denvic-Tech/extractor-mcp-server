@@ -12,6 +12,12 @@ the native Extractor settings, preserving other values. Use the existing wizard
 mechanism and preserve fields, types, GUID calculations and segment roles.
 Do not add a custom renaming system or invent a new API parameter for this setting.
 
+## Составные поля: сегменты и GUID
+
+Составные поля никогда не выбирай как сегменты: запрет действует и для нескольких ссылочных типов, и для смеси ссылок с примитивами. До выбора проверь фактическое описание типов поля; для сегмента допускается один конкретный тип. Не перестраивай существующий проект автоматически: согласуй замену составного сегмента.
+
+GUID любых составных полей вычисляй только штатной функцией Экстрактора 1С `УникальныйИдентификатор` в буфере. Не подменяй её SQL/query-функцией UUID или собственным конвертером. Правило действует для всех экспортируемых составных полей, включая поля без роли сегмента.
+
 ## SQL operations and plan-based receivers
 
 For SQL, preview is optional when actual readiness confirms `direct_sql_operations`
@@ -77,7 +83,7 @@ For requests to schedule daily or weekly exports, run every N minutes, pause or 
 
 ## Транспорт и версия
 
-MCP и EPA_Projects используют 3.3.1; базовая серия Экстрактора — 3.16.2.xx. Фактическую версию и capabilities выбранной базы проверяй через `readiness`: обновление MCP не обновляет методы в 1С. Вызови `list_bases`, выбери `base_id` и передавай его во все операции. В прямом HTTP-режиме базы перечислены в YAML на сервере; в DCC-режиме базы обнаруживаются через DCC, а 1С сама получает команды. DCC-маршрут не обращается к публикации 1С. `segmentation` передаётся массивом группировок с явным `field` и тремя Boolean-ролями; объект с `mode` не используется.
+MCP - 3.3.2, ожидаемый контракт EPA_Projects - 3.3.1; readiness возвращает отдельно mcpVersion, expectedOneCMethodsVersion и фактическую oneCMethodsVersion; базовая серия Экстрактора — 3.16.2.xx. Фактическую версию и capabilities выбранной базы проверяй через `readiness`: обновление MCP не обновляет методы в 1С. Вызови `list_bases`, выбери `base_id` и передавай его во все операции. В прямом HTTP-режиме базы перечислены в YAML на сервере; в DCC-режиме базы обнаруживаются через DCC, а 1С сама получает команды. DCC-маршрут не обращается к публикации 1С. `segmentation` передаётся массивом группировок с явным `field` и тремя Boolean-ролями; объект с `mode` не используется.
 
 For receiver observations, use `inspect_project_receiver` only after readiness
 confirms EPA 3.3.0+ and capability `receiver_inspection`. Read the receiver section

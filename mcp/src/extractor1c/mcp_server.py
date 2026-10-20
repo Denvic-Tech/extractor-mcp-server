@@ -26,7 +26,7 @@ from mcp.server.fastmcp.exceptions import ToolError
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ToolAnnotations
 
-from . import __version__
+from . import EPA_CONTRACT_VERSION, __version__
 from .cloud_tools import (
     describe_object_page, preview_fields_page, preview_summary,
     search_metadata as search_metadata_data,
@@ -37,14 +37,14 @@ from .transport import (resolve_target, call_target, list_bases as transport_lis
                         get_target_operation, DccOperationPending, operation_result)
 from .reference_graph import analyze_reference_graph as analyze_reference_graph_data
 from .dcc_metadata import DccMetadataClient, MetadataResource
-from .connections import resolve_project_connection, select_connection
+from .connections import bind_project_connection, resolve_project_connection, select_connection
 from .operation_store import OperationRejected, OperationStore, OperationStoreError
 from .skill_catalog import get_skill_data, list_skills_data
 from .project_template import ProjectTemplateRequest, project_template_schema
 from .projects_api import (
     ApiSettings, ProjectsApiClient, ProjectsApiError,
     ProjectDefinition, GroupProjectDefinition, ProjectChange, ProjectPreview, ProjectRowChange, ProjectUpdate,
-    ProjectReceiverRepair, ProjectRowSettingsChange, RowSettings,
+    ProjectReceiverRepair, ProjectRowSettingsChange, ProjectRowsAppend, RowSettings,
     ProjectSchedulePreview, ProjectScheduleSet, ProjectExportRef, ProjectExportStart, ProjectExportStatus,
     ProjectQueryDiagnostics,
     ProjectExportCancelRef, ProjectExportCancel,
@@ -311,9 +311,9 @@ def readiness() -> dict:
         version_warning = "Published 1C API does not expose its methods version; update the extension"
     if not isinstance(build, dict) or (build.get("methodsVersion") is None and not version_warning) or (build.get("methodsVersion") is not None and not re.fullmatch(r"\d+\.\d+\.\d+", str(build["methodsVersion"]))):
         raise ToolError("1C API did not report its methods version; update the API extension")
-    if build["methodsVersion"] is not None and build["methodsVersion"] != __version__:
+    if build["methodsVersion"] is not None and build["methodsVersion"] != EPA_CONTRACT_VERSION:
         version_warning = (
-            f"Published 1C methods {build['methodsVersion']} differ from MCP contract {__version__}; "
+            f"Published 1C methods {build['methodsVersion']} differ from MCP contract {EPA_CONTRACT_VERSION}; "
             "synchronize the EPA module before project writes"
         )
     connections = call_api("connections/list", {})
@@ -329,6 +329,7 @@ def readiness() -> dict:
         raise ToolError(str(exc)) from None
     _remember_direct_capability(build)
     return {"ready": store_ready, "operationStore": store_ready,
+            "mcpVersion": __version__, "expectedOneCMethodsVersion": EPA_CONTRACT_VERSION,
             "oneCMethodsVersion": build["methodsVersion"], "oneCCapabilities": build.get("capabilities", []),
             "oneCMethodsVersionWarning": version_warning,
             "connectionCount": count, "connectionSelection": selection,
@@ -972,6 +973,14 @@ def _write_project(action: str, plan_id: str | None, operation_id: str, direct: 
         # after strict validation, frozen in the journal, and checked against
         # the actual native receiver immediately before any write or start.
         payload = {**request.model_dump(exclude_none=True), "directSql": True}
+        if isinstance(request, (GroupProjectDefinition, ProjectRowsAppend)):
+            # EPA проверяет подключение всего запроса и каждой строки. Прямой
+            # маршрут тоже связывает явный выбор до фиксации неизменяемого payload.
+            name = request.connectionName or next(
+                (row.connectionName for row in request.rows if row.connectionName), ""
+            )
+            if name:
+                bind_project_connection(payload, name)
     except ValueError as exc:
         raise ToolError(str(exc)) from None
     return _commit(None, operation_id, action, direct_payload=payload)

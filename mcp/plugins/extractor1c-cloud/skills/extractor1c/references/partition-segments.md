@@ -37,23 +37,11 @@ rule to dates, strings, numbers, booleans or other nonreference types. After a d
 with `verify_project`; when preview is used, also check it before writing.
 This contract does not replace checking the running base.
 
-## Mixed reference and primitive segment keys
+## Compound fields: segments and GUIDs
 
-Actual field types may allow reference classes and string/number/date/boolean
-values together, for example dependent characteristic values or an operations
-journal. A GUID alone is insufficient: native GUID is undefined for primitive
-values, which can collapse distinct SQL segments. Require the shared native
-role vector: GUID, native `ПолноеИмяМетаданных`, and applicable native
-`ЕслиТипСтрока` / `ЕслиТипЧисло` / `ЕслиТипДата` / `ЕслиТипБулево` calculations,
-selected from actual metadata types. Keep the original typed parameter in the
-1C query and preserve the existing pure-primitive path. Before writing, confirm
-actual support and every role part through saved native settings or an optional preview/get_project_plan;
-explicit `selectedFields` must retain all actual parts. Never guess names or
-add a private UUID converter. Verify the same native functions in queue and
-buffer and repeated native predicate construction; documentation alone is not
-runtime acceptance. Compound-segmentation regression must include actual PVH
-dependent values and journal metadata, multiple reference classes plus allowed
-primitives, zero, false and UUID-like strings.
+Never select a compound field as a segment, including multiple reference types or references mixed with primitive types. Check actual metadata first; a segment must have one concrete type. Do not automatically rebuild saved projects; agree a replacement for an existing compound segment.
+
+Compute GUIDs of every compound field through the native Extractor 1C `УникальныйИдентификатор` buffer function. Never replace it with a SQL/query UUID function or a custom converter. This applies to all exported compound fields, including fields without segment roles.
 
 For a standalone enumeration without segmentation, use `segmentation: []` and
 confirm saved native settings or an optional preview; legacy `segment: ""` is not an enumeration equivalent.

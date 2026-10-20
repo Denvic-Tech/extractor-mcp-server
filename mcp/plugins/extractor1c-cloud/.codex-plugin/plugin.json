@@ -1,6 +1,6 @@
 {
   "name": "extractor1c-cloud",
-  "version": "3.3.1",
+  "version": "3.3.2",
   "description": "Create and safely update Extractor 1C export projects through a hosted MCP server.",
   "author": {
     "name": "Extractor 1C team"
