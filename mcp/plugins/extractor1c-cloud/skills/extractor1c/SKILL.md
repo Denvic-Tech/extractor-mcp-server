@@ -5,6 +5,10 @@ description: Create, inspect, verify and update Extractor 1C projects, run expor
 
 # Extractor 1C Cloud
 
+For common requests about setup, start/stop, connectivity, metadata and project
+diagnostics, read [prompt examples](references/prompt-examples.md). Adapt examples
+to the connected installation; preserve the user's selected base and action scope.
+
 Before creating a project ask only an unresolved naming choice:
 1. Use native transliteration.
 2. Choose English equivalents for table and field names.
@@ -87,7 +91,7 @@ For requests to schedule daily or weekly exports, run every N minutes, pause or 
 
 ## Транспорт и версия
 
-MCP - 3.3.3, ожидаемый контракт EPA_Projects - 3.3.1; readiness возвращает отдельно mcpVersion, expectedOneCMethodsVersion и фактическую oneCMethodsVersion; базовая серия Экстрактора — 3.16.2.xx. Фактическую версию и capabilities выбранной базы проверяй через `readiness`: обновление MCP не обновляет методы в 1С. Вызови `list_bases`, выбери `base_id` и передавай его во все операции. В прямом HTTP-режиме базы перечислены в YAML на сервере; в DCC-режиме базы обнаруживаются через DCC, а 1С сама получает команды. DCC-маршрут не обращается к публикации 1С. `segmentation` передаётся массивом группировок с явным `field` и тремя Boolean-ролями; объект с `mode` не используется.
+MCP - 3.3.4, ожидаемый контракт EPA_Projects - 3.3.1; readiness возвращает отдельно mcpVersion, expectedOneCMethodsVersion и фактическую oneCMethodsVersion; базовая серия Экстрактора — 3.16.2.xx. Фактическую версию и capabilities выбранной базы проверяй через `readiness`: обновление MCP не обновляет методы в 1С. Вызови `list_bases`, выбери `base_id` и передавай его во все операции. В прямом HTTP-режиме базы перечислены в YAML на сервере; в DCC-режиме базы обнаруживаются через DCC, а 1С сама получает команды. DCC-маршрут не обращается к публикации 1С. `segmentation` передаётся массивом группировок с явным `field` и тремя Boolean-ролями; объект с `mode` не используется.
 
 For receiver observations, use `inspect_project_receiver` only after readiness
 confirms EPA 3.3.0+ and capability `receiver_inspection`. Read the receiver section

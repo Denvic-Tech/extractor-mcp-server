@@ -1,4 +1,4 @@
-# MCP Экстрактора 1С 3.3.3
+# MCP Экстрактора 1С 3.3.4
 
 Поддерживаемый релиз Экстрактора 1С — **3.16.2.1018**, версия методов
 EPA_Projects — **3.3.1**. После установки проверяйте фактическую версию методов
@@ -27,6 +27,13 @@ if (-not (Test-Path bases.yaml)) { Copy-Item bases.example.yaml bases.yaml }
 [JSON-контракт подготовки проектов](../docs/Справочник/project-template-contract.md):
 `get_project_template_schema`, `validate_project_template`, `preview_project_template`.
 Сохранение использует прежний `create_project` и его `plan_id/operation_id`.
+
+## Релиз MCP 3.3.4
+
+Версия контракта EPA_Projects остаётся 3.3.1. Добавлены примеры запросов
+для установки, подключения, чтения метаданных, создания проектов и диагностики.
+Навыки учитывают фактические capabilities выбранной базы; главный README
+содержит таблицу методов и их назначения.
 
 ## Релиз MCP 3.3.3
 

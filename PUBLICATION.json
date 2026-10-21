@@ -1,7 +1,7 @@
 {
   "product": "Extractor 1C MCP",
-  "version": "3.3.3",
-  "sourceCommit": "f9405f272b66914fa0d05adbfaf8f336e1c3cb7a",
+  "version": "3.3.4",
+  "sourceCommit": "58d59acf9c2a791a6a47152cd003ba3e13b6264a",
   "repository": "https://github.com/Denvic-Tech/extractor-mcp-server",
   "managedFiles": [
     ".dockerignore",
@@ -31,6 +31,7 @@
     "mcp/plugins/extractor1c-cloud/skills/extractor1c/references/accumulation-registers.md",
     "mcp/plugins/extractor1c-cloud/skills/extractor1c/references/development-tests.md",
     "mcp/plugins/extractor1c-cloud/skills/extractor1c/references/partition-segments.md",
+    "mcp/plugins/extractor1c-cloud/skills/extractor1c/references/prompt-examples.md",
     "mcp/plugins/extractor1c-cloud/skills/extractor1c/references/reference-tree.md",
     "mcp/plugins/extractor1c-cloud/skills/extractor1c/references/row-settings.md",
     "mcp/plugins/extractor1c-cloud/skills/extractor1c/references/workflow.md",
@@ -53,6 +54,7 @@
     "mcp/skills/extractor1c/references/22-receiver-preflight.md",
     "mcp/skills/extractor1c/references/23-project-dialog.md",
     "mcp/skills/extractor1c/references/24-row-settings.md",
+    "mcp/skills/extractor1c/references/25-prompt-examples.md",
     "mcp/src/extractor1c/__init__.py",
     "mcp/src/extractor1c/cloud_tools.py",
     "mcp/src/extractor1c/connections.py",

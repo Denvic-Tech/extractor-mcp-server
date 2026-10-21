@@ -279,7 +279,7 @@ row requires an explicitly selected enumeration.
 `tableName` задаёт имя новой таблицы; переименование существующей таблицы этим
 контрактом не поддерживается. Не добавляй собственный конструктор источников.
 
-MCP 3.3.3 / EPA 3.3.1 с capability `field_mapping` поддерживает изменение любых
+MCP 3.3.4 / EPA 3.3.1 с capability `field_mapping` поддерживает изменение любых
 сохранённых полей через существующие `preview_project` и `update_project`:
 
 ```json
