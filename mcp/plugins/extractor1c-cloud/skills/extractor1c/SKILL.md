@@ -1,0 +1,168 @@
+---
+name: extractor1c
+description: Create, inspect, verify and update Extractor 1C projects, run exports and manage schedules through MCP; develop and validate Extractor MCP and 1C API methods with mandatory regression tests.
+---
+
+# Extractor 1C Cloud
+
+Before create_project, check every final receiver field name after native
+transliteration, including generated GUID/type and segment fields. Read
+[receiver name preflight](references/receiver-name-preflight.md). Explicit
+`columnNames` require the selected EPA's `column_names` capability.
+
+For common requests about setup, start/stop, connectivity, metadata and project
+diagnostics, read [prompt examples](references/prompt-examples.md). Adapt examples
+to the connected installation; preserve the user's selected base and action scope.
+
+When preparing a new project, try to propose meaningful English field and table
+names immediately, with concrete examples rather than transliteration. If the
+naming choice is unresolved, offer English translation first and native
+transliteration second. Preserve names already chosen by the user.
+Preserve an explicit preference without asking again. The native wizard has
+transliteration and editable SQL mapping names, not a semantic English translator.
+For English names choose meaningful equivalents, use `tableName` at creation,
+`columnNames` for new fields with capability `column_names`, and `fieldChanges`
+for saved mappings. With capability `field_mapping`, use the
+existing update_project and fresh expectedState to rename any saved field or set
+`noExport:false` to include it. Preserve types, GUIDs and segment roles and verify
+the saved mapping and physical schema. Read [workflow](references/workflow.md).
+
+## Составные поля: сегменты и GUID
+
+Составные поля никогда не выбирай как сегменты: запрет действует и для нескольких ссылочных типов, и для смеси ссылок с примитивами. До выбора проверь фактическое описание типов поля; для сегмента допускается один конкретный тип. Не перестраивай существующий проект автоматически: согласуй замену составного сегмента.
+
+GUID любых составных полей вычисляй только штатной функцией Экстрактора 1С `УникальныйИдентификатор` в буфере. Не подменяй её SQL/query-функцией UUID или собственным конвертером. Правило действует для всех экспортируемых составных полей, включая поля без роли сегмента.
+
+## SQL operations and plan-based receivers
+
+For SQL, preview is optional when actual readiness confirms `direct_sql_operations`
+and the connected tool schemas support direct inputs. Kafka, AMQP and 1C Bus
+require preview; DCC transport and the internal change queue do not change the
+receiver type. Check the connected installation rather than assuming an upgrade.
+Keep immutable operation UUIDs, update `expectedState`, task IDs, errors/status
+and unknown-outcome reconciliation. For exact calls and an explicitly chosen
+legacy mode, read [SQL operations](references/workflow.md#sql-operations-and-plan-based-receivers).
+
+Before preparing a project, select the receiver connection and verify it from
+the executing 1C server through the native Extractor driver. MCP readiness
+confirms access to 1C, not access from 1C to the receiver. Use a supported
+connection check, or a successful schema inspection of an existing project
+using that same connection. If neither is available, ask for the native 1C
+connection check; do not invent an MCP tool or create a diagnostic project.
+On timeout or authentication failure, stop dependent project preparation,
+report the known 1C host, receiver endpoint and errorId, and resume only after
+a successful check or the user's explicit selection of another connection.
+Do not retry preview with altered fields or segments to bypass a network error.
+
+When developing or fixing Extractor MCP or its 1C API, read
+[development-tests.md](references/development-tests.md). Run the full automated
+suite after code changes and all ten live test projects after changes to project
+construction or export execution. Re-reading old successful task receipts does
+not validate a changed build. Use a local development checkout for these tests.
+
+For the universal fact tree, assigned account analytics and native build version,
+read [reference-tree.md](references/reference-tree.md). Present tree as a tree.
+
+Prefer the `Обороты` virtual table for accumulation-register exports when
+available and suitable; see references/accumulation-registers.md.
+For turnovers, default the grain to `Регистратор`. Ask for the partition roles,
+offering Day for regular export and Month for initialization. Preserve explicit
+choices. Before project preparation, ask whether to show reference presentations in a
+document/register: Yes or No, offering No. Reuse an existing answer. For No,
+set the native “Do not export” flag; for Yes, enable presentations. Retain
+mapping rows, identifiers and compound types.
+Use the native Extractor wizard wherever supported. Export every reference
+identifier using its native `УникальныйИдентификатор` function; disable
+“Экранировать” for confirmed GUID mappings to SQL. Preserve native GUID types
+and lengths and identify fields by their function/source, not their suffix.
+
+For `РегистрСведений.<Name>.СрезПоследних`, always offer **Месяц** (Month)
+as the first default partition-segment option. Agree on an unspecified choice
+before project preparation; do not automatically choose Day. Preserve explicit choices,
+existing project settings and running exports. This applies to HTTP and DCC.
+First confirm that LastSlice is available. For large monthly segments (item
+prices, goods or batches), ask for an additional segmentation field and confirm
+it from the selected infobase metadata before project preparation.
+
+Use `analyze_reference_graph` for outgoing links of any entity and document
+sections. Expand selected dotted paths with `expand_paths`. Periodic information
+registers are skipped. Analytics keys follow exact metadata targets, never name heuristics.
+
+Use only the `extractor1c` MCP tools. Call `list_skills` and then `get_skill` to read server-published Markdown instructions and references. Never construct SQL, execute arbitrary 1C code, or call the 1C publication directly.
+
+For project work, read [workflow.md](references/workflow.md). For accumulation registers also read [accumulation-registers.md](references/accumulation-registers.md).
+For project-row runtime parameters, read [row-settings.md](references/row-settings.md)
+and the referenced server skill. Require the actual `row_settings` capability.
+
+For requests to schedule daily or weekly exports, run every N minutes, pause or resume automatic export, follow the scheduling workflow below. Scheduling an existing project does not require creating the project again or changing its rows.
+
+## Транспорт и версия
+
+MCP - 3.3.7, ожидаемый контракт EPA_Projects - 3.3.5; readiness возвращает отдельно mcpVersion, expectedOneCMethodsVersion и фактическую oneCMethodsVersion; Экстрактор поддерживается начиная с 3.16.1.34. Для маршрута `dcc` поддерживается DCC начиная с 2.0.2. Фактическую версию и capabilities выбранной базы проверяй через `readiness`: обновление MCP не обновляет методы в 1С. Вызови `list_bases`, выбери `base_id` и передавай его во все операции. В прямом HTTP-режиме базы перечислены в YAML на сервере; в DCC-режиме базы обнаруживаются через DCC, а 1С сама получает команды. DCC-маршрут не обращается к публикации 1С. `segmentation` передаётся массивом группировок с явным `field` и тремя Boolean-ролями; объект с `mode` не используется.
+
+For receiver observations, use `inspect_project_receiver` only after readiness
+confirms EPA 3.3.0+ and capability `receiver_inspection`. Read the receiver section
+in [workflow.md](references/workflow.md) for exact arguments and limits. Receiver
+observations do not prove equality with the source.
+
+### Mandatory route choice when the same base is available twice
+
+If `.env` contains a configured DCC connection and the same 1C base is available
+both through a direct web publication and as a DCC connector, before preparing
+a project or starting export ask: "This base is available directly through the
+1C web publication and through DCC. Which route should we use: direct or DCC?"
+Wait for the answer; do not choose by default or by server availability. Reuse
+an explicit choice for this base in the current conversation unless conditions
+change. Keep commands, data and status checks on the chosen route. Match bases
+using confirmed identifiers and registration details, not only display names.
+The current MCP instance exposes one configured route; DCC credentials alone
+do not activate a second route. If the selected route is unavailable, configure
+or select the appropriate MCP instance and check `list_bases` / `readiness`.
+Do not substitute another route or transfer preview plans between instances.
+
+## Creating projects and changing their contents
+
+Ask for the partition choice unless already specified: documents by day or
+Ссылка; catalogs by the first two characters of Наименование/Код or Ссылка.
+Reference partitioning uses batches of 1000. Read
+[partition-segments.md](references/partition-segments.md) before project preparation.
+
+First follow "Connection selection" in [workflow.md](references/workflow.md): none requires 1C configuration, one is automatic, several require a user choice reused in the conversation.
+
+For a document tabular section partitioned by the header date, read "Document
+tabular sections and header dates" in [workflow.md](references/workflow.md).
+Verify the saved partition path is `Ссылка.Дата` before initialization and export.
+
+1. Call `readiness`, then use `search_metadata`, `describe_object_fields`, `list_connections`, and `list_projects` for discovery.
+2. Present the intended entities and target tables to the user before any write.
+3. For SQL with the confirmed direct capability/schema, use the authorized `create_project(definition=..., operation_id=...)` or `update_project(change=..., operation_id=...)`, retaining a fresh `expectedState` for updates.
+4. For Kafka, AMQP, 1C Bus or an explicitly chosen legacy plan-based workflow, obtain `preview_project` or `preview_project_properties` and keep its exact `planId`. Pass it with a new UUID `operation_id` without rebuilding the payload. Direct input and `plan_id` are mutually exclusive. Reuse existing explicit authorization.
+5. Add related rows one at a time and call `verify_project_summary` after every write.
+6. If a write result is uncertain, call `get_operation_status` and verify project state. Never retry with another operation ID until the state is resolved.
+
+Call the setting a **partition segment**, not a grouping. Project creation configures an export but does not start data export.
+
+For scheduling, use `get_project_schedule`, `preview_project_schedule`, then after user approval `set_project_schedule(plan_id, operation_id)` and read back. Read the scheduling section in [workflow.md](references/workflow.md). Enabling can start export of the whole project; show the 1C time context, execution user from Extractor general settings, activation and blockers. A row's `disabled` flag is not schedule activity.
+
+For hourly repetition and screenshots of the native 1C schedule dialog, read 'Hourly repetition and native 1C fields' in [workflow.md](references/workflow.md). Distinguish repetition intervals, pauses after execution, and daily time limits.
+
+## After creating a project
+
+After creation and successful verification, establish the user choices:
+
+1. Initialize the export queue? Yes / no.
+2. Run the project now? Yes / no.
+3. If running: wait for completion? Yes / no.
+4. Schedule the project? Yes / no; if yes, what schedule?
+
+Do not ask again for choices or parameters already supplied. Bundle the unanswered questions in one message. Follow 'After creating a project' in [workflow.md](references/workflow.md) for execution order and schedule details.
+
+Ask about waiting only when a run is selected and the preference is unknown. Yes means poll the task until a terminal result. No means return the acknowledged launch with taskId and available backgroundJobId, without polling until completion. Report started, not successfully completed; status can be requested later. Not waiting does not cancel the launch. Do not repeat an already stated wait/no-wait preference.
+
+## Immediate export
+
+Read 'Run a project' in [workflow.md](references/workflow.md). For SQL with the confirmed direct capability/schema, use the authorized `start_project_export(project_guid=..., operation_id=...)` without preview. For message receivers or an explicitly chosen legacy plan workflow, obtain `preview_project_export` and start with its `plan_id`. If waiting was selected, poll `get_project_export_status(project_guid, task_id)` using the returned task ID; otherwise return launch confirmation and task ID. Show the whole project and confirmed execution-user/activation details; do not invent missing identity. Existing explicit authorization remains valid for the agreed operation. A completed MCP operation is not a completed export. Never retry an uncertain launch with a new plan or operation ID.
+
+## Queue initialization
+
+For initializing or preparing an export queue, read 'Queue initialization' in [workflow.md](references/workflow.md). For SQL with the confirmed direct capability/schema, use `initialize_project_queue(project_guid=..., operation_id=...)` without preview. For message receivers or an explicitly chosen legacy plan workflow, obtain `preview_project_initialization` and pass its `plan_id`. Poll `get_project_export_status` with its returned task ID. Initialization is a separate action; an export request alone does not authorize it.

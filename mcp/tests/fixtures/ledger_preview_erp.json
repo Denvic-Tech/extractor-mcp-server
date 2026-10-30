@@ -1,0 +1,838 @@
+[
+  {
+    "kind": "regulated",
+    "definition": {
+      "projectName": "ledger_example_regulated_dd77e83d",
+      "object": "РегистрБухгалтерии.Хозрасчетный",
+      "connectionName": "demo Clickhouse - erp_25_demo_denis",
+      "tableName": "example_ledger_regulated",
+      "segment": "День",
+      "maxItemsPerBatch": 0,
+      "includeGuids": true,
+      "includeMetadataTypes": true,
+      "selectedFields": []
+    },
+    "summary": {
+      "approved": true,
+      "projectName": "ledger_example_regulated_dd77e83d",
+      "rowCount": 1,
+      "fieldCount": 39,
+      "stateMatches": null,
+      "rows": [
+        {
+          "object": "РегистрБухгалтерии.Хозрасчетный",
+          "table": "example_ledger_regulated",
+          "fieldCount": 39,
+          "tableExists": false,
+          "projectTableExists": false,
+          "sourceSettings": {
+            "grouping": [
+              {
+                "enabled": true,
+                "field": "ПериодДень",
+                "path": "Период",
+                "function": "День",
+                "inclusive": false
+              }
+            ],
+            "maxItemsPerBatch": 0
+          }
+        }
+      ],
+      "connectionName": "demo Clickhouse - erp_25_demo_denis"
+    },
+    "fields": {
+      "items": [
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "Период",
+          "target": "Period",
+          "type": "DateTime64"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "Регистратор",
+          "target": "Registrator",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "НомерСтроки",
+          "target": "NomerStroki",
+          "type": "UInt32"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "Активность",
+          "target": "Aktivnost",
+          "type": "Bool"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "СчетДт",
+          "target": "SchetDt",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "СчетКт",
+          "target": "SchetKt",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "Организация",
+          "target": "Organizatsiya",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ВалютаДт",
+          "target": "ValyutaDt",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ВалютаКт",
+          "target": "ValyutaKt",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ПодразделениеДт",
+          "target": "PodrazdelenieDt",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ПодразделениеКт",
+          "target": "PodrazdelenieKt",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "НаправлениеДеятельностиДт",
+          "target": "NapravlenieDeyatelnostiDt",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "НаправлениеДеятельностиКт",
+          "target": "NapravlenieDeyatelnostiKt",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 15,
+          "scale": 2,
+          "source": "Сумма",
+          "target": "Summa",
+          "type": "Decimal"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 15,
+          "scale": 2,
+          "source": "ВалютнаяСуммаДт",
+          "target": "ValyutnayaSummaDt",
+          "type": "Decimal"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 15,
+          "scale": 2,
+          "source": "ВалютнаяСуммаКт",
+          "target": "ValyutnayaSummaKt",
+          "type": "Decimal"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 15,
+          "scale": 3,
+          "source": "КоличествоДт",
+          "target": "KolichestvoDt",
+          "type": "Decimal"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 15,
+          "scale": 3,
+          "source": "КоличествоКт",
+          "target": "KolichestvoKt",
+          "type": "Decimal"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 15,
+          "scale": 2,
+          "source": "СуммаНУДт",
+          "target": "SummaNUDt",
+          "type": "Decimal"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 15,
+          "scale": 2,
+          "source": "СуммаНУКт",
+          "target": "SummaNUKt",
+          "type": "Decimal"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 15,
+          "scale": 2,
+          "source": "СуммаПРДт",
+          "target": "SummaPRDt",
+          "type": "Decimal"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 15,
+          "scale": 2,
+          "source": "СуммаПРКт",
+          "target": "SummaPRKt",
+          "type": "Decimal"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 15,
+          "scale": 2,
+          "source": "СуммаВРДт",
+          "target": "SummaVRDt",
+          "type": "Decimal"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 15,
+          "scale": 2,
+          "source": "СуммаВРКт",
+          "target": "SummaVRKt",
+          "type": "Decimal"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "Содержание",
+          "target": "Soderzhanie",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "НеКорректироватьСтоимостьАвтоматически",
+          "target": "NeKorrektirovatStoimostAvtomaticheski",
+          "type": "Bool"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "Сторно",
+          "target": "Storno",
+          "type": "Bool"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "Параметр.ПериодДень",
+          "target": "ParametrPeriodDen",
+          "type": "DateTime64"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "РегистраторГуид",
+          "target": "RegistratorGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "СчетДтГуид",
+          "target": "SchetDtGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "СчетКтГуид",
+          "target": "SchetKtGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ОрганизацияГуид",
+          "target": "OrganizatsiyaGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ВалютаДтГуид",
+          "target": "ValyutaDtGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ВалютаКтГуид",
+          "target": "ValyutaKtGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ПодразделениеДтГуид",
+          "target": "PodrazdelenieDtGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ПодразделениеКтГуид",
+          "target": "PodrazdelenieKtGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "НаправлениеДеятельностиДтГуид",
+          "target": "NapravlenieDeyatelnostiDtGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "НаправлениеДеятельностиКтГуид",
+          "target": "NapravlenieDeyatelnostiKtGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_regulated",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "РегистраторТип",
+          "target": "RegistratorTip",
+          "type": "String"
+        }
+      ],
+      "total": 39,
+      "nextCursor": null
+    }
+  },
+  {
+    "kind": "international",
+    "definition": {
+      "projectName": "ledger_example_international_ef77c09c",
+      "object": "РегистрБухгалтерии.Международный",
+      "connectionName": "demo Clickhouse - erp_25_demo_denis",
+      "tableName": "example_ledger_international",
+      "segment": "День",
+      "maxItemsPerBatch": 0,
+      "includeGuids": true,
+      "includeMetadataTypes": true,
+      "selectedFields": []
+    },
+    "summary": {
+      "approved": true,
+      "projectName": "ledger_example_international_ef77c09c",
+      "rowCount": 1,
+      "fieldCount": 43,
+      "stateMatches": null,
+      "rows": [
+        {
+          "object": "РегистрБухгалтерии.Международный",
+          "table": "example_ledger_international",
+          "fieldCount": 43,
+          "tableExists": false,
+          "projectTableExists": false,
+          "sourceSettings": {
+            "grouping": [
+              {
+                "enabled": true,
+                "field": "ПериодДень",
+                "path": "Период",
+                "function": "День",
+                "inclusive": false
+              }
+            ],
+            "maxItemsPerBatch": 0
+          }
+        }
+      ],
+      "connectionName": "demo Clickhouse - erp_25_demo_denis"
+    },
+    "fields": {
+      "items": [
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "Период",
+          "target": "Period",
+          "type": "DateTime64"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "Регистратор",
+          "target": "Registrator",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "НомерСтроки",
+          "target": "NomerStroki",
+          "type": "UInt32"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "Активность",
+          "target": "Aktivnost",
+          "type": "Bool"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "СчетДт",
+          "target": "SchetDt",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "СчетКт",
+          "target": "SchetKt",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "Организация",
+          "target": "Organizatsiya",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ПодразделениеДт",
+          "target": "PodrazdelenieDt",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ПодразделениеКт",
+          "target": "PodrazdelenieKt",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ВалютаДт",
+          "target": "ValyutaDt",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ВалютаКт",
+          "target": "ValyutaKt",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "НаправлениеДеятельностиДт",
+          "target": "NapravlenieDeyatelnostiDt",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "НаправлениеДеятельностиКт",
+          "target": "NapravlenieDeyatelnostiKt",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 15,
+          "scale": 2,
+          "source": "Сумма",
+          "target": "Summa",
+          "type": "Decimal"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 15,
+          "scale": 2,
+          "source": "СуммаПредставления",
+          "target": "SummaPredstavleniya",
+          "type": "Decimal"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 15,
+          "scale": 2,
+          "source": "ВалютнаяСуммаДт",
+          "target": "ValyutnayaSummaDt",
+          "type": "Decimal"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 15,
+          "scale": 2,
+          "source": "ВалютнаяСуммаКт",
+          "target": "ValyutnayaSummaKt",
+          "type": "Decimal"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 15,
+          "scale": 3,
+          "source": "КоличествоДт",
+          "target": "KolichestvoDt",
+          "type": "Decimal"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 15,
+          "scale": 3,
+          "source": "КоличествоКт",
+          "target": "KolichestvoKt",
+          "type": "Decimal"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "Содержание",
+          "target": "Soderzhanie",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ШаблонПроводки",
+          "target": "SHablonProvodki",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ТипПроводки",
+          "target": "TipProvodki",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "СоответствиеСчетаДт",
+          "target": "SootvetstvieSchetaDt",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "СоответствиеСчетаКт",
+          "target": "SootvetstvieSchetaKt",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "Сторно",
+          "target": "Storno",
+          "type": "Bool"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ИдентификаторФинЗаписи",
+          "target": "IdentifikatorFinZapisi",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "НастройкаХозяйственнойОперации",
+          "target": "NastroykaKHozyaystvennoyOperatsii",
+          "type": "String"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "Параметр.ПериодДень",
+          "target": "ParametrPeriodDen",
+          "type": "DateTime64"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "РегистраторГуид",
+          "target": "RegistratorGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "СчетДтГуид",
+          "target": "SchetDtGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "СчетКтГуид",
+          "target": "SchetKtGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ОрганизацияГуид",
+          "target": "OrganizatsiyaGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ПодразделениеДтГуид",
+          "target": "PodrazdelenieDtGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ПодразделениеКтГуид",
+          "target": "PodrazdelenieKtGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ВалютаДтГуид",
+          "target": "ValyutaDtGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ВалютаКтГуид",
+          "target": "ValyutaKtGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "НаправлениеДеятельностиДтГуид",
+          "target": "NapravlenieDeyatelnostiDtGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "НаправлениеДеятельностиКтГуид",
+          "target": "NapravlenieDeyatelnostiKtGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "ШаблонПроводкиГуид",
+          "target": "SHablonProvodkiGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "СоответствиеСчетаДтГуид",
+          "target": "SootvetstvieSchetaDtGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "СоответствиеСчетаКтГуид",
+          "target": "SootvetstvieSchetaKtGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "НастройкаХозяйственнойОперацииГуид",
+          "target": "NastroykaKHozyaystvennoyOperatsiiGuid",
+          "type": "UUID"
+        },
+        {
+          "table": "example_ledger_international",
+          "nullable": true,
+          "precision": 0,
+          "scale": 0,
+          "source": "РегистраторТип",
+          "target": "RegistratorTip",
+          "type": "String"
+        }
+      ],
+      "total": 43,
+      "nextCursor": null
+    }
+  }
+]

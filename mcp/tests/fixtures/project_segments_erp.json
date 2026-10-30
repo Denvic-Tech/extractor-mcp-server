@@ -1,0 +1,6267 @@
+{
+  "capturedAt": "2026-10-03",
+  "source": "Real full and minimal-field 1C previews through local MCP; no project writes",
+  "cases": [
+    {
+      "case": "document_day",
+      "definition": {
+        "connectionName": "demo Clickhouse - erp_25_demo_denis",
+        "guidColumnNames": {},
+        "includeGuids": true,
+        "includeMetadataTypes": true,
+        "maxItemsPerBatch": 0,
+        "object": "Документ.ЗаказКлиента",
+        "projectName": "segment_test_9b3a1acf1c7b_document_day",
+        "segment": "День",
+        "segmentField": "",
+        "selectedFields": [],
+        "tableName": "segment_test_9b3a1acf1c7b_document_day"
+      },
+      "preview": {
+        "connectionName": "demo Clickhouse - erp_25_demo_denis",
+        "fields": [
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Партнер",
+            "target": "Partner",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Контрагент",
+            "target": "Kontragent",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Организация",
+            "target": "Organizatsiya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Соглашение",
+            "target": "Soglashenie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Сделка",
+            "target": "Sdelka",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Валюта",
+            "target": "Valyuta",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 2,
+            "source": "СуммаДокумента",
+            "target": "SummaDokumenta",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГрафикОплаты",
+            "target": "GrafikOplaty",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Склад",
+            "target": "Sklad",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЦенаВключаетНДС",
+            "target": "TSenaVklyuchaetNDS",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Менеджер",
+            "target": "Menedzher",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДополнительнаяИнформация",
+            "target": "DopolnitelnayaInformatsiya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДокументОснование",
+            "target": "DokumentOsnovanie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НеОтгружатьЧастями",
+            "target": "NeOtgruzhatCHastyami",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Статус",
+            "target": "Status",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "МаксимальныйКодСтроки",
+            "target": "MaksimalnyyKodStroki",
+            "type": "UInt32"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДатаСогласования",
+            "target": "DataSoglasovaniya",
+            "type": "Date32"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Согласован",
+            "target": "Soglasovan",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ФормаОплаты",
+            "target": "FormaOplaty",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "БанковскийСчет",
+            "target": "BankovskiySchet",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "БанковскийСчетКонтрагента",
+            "target": "BankovskiySchetKontragenta",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Касса",
+            "target": "Kassa",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 2,
+            "source": "СуммаАвансаДоОбеспечения",
+            "target": "SummaAvansaDoObespecheniya",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 2,
+            "source": "СуммаПредоплатыДоОтгрузки",
+            "target": "SummaPredoplatyDoOtgruzki",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДатаОтгрузки",
+            "target": "DataOtgruzki",
+            "type": "Date32"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АдресДоставки",
+            "target": "AdresDostavki",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НалогообложениеНДС",
+            "target": "NalogooblozhenieNDS",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СкидкиРассчитаны",
+            "target": "SkidkiRasschitany",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ХозяйственнаяОперация",
+            "target": "KHozyaystvennayaOperatsiya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Комментарий",
+            "target": "Kommentariy",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НомерПоДаннымКлиента",
+            "target": "NomerPoDannymKlienta",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДатаПоДаннымКлиента",
+            "target": "DataPoDannymKlienta",
+            "type": "Date32"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Грузоотправитель",
+            "target": "Gruzootpravitel",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Грузополучатель",
+            "target": "Gruzopoluchatel",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "БанковскийСчетГрузоотправителя",
+            "target": "BankovskiySchetGruzootpravitelya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "БанковскийСчетГрузополучателя",
+            "target": "BankovskiySchetGruzopoluchatelya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГруппаФинансовогоУчета",
+            "target": "GruppaFinansovogoUcheta",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КартаЛояльности",
+            "target": "KartaLoyalnosti",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Договор",
+            "target": "Dogovor",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Подразделение",
+            "target": "Podrazdelenie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Автор",
+            "target": "Avtor",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПорядокРасчетов",
+            "target": "PoryadokRaschetov",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Назначение",
+            "target": "Naznachenie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СпособДоставки",
+            "target": "SposobDostavki",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПеревозчикПартнер",
+            "target": "PerevozchikPartner",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЗонаДоставки",
+            "target": "ZonaDostavki",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВремяДоставкиС",
+            "target": "VremyaDostavkiS",
+            "type": "DateTime64"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВремяДоставкиПо",
+            "target": "VremyaDostavkiPo",
+            "type": "DateTime64"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АдресДоставкиПеревозчика",
+            "target": "AdresDostavkiPerevozchika",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АдресДоставкиЗначенияПолей",
+            "target": "AdresDostavkiZnacheniyaPoley",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АдресДоставкиПеревозчикаЗначенияПолей",
+            "target": "AdresDostavkiPerevozchikaZnacheniyaPoley",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДополнительнаяИнформацияПоДоставке",
+            "target": "DopolnitelnayaInformatsiyaPoDostavke",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КонтактноеЛицо",
+            "target": "KontaktnoeLitso",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Руководитель",
+            "target": "Rukovoditel",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГлавныйБухгалтер",
+            "target": "GlavnyyBukhgalter",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВернутьМногооборотнуюТару",
+            "target": "VernutMnogooborotnuyuTaru",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СрокВозвратаМногооборотнойТары",
+            "target": "SrokVozvrataMnogooborotnoyTary",
+            "type": "UInt8"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СостояниеЗаполненияМногооборотнойТары",
+            "target": "SostoyanieZapolneniyaMnogooborotnoyTary",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 2,
+            "source": "СуммаВозвратнойТары",
+            "target": "SummaVozvratnoyTary",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НазначениеПлатежа",
+            "target": "NaznacheniePlatezha",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ТребуетсяЗалогЗаТару",
+            "target": "TrebuetsyaZalogZaTaru",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Приоритет",
+            "target": "Prioritet",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ИдентификаторПлатежа",
+            "target": "IdentifikatorPlatezha",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОсобыеУсловияПеревозки",
+            "target": "OsobyeUsloviyaPerevozki",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОсобыеУсловияПеревозкиОписание",
+            "target": "OsobyeUsloviyaPerevozkiOpisanie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НаправлениеДеятельности",
+            "target": "NapravlenieDeyatelnosti",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОплатаВВалюте",
+            "target": "OplataVValyute",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОбъектРасчетов",
+            "target": "ObektRaschetov",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Сборщик",
+            "target": "Sborshchik",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Курьер",
+            "target": "Kurer",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АдресДоставкиЗначение",
+            "target": "AdresDostavkiZnachenie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АдресДоставкиПеревозчикаЗначение",
+            "target": "AdresDostavkiPerevozchikaZnachenie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЭтапГосконтрактаЕИС",
+            "target": "EtapGoskontraktaEIS",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЭтоЗаказКакСчет",
+            "target": "EtoZakazKakSchet",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Проведен",
+            "target": "Proveden",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Ссылка",
+            "target": "Ssylka",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПометкаУдаления",
+            "target": "PometkaUdaleniya",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Дата",
+            "target": "Data",
+            "type": "DateTime64"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Номер",
+            "target": "Nomer",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВерсияДанных",
+            "target": "VersiyaDannykh",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Параметр.ДатаДень",
+            "target": "ParametrDataDen",
+            "type": "DateTime64"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПартнерГуид",
+            "target": "PartnerGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КонтрагентГуид",
+            "target": "KontragentGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОрганизацияГуид",
+            "target": "OrganizatsiyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СоглашениеГуид",
+            "target": "SoglashenieGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СделкаГуид",
+            "target": "SdelkaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВалютаГуид",
+            "target": "ValyutaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГрафикОплатыГуид",
+            "target": "GrafikOplatyGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СкладГуид",
+            "target": "SkladGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "МенеджерГуид",
+            "target": "MenedzherGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДокументОснованиеГуид",
+            "target": "DokumentOsnovanieGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "БанковскийСчетГуид",
+            "target": "BankovskiySchetGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "БанковскийСчетКонтрагентаГуид",
+            "target": "BankovskiySchetKontragentaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КассаГуид",
+            "target": "KassaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГрузоотправительГуид",
+            "target": "GruzootpravitelGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГрузополучательГуид",
+            "target": "GruzopoluchatelGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "БанковскийСчетГрузоотправителяГуид",
+            "target": "BankovskiySchetGruzootpravitelyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "БанковскийСчетГрузополучателяГуид",
+            "target": "BankovskiySchetGruzopoluchatelyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГруппаФинансовогоУчетаГуид",
+            "target": "GruppaFinansovogoUchetaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КартаЛояльностиГуид",
+            "target": "KartaLoyalnostiGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДоговорГуид",
+            "target": "DogovorGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПодразделениеГуид",
+            "target": "PodrazdelenieGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АвторГуид",
+            "target": "AvtorGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НазначениеГуид",
+            "target": "NaznachenieGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПеревозчикПартнерГуид",
+            "target": "PerevozchikPartnerGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЗонаДоставкиГуид",
+            "target": "ZonaDostavkiGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КонтактноеЛицоГуид",
+            "target": "KontaktnoeLitsoGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "РуководительГуид",
+            "target": "RukovoditelGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГлавныйБухгалтерГуид",
+            "target": "GlavnyyBukhgalterGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПриоритетГуид",
+            "target": "PrioritetGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НаправлениеДеятельностиГуид",
+            "target": "NapravlenieDeyatelnostiGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОбъектРасчетовГуид",
+            "target": "ObektRaschetovGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СборщикГуид",
+            "target": "SborshchikGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КурьерГуид",
+            "target": "KurerGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СсылкаГуид",
+            "target": "SsylkaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДокументОснованиеТип",
+            "target": "DokumentOsnovanieTip",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АвторТип",
+            "target": "AvtorTip",
+            "type": "String"
+          }
+        ],
+        "object": "Документ.ЗаказКлиента",
+        "projectExists": false,
+        "projectName": "segment_test_9b3a1acf1c7b_document_day",
+        "sourceSettings": {
+          "dataParameters": [
+            {
+              "enabled": true,
+              "name": "ДатаДень",
+              "valueType": "Не определено"
+            }
+          ],
+          "grouping": [
+            {
+              "enabled": true,
+              "field": "ДатаДень",
+              "function": "День",
+              "inclusive": false,
+              "path": "Дата"
+            }
+          ],
+          "maxItemsPerBatch": null,
+          "numericSettings": [],
+          "objectKind": "Документы",
+          "objectName": "ЗаказКлиента",
+          "objectTable": "",
+          "periodicity": "",
+          "supported": true
+        },
+        "table": "segment_test_9b3a1acf1c7b_document_day",
+        "tableExists": false
+      },
+      "minimalDefinition": {
+        "connectionName": "demo Clickhouse - erp_25_demo_denis",
+        "guidColumnNames": {},
+        "includeGuids": true,
+        "includeMetadataTypes": true,
+        "maxItemsPerBatch": 0,
+        "object": "Документ.ЗаказКлиента",
+        "projectName": "segment_test_9b3a1acf1c7b_document_day_minimal",
+        "segment": "День",
+        "segmentField": "",
+        "selectedFields": [
+          "Дата",
+          "Номер",
+          "Параметр.ДатаДень",
+          "Ссылка",
+          "СсылкаГуид"
+        ],
+        "tableName": "segment_test_9b3a1acf1c7b_document_day_minimal"
+      },
+      "minimalPreview": {
+        "connectionName": "demo Clickhouse - erp_25_demo_denis",
+        "fields": [
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Ссылка",
+            "target": "Ssylka",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Дата",
+            "target": "Data",
+            "type": "DateTime64"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Номер",
+            "target": "Nomer",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Параметр.ДатаДень",
+            "target": "ParametrDataDen",
+            "type": "DateTime64"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СсылкаГуид",
+            "target": "SsylkaGuid",
+            "type": "UUID"
+          }
+        ],
+        "object": "Документ.ЗаказКлиента",
+        "projectExists": false,
+        "projectName": "segment_test_9b3a1acf1c7b_document_day_minimal",
+        "sourceSettings": {
+          "dataParameters": [
+            {
+              "enabled": true,
+              "name": "ДатаДень",
+              "valueType": "Не определено"
+            }
+          ],
+          "grouping": [
+            {
+              "enabled": true,
+              "field": "ДатаДень",
+              "function": "День",
+              "inclusive": false,
+              "path": "Дата"
+            }
+          ],
+          "maxItemsPerBatch": null,
+          "numericSettings": [],
+          "objectKind": "Документы",
+          "objectName": "ЗаказКлиента",
+          "objectTable": "",
+          "periodicity": "",
+          "supported": true
+        },
+        "table": "segment_test_9b3a1acf1c7b_document_day_minimal",
+        "tableExists": false
+      }
+    },
+    {
+      "case": "document_reference",
+      "definition": {
+        "connectionName": "demo Clickhouse - erp_25_demo_denis",
+        "guidColumnNames": {},
+        "includeGuids": true,
+        "includeMetadataTypes": true,
+        "maxItemsPerBatch": 1000,
+        "object": "Документ.ЗаказКлиента",
+        "projectName": "segment_test_9b3a1acf1c7b_document_reference",
+        "segment": "По значению",
+        "segmentField": "Ссылка",
+        "selectedFields": [],
+        "tableName": "segment_test_9b3a1acf1c7b_document_reference"
+      },
+      "preview": {
+        "connectionName": "demo Clickhouse - erp_25_demo_denis",
+        "fields": [
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Партнер",
+            "target": "Partner",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Контрагент",
+            "target": "Kontragent",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Организация",
+            "target": "Organizatsiya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Соглашение",
+            "target": "Soglashenie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Сделка",
+            "target": "Sdelka",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Валюта",
+            "target": "Valyuta",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 2,
+            "source": "СуммаДокумента",
+            "target": "SummaDokumenta",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГрафикОплаты",
+            "target": "GrafikOplaty",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Склад",
+            "target": "Sklad",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЦенаВключаетНДС",
+            "target": "TSenaVklyuchaetNDS",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Менеджер",
+            "target": "Menedzher",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДополнительнаяИнформация",
+            "target": "DopolnitelnayaInformatsiya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДокументОснование",
+            "target": "DokumentOsnovanie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НеОтгружатьЧастями",
+            "target": "NeOtgruzhatCHastyami",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Статус",
+            "target": "Status",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "МаксимальныйКодСтроки",
+            "target": "MaksimalnyyKodStroki",
+            "type": "UInt32"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДатаСогласования",
+            "target": "DataSoglasovaniya",
+            "type": "Date32"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Согласован",
+            "target": "Soglasovan",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ФормаОплаты",
+            "target": "FormaOplaty",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "БанковскийСчет",
+            "target": "BankovskiySchet",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "БанковскийСчетКонтрагента",
+            "target": "BankovskiySchetKontragenta",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Касса",
+            "target": "Kassa",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 2,
+            "source": "СуммаАвансаДоОбеспечения",
+            "target": "SummaAvansaDoObespecheniya",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 2,
+            "source": "СуммаПредоплатыДоОтгрузки",
+            "target": "SummaPredoplatyDoOtgruzki",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДатаОтгрузки",
+            "target": "DataOtgruzki",
+            "type": "Date32"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АдресДоставки",
+            "target": "AdresDostavki",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НалогообложениеНДС",
+            "target": "NalogooblozhenieNDS",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СкидкиРассчитаны",
+            "target": "SkidkiRasschitany",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ХозяйственнаяОперация",
+            "target": "KHozyaystvennayaOperatsiya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Комментарий",
+            "target": "Kommentariy",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НомерПоДаннымКлиента",
+            "target": "NomerPoDannymKlienta",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДатаПоДаннымКлиента",
+            "target": "DataPoDannymKlienta",
+            "type": "Date32"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Грузоотправитель",
+            "target": "Gruzootpravitel",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Грузополучатель",
+            "target": "Gruzopoluchatel",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "БанковскийСчетГрузоотправителя",
+            "target": "BankovskiySchetGruzootpravitelya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "БанковскийСчетГрузополучателя",
+            "target": "BankovskiySchetGruzopoluchatelya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГруппаФинансовогоУчета",
+            "target": "GruppaFinansovogoUcheta",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КартаЛояльности",
+            "target": "KartaLoyalnosti",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Договор",
+            "target": "Dogovor",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Подразделение",
+            "target": "Podrazdelenie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Автор",
+            "target": "Avtor",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПорядокРасчетов",
+            "target": "PoryadokRaschetov",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Назначение",
+            "target": "Naznachenie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СпособДоставки",
+            "target": "SposobDostavki",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПеревозчикПартнер",
+            "target": "PerevozchikPartner",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЗонаДоставки",
+            "target": "ZonaDostavki",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВремяДоставкиС",
+            "target": "VremyaDostavkiS",
+            "type": "DateTime64"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВремяДоставкиПо",
+            "target": "VremyaDostavkiPo",
+            "type": "DateTime64"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АдресДоставкиПеревозчика",
+            "target": "AdresDostavkiPerevozchika",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АдресДоставкиЗначенияПолей",
+            "target": "AdresDostavkiZnacheniyaPoley",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АдресДоставкиПеревозчикаЗначенияПолей",
+            "target": "AdresDostavkiPerevozchikaZnacheniyaPoley",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДополнительнаяИнформацияПоДоставке",
+            "target": "DopolnitelnayaInformatsiyaPoDostavke",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КонтактноеЛицо",
+            "target": "KontaktnoeLitso",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Руководитель",
+            "target": "Rukovoditel",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГлавныйБухгалтер",
+            "target": "GlavnyyBukhgalter",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВернутьМногооборотнуюТару",
+            "target": "VernutMnogooborotnuyuTaru",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СрокВозвратаМногооборотнойТары",
+            "target": "SrokVozvrataMnogooborotnoyTary",
+            "type": "UInt8"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СостояниеЗаполненияМногооборотнойТары",
+            "target": "SostoyanieZapolneniyaMnogooborotnoyTary",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 2,
+            "source": "СуммаВозвратнойТары",
+            "target": "SummaVozvratnoyTary",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НазначениеПлатежа",
+            "target": "NaznacheniePlatezha",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ТребуетсяЗалогЗаТару",
+            "target": "TrebuetsyaZalogZaTaru",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Приоритет",
+            "target": "Prioritet",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ИдентификаторПлатежа",
+            "target": "IdentifikatorPlatezha",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОсобыеУсловияПеревозки",
+            "target": "OsobyeUsloviyaPerevozki",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОсобыеУсловияПеревозкиОписание",
+            "target": "OsobyeUsloviyaPerevozkiOpisanie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НаправлениеДеятельности",
+            "target": "NapravlenieDeyatelnosti",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОплатаВВалюте",
+            "target": "OplataVValyute",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОбъектРасчетов",
+            "target": "ObektRaschetov",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Сборщик",
+            "target": "Sborshchik",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Курьер",
+            "target": "Kurer",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АдресДоставкиЗначение",
+            "target": "AdresDostavkiZnachenie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АдресДоставкиПеревозчикаЗначение",
+            "target": "AdresDostavkiPerevozchikaZnachenie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЭтапГосконтрактаЕИС",
+            "target": "EtapGoskontraktaEIS",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЭтоЗаказКакСчет",
+            "target": "EtoZakazKakSchet",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Проведен",
+            "target": "Proveden",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Ссылка",
+            "target": "Ssylka",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПометкаУдаления",
+            "target": "PometkaUdaleniya",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Дата",
+            "target": "Data",
+            "type": "DateTime64"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Номер",
+            "target": "Nomer",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВерсияДанных",
+            "target": "VersiyaDannykh",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Параметр.Ссылка",
+            "target": "ParametrSsylka",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПартнерГуид",
+            "target": "PartnerGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КонтрагентГуид",
+            "target": "KontragentGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОрганизацияГуид",
+            "target": "OrganizatsiyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СоглашениеГуид",
+            "target": "SoglashenieGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СделкаГуид",
+            "target": "SdelkaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВалютаГуид",
+            "target": "ValyutaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГрафикОплатыГуид",
+            "target": "GrafikOplatyGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СкладГуид",
+            "target": "SkladGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "МенеджерГуид",
+            "target": "MenedzherGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДокументОснованиеГуид",
+            "target": "DokumentOsnovanieGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "БанковскийСчетГуид",
+            "target": "BankovskiySchetGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "БанковскийСчетКонтрагентаГуид",
+            "target": "BankovskiySchetKontragentaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КассаГуид",
+            "target": "KassaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГрузоотправительГуид",
+            "target": "GruzootpravitelGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГрузополучательГуид",
+            "target": "GruzopoluchatelGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "БанковскийСчетГрузоотправителяГуид",
+            "target": "BankovskiySchetGruzootpravitelyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "БанковскийСчетГрузополучателяГуид",
+            "target": "BankovskiySchetGruzopoluchatelyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГруппаФинансовогоУчетаГуид",
+            "target": "GruppaFinansovogoUchetaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КартаЛояльностиГуид",
+            "target": "KartaLoyalnostiGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДоговорГуид",
+            "target": "DogovorGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПодразделениеГуид",
+            "target": "PodrazdelenieGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АвторГуид",
+            "target": "AvtorGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НазначениеГуид",
+            "target": "NaznachenieGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПеревозчикПартнерГуид",
+            "target": "PerevozchikPartnerGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЗонаДоставкиГуид",
+            "target": "ZonaDostavkiGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КонтактноеЛицоГуид",
+            "target": "KontaktnoeLitsoGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "РуководительГуид",
+            "target": "RukovoditelGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГлавныйБухгалтерГуид",
+            "target": "GlavnyyBukhgalterGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПриоритетГуид",
+            "target": "PrioritetGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НаправлениеДеятельностиГуид",
+            "target": "NapravlenieDeyatelnostiGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОбъектРасчетовГуид",
+            "target": "ObektRaschetovGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СборщикГуид",
+            "target": "SborshchikGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КурьерГуид",
+            "target": "KurerGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СсылкаГуид",
+            "target": "SsylkaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПараметрСсылкаГуид",
+            "target": "ParametrSsylkaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДокументОснованиеТип",
+            "target": "DokumentOsnovanieTip",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АвторТип",
+            "target": "AvtorTip",
+            "type": "String"
+          }
+        ],
+        "object": "Документ.ЗаказКлиента",
+        "projectExists": false,
+        "projectName": "segment_test_9b3a1acf1c7b_document_reference",
+        "sourceSettings": {
+          "dataParameters": [
+            {
+              "enabled": true,
+              "name": "Ссылка",
+              "valueType": "Не определено"
+            }
+          ],
+          "grouping": [
+            {
+              "enabled": true,
+              "field": "Ссылка",
+              "function": "",
+              "inclusive": false,
+              "path": "Ссылка"
+            }
+          ],
+          "maxItemsPerBatch": 1000,
+          "numericSettings": [],
+          "objectKind": "Документы",
+          "objectName": "ЗаказКлиента",
+          "objectTable": "",
+          "periodicity": "",
+          "supported": true
+        },
+        "table": "segment_test_9b3a1acf1c7b_document_reference",
+        "tableExists": false
+      },
+      "minimalDefinition": {
+        "connectionName": "demo Clickhouse - erp_25_demo_denis",
+        "guidColumnNames": {},
+        "includeGuids": true,
+        "includeMetadataTypes": true,
+        "maxItemsPerBatch": 1000,
+        "object": "Документ.ЗаказКлиента",
+        "projectName": "segment_test_9b3a1acf1c7b_document_reference_minimal",
+        "segment": "По значению",
+        "segmentField": "Ссылка",
+        "selectedFields": [
+          "Дата",
+          "Номер",
+          "Параметр.Ссылка",
+          "Ссылка",
+          "СсылкаГуид"
+        ],
+        "tableName": "segment_test_9b3a1acf1c7b_document_reference_minimal"
+      },
+      "minimalPreview": {
+        "connectionName": "demo Clickhouse - erp_25_demo_denis",
+        "fields": [
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Ссылка",
+            "target": "Ssylka",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Дата",
+            "target": "Data",
+            "type": "DateTime64"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Номер",
+            "target": "Nomer",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Параметр.Ссылка",
+            "target": "ParametrSsylka",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СсылкаГуид",
+            "target": "SsylkaGuid",
+            "type": "UUID"
+          }
+        ],
+        "object": "Документ.ЗаказКлиента",
+        "projectExists": false,
+        "projectName": "segment_test_9b3a1acf1c7b_document_reference_minimal",
+        "sourceSettings": {
+          "dataParameters": [
+            {
+              "enabled": true,
+              "name": "Ссылка",
+              "valueType": "Не определено"
+            }
+          ],
+          "grouping": [
+            {
+              "enabled": true,
+              "field": "Ссылка",
+              "function": "",
+              "inclusive": false,
+              "path": "Ссылка"
+            }
+          ],
+          "maxItemsPerBatch": 1000,
+          "numericSettings": [],
+          "objectKind": "Документы",
+          "objectName": "ЗаказКлиента",
+          "objectTable": "",
+          "periodicity": "",
+          "supported": true
+        },
+        "table": "segment_test_9b3a1acf1c7b_document_reference_minimal",
+        "tableExists": false
+      }
+    },
+    {
+      "case": "catalog_name_prefix",
+      "definition": {
+        "connectionName": "demo Clickhouse - erp_25_demo_denis",
+        "guidColumnNames": {},
+        "includeGuids": true,
+        "includeMetadataTypes": true,
+        "maxItemsPerBatch": 0,
+        "object": "Справочник.Номенклатура",
+        "projectName": "segment_test_9b3a1acf1c7b_catalog_name_prefix",
+        "segment": "Первые две буквы",
+        "segmentField": "Наименование",
+        "selectedFields": [],
+        "tableName": "segment_test_9b3a1acf1c7b_catalog_name_prefix"
+      },
+      "preview": {
+        "connectionName": "demo Clickhouse - erp_25_demo_denis",
+        "fields": [
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕдиницаИзмерения",
+            "target": "EdinitsaIzmereniya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Артикул",
+            "target": "Artikul",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВариантОформленияПродажи",
+            "target": "VariantOformleniyaProdazhi",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВесЕдиницаИзмерения",
+            "target": "VesEdinitsaIzmereniya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ВесЗнаменатель",
+            "target": "VesZnamenatel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВесИспользовать",
+            "target": "VesIspolzovat",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВесМожноУказыватьВДокументах",
+            "target": "VesMozhnoUkazyvatVDokumentakh",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ВесЧислитель",
+            "target": "VesCHislitel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВестиУчетПоГТД",
+            "target": "VestiUchetPoGTD",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВестиУчетСертификатовНоменклатуры",
+            "target": "VestiUchetSertifikatovNomenklatury",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВидАлкогольнойПродукции",
+            "target": "VidAlkogolnoyProduktsii",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВидНоменклатуры",
+            "target": "VidNomenklatury",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АлкогольнаяПродукция",
+            "target": "AlkogolnayaProduktsiya",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НаименованиеПолное",
+            "target": "NaimenovaniePolnoe",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕдиницаИзмеренияСрокаГодности",
+            "target": "EdinitsaIzmereniyaSrokaGodnosti",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕстьТоварыДругогоКачества",
+            "target": "EstTovaryDrugogoKachestva",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ИмпортнаяАлкогольнаяПродукция",
+            "target": "ImportnayaAlkogolnayaProduktsiya",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДлинаЕдиницаИзмерения",
+            "target": "DlinaEdinitsaIzmereniya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ДлинаЗнаменатель",
+            "target": "DlinaZnamenatel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДлинаИспользовать",
+            "target": "DlinaIspolzovat",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДлинаМожноУказыватьВДокументах",
+            "target": "DlinaMozhnoUkazyvatVDokumentakh",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ДлинаЧислитель",
+            "target": "DlinaCHislitel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ИспользованиеХарактеристик",
+            "target": "IspolzovanieKHarakteristik",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ИспользоватьИндивидуальныйШаблонЦенника",
+            "target": "IspolzovatIndividualnyySHablonTSennika",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ИспользоватьИндивидуальныйШаблонЭтикетки",
+            "target": "IspolzovatIndividualnyySHablonEtiketki",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ИспользоватьУпаковки",
+            "target": "IspolzovatUpakovki",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Качество",
+            "target": "Kachestvo",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодДляПоиска",
+            "target": "KodDlyaPoiska",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Марка",
+            "target": "Marka",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НаборУпаковок",
+            "target": "NaborUpakovok",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГруппаФинансовогоУчета",
+            "target": "GruppaFinansovogoUcheta",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НоменклатураМногооборотнаяТара",
+            "target": "NomenklaturaMnogooborotnayaTara",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 18,
+            "scale": 6,
+            "source": "ОбъемДАЛ",
+            "target": "ObemDAL",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Описание",
+            "target": "Opisanie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПодакцизныйТовар",
+            "target": "PodaktsiznyyTovar",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПоставляетсяВМногооборотнойТаре",
+            "target": "PostavlyaetsyaVMnogooborotnoyTare",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Производитель",
+            "target": "Proizvoditel",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПроизводительИмпортерКонтрагент",
+            "target": "ProizvoditelImporterKontragent",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СкладскаяГруппа",
+            "target": "SkladskayaGruppa",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СрокГодности",
+            "target": "SrokGodnosti",
+            "type": "UInt64"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СтавкаНДС",
+            "target": "StavkaNDS",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ТипНоменклатуры",
+            "target": "TipNomenklatury",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ТоварнаяКатегория",
+            "target": "TovarnayaKategoriya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ФайлКартинки",
+            "target": "FaylKartinki",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ФайлОписанияДляСайта",
+            "target": "FaylOpisaniyaDlyaSayta",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОбъемЕдиницаИзмерения",
+            "target": "ObemEdinitsaIzmereniya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ОбъемЗнаменатель",
+            "target": "ObemZnamenatel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОбъемИспользовать",
+            "target": "ObemIspolzovat",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОбъемМожноУказыватьВДокументах",
+            "target": "ObemMozhnoUkazyvatVDokumentakh",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ОбъемЧислитель",
+            "target": "ObemCHislitel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ХарактеристикаМногооборотнаяТара",
+            "target": "KHarakteristikaMnogooborotnayaTara",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПлощадьЕдиницаИзмерения",
+            "target": "PloshchadEdinitsaIzmereniya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ПлощадьЗнаменатель",
+            "target": "PloshchadZnamenatel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СхемаОбеспечения",
+            "target": "SkhemaObespecheniya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СпособОбеспеченияПотребностей",
+            "target": "SposobObespecheniyaPotrebnostey",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПлощадьИспользовать",
+            "target": "PloshchadIspolzovat",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПлощадьМожноУказыватьВДокументах",
+            "target": "PloshchadMozhnoUkazyvatVDokumentakh",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ПлощадьЧислитель",
+            "target": "PloshchadCHislitel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЦеноваяГруппа",
+            "target": "TSenovayaGruppa",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ШаблонЦенника",
+            "target": "SHablonTSennika",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕдиницаДляОтчетов",
+            "target": "EdinitsaDlyaOtchetov",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "КоэффициентЕдиницыДляОтчетов",
+            "target": "KoeffitsientEdinitsyDlyaOtchetov",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ШаблонЭтикетки",
+            "target": "SHablonEtiketki",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СезоннаяГруппа",
+            "target": "SezonnayaGruppa",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КоллекцияНоменклатуры",
+            "target": "KollektsiyaNomenklatury",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Принципал",
+            "target": "Printsipal",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Контрагент",
+            "target": "Kontragent",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "РейтингПродаж",
+            "target": "ReytingProdazh",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОбособленнаяЗакупкаПродажа",
+            "target": "ObosoblennayaZakupkaProdazha",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГруппаАналитическогоУчета",
+            "target": "GruppaAnaliticheskogoUcheta",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодТНВЭД",
+            "target": "KodTNVED",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКВЭД",
+            "target": "KodOKVED",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКП",
+            "target": "KodOKP",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВладелецСерий",
+            "target": "VladeletsSeriy",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВладелецХарактеристик",
+            "target": "VladeletsKHarakteristik",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВладелецТоварныхКатегорий",
+            "target": "VladeletsTovarnykhKategoriy",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 5,
+            "scale": 3,
+            "source": "Крепость",
+            "target": "Krepost",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОсобенностьУчета",
+            "target": "OsobennostUcheta",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПродукцияМаркируемаяДляГИСМ",
+            "target": "ProduktsiyaMarkiruemayaDlyaGISM",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КиЗГИСМ",
+            "target": "KiZGISM",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КиЗГИСМВид",
+            "target": "KiZGISMVid",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КиЗГИСМСпособВыпускаВОборот",
+            "target": "KiZGISMSposobVypuskaVOborot",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КиЗГИСМGTIN",
+            "target": "KiZGISMGTIN",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КиЗГИСМРазмер",
+            "target": "KiZGISMRazmer",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПодконтрольнаяПродукцияВЕТИС",
+            "target": "PodkontrolnayaProduktsiyaVETIS",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АлкогольнаяПродукцияВоВскрытойТаре",
+            "target": "AlkogolnayaProduktsiyaVoVskrytoyTare",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодРаздел7ДекларацииНДС",
+            "target": "KodRazdel7DeklaratsiiNDS",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКВЭД2",
+            "target": "KodOKVED2",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКПД2",
+            "target": "KodOKPD2",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодВидаНоменклатурнойКлассификации",
+            "target": "KodVidaNomenklaturnoyKlassifikatsii",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НаименованиеВидаНоменклатурнойКлассификации",
+            "target": "NaimenovanieVidaNomenklaturnoyKlassifikatsii",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕдиницаИзмеренияТНВЭД",
+            "target": "EdinitsaIzmereniyaTNVED",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СтранаПроисхождения",
+            "target": "StranaProiskhozhdeniya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПрослеживаемыйТовар",
+            "target": "ProslezhivaemyyTovar",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодТРУ",
+            "target": "KodTRU",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ИмяПредопределенныхДанных",
+            "target": "ImyaPredopredelennykhDannykh",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Предопределенный",
+            "target": "Predopredelennyy",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Ссылка",
+            "target": "Ssylka",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПометкаУдаления",
+            "target": "PometkaUdaleniya",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЭтоГруппа",
+            "target": "EtoGruppa",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Родитель",
+            "target": "Roditel",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Наименование",
+            "target": "Naimenovanie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Код",
+            "target": "Kod",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НаименованиеЯзык1",
+            "target": "NaimenovanieYAzyk1",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВерсияДанных",
+            "target": "VersiyaDannykh",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Параметр.НаименованиеПервыеДвеБуквы",
+            "target": "ParametrNaimenovaniePervyeDveBukvy",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕдиницаИзмеренияГуид",
+            "target": "EdinitsaIzmereniyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВесЕдиницаИзмеренияГуид",
+            "target": "VesEdinitsaIzmereniyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВидАлкогольнойПродукцииГуид",
+            "target": "VidAlkogolnoyProduktsiiGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВидНоменклатурыГуид",
+            "target": "VidNomenklaturyGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДлинаЕдиницаИзмеренияГуид",
+            "target": "DlinaEdinitsaIzmereniyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "МаркаГуид",
+            "target": "MarkaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НаборУпаковокГуид",
+            "target": "NaborUpakovokGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГруппаФинансовогоУчетаГуид",
+            "target": "GruppaFinansovogoUchetaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НоменклатураМногооборотнаяТараГуид",
+            "target": "NomenklaturaMnogooborotnayaTaraGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПроизводительГуид",
+            "target": "ProizvoditelGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПроизводительИмпортерКонтрагентГуид",
+            "target": "ProizvoditelImporterKontragentGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СкладскаяГруппаГуид",
+            "target": "SkladskayaGruppaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СтавкаНДСГуид",
+            "target": "StavkaNDSGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ТоварнаяКатегорияГуид",
+            "target": "TovarnayaKategoriyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ФайлКартинкиГуид",
+            "target": "FaylKartinkiGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ФайлОписанияДляСайтаГуид",
+            "target": "FaylOpisaniyaDlyaSaytaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОбъемЕдиницаИзмеренияГуид",
+            "target": "ObemEdinitsaIzmereniyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ХарактеристикаМногооборотнаяТараГуид",
+            "target": "KHarakteristikaMnogooborotnayaTaraGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПлощадьЕдиницаИзмеренияГуид",
+            "target": "PloshchadEdinitsaIzmereniyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СхемаОбеспеченияГуид",
+            "target": "SkhemaObespecheniyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СпособОбеспеченияПотребностейГуид",
+            "target": "SposobObespecheniyaPotrebnosteyGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЦеноваяГруппаГуид",
+            "target": "TSenovayaGruppaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ШаблонЦенникаГуид",
+            "target": "SHablonTSennikaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕдиницаДляОтчетовГуид",
+            "target": "EdinitsaDlyaOtchetovGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ШаблонЭтикеткиГуид",
+            "target": "SHablonEtiketkiGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СезоннаяГруппаГуид",
+            "target": "SezonnayaGruppaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КоллекцияНоменклатурыГуид",
+            "target": "KollektsiyaNomenklaturyGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПринципалГуид",
+            "target": "PrintsipalGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КонтрагентГуид",
+            "target": "KontragentGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "РейтингПродажГуид",
+            "target": "ReytingProdazhGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГруппаАналитическогоУчетаГуид",
+            "target": "GruppaAnaliticheskogoUchetaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодТНВЭДГуид",
+            "target": "KodTNVEDGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКВЭДГуид",
+            "target": "KodOKVEDGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКПГуид",
+            "target": "KodOKPGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВладелецСерийГуид",
+            "target": "VladeletsSeriyGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВладелецХарактеристикГуид",
+            "target": "VladeletsKHarakteristikGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВладелецТоварныхКатегорийГуид",
+            "target": "VladeletsTovarnykhKategoriyGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодРаздел7ДекларацииНДСГуид",
+            "target": "KodRazdel7DeklaratsiiNDSGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКВЭД2Гуид",
+            "target": "KodOKVED2Guid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКПД2Гуид",
+            "target": "KodOKPD2Guid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕдиницаИзмеренияТНВЭДГуид",
+            "target": "EdinitsaIzmereniyaTNVEDGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СтранаПроисхожденияГуид",
+            "target": "StranaProiskhozhdeniyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СсылкаГуид",
+            "target": "SsylkaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "РодительГуид",
+            "target": "RoditelGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПринципалТип",
+            "target": "PrintsipalTip",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КонтрагентТип",
+            "target": "KontragentTip",
+            "type": "String"
+          }
+        ],
+        "object": "Справочник.Номенклатура",
+        "projectExists": false,
+        "projectName": "segment_test_9b3a1acf1c7b_catalog_name_prefix",
+        "sourceSettings": {
+          "dataParameters": [
+            {
+              "enabled": true,
+              "name": "НаименованиеПервыеДвеБуквы",
+              "valueType": "Не определено"
+            }
+          ],
+          "grouping": [
+            {
+              "enabled": true,
+              "field": "НаименованиеПервыеДвеБуквы",
+              "function": "Первые две буквы",
+              "inclusive": false,
+              "path": "Наименование"
+            }
+          ],
+          "maxItemsPerBatch": null,
+          "numericSettings": [],
+          "objectKind": "Справочники",
+          "objectName": "Номенклатура",
+          "objectTable": "",
+          "periodicity": "",
+          "supported": true
+        },
+        "table": "segment_test_9b3a1acf1c7b_catalog_name_prefix",
+        "tableExists": false
+      },
+      "minimalDefinition": {
+        "connectionName": "demo Clickhouse - erp_25_demo_denis",
+        "guidColumnNames": {},
+        "includeGuids": true,
+        "includeMetadataTypes": true,
+        "maxItemsPerBatch": 0,
+        "object": "Справочник.Номенклатура",
+        "projectName": "segment_test_9b3a1acf1c7b_catalog_name_prefix_minimal",
+        "segment": "Первые две буквы",
+        "segmentField": "Наименование",
+        "selectedFields": [
+          "Код",
+          "Наименование",
+          "Параметр.НаименованиеПервыеДвеБуквы",
+          "Ссылка",
+          "СсылкаГуид"
+        ],
+        "tableName": "segment_test_9b3a1acf1c7b_catalog_name_prefix_minimal"
+      },
+      "minimalPreview": {
+        "connectionName": "demo Clickhouse - erp_25_demo_denis",
+        "fields": [
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Ссылка",
+            "target": "Ssylka",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Наименование",
+            "target": "Naimenovanie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Код",
+            "target": "Kod",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Параметр.НаименованиеПервыеДвеБуквы",
+            "target": "ParametrNaimenovaniePervyeDveBukvy",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СсылкаГуид",
+            "target": "SsylkaGuid",
+            "type": "UUID"
+          }
+        ],
+        "object": "Справочник.Номенклатура",
+        "projectExists": false,
+        "projectName": "segment_test_9b3a1acf1c7b_catalog_name_prefix_minimal",
+        "sourceSettings": {
+          "dataParameters": [
+            {
+              "enabled": true,
+              "name": "НаименованиеПервыеДвеБуквы",
+              "valueType": "Не определено"
+            }
+          ],
+          "grouping": [
+            {
+              "enabled": true,
+              "field": "НаименованиеПервыеДвеБуквы",
+              "function": "Первые две буквы",
+              "inclusive": false,
+              "path": "Наименование"
+            }
+          ],
+          "maxItemsPerBatch": null,
+          "numericSettings": [],
+          "objectKind": "Справочники",
+          "objectName": "Номенклатура",
+          "objectTable": "",
+          "periodicity": "",
+          "supported": true
+        },
+        "table": "segment_test_9b3a1acf1c7b_catalog_name_prefix_minimal",
+        "tableExists": false
+      }
+    },
+    {
+      "case": "catalog_code_prefix",
+      "definition": {
+        "connectionName": "demo Clickhouse - erp_25_demo_denis",
+        "guidColumnNames": {},
+        "includeGuids": true,
+        "includeMetadataTypes": true,
+        "maxItemsPerBatch": 0,
+        "object": "Справочник.Номенклатура",
+        "projectName": "segment_test_9b3a1acf1c7b_catalog_code_prefix",
+        "segment": "Первые две буквы",
+        "segmentField": "Код",
+        "selectedFields": [],
+        "tableName": "segment_test_9b3a1acf1c7b_catalog_code_prefix"
+      },
+      "preview": {
+        "connectionName": "demo Clickhouse - erp_25_demo_denis",
+        "fields": [
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕдиницаИзмерения",
+            "target": "EdinitsaIzmereniya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Артикул",
+            "target": "Artikul",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВариантОформленияПродажи",
+            "target": "VariantOformleniyaProdazhi",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВесЕдиницаИзмерения",
+            "target": "VesEdinitsaIzmereniya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ВесЗнаменатель",
+            "target": "VesZnamenatel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВесИспользовать",
+            "target": "VesIspolzovat",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВесМожноУказыватьВДокументах",
+            "target": "VesMozhnoUkazyvatVDokumentakh",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ВесЧислитель",
+            "target": "VesCHislitel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВестиУчетПоГТД",
+            "target": "VestiUchetPoGTD",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВестиУчетСертификатовНоменклатуры",
+            "target": "VestiUchetSertifikatovNomenklatury",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВидАлкогольнойПродукции",
+            "target": "VidAlkogolnoyProduktsii",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВидНоменклатуры",
+            "target": "VidNomenklatury",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АлкогольнаяПродукция",
+            "target": "AlkogolnayaProduktsiya",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НаименованиеПолное",
+            "target": "NaimenovaniePolnoe",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕдиницаИзмеренияСрокаГодности",
+            "target": "EdinitsaIzmereniyaSrokaGodnosti",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕстьТоварыДругогоКачества",
+            "target": "EstTovaryDrugogoKachestva",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ИмпортнаяАлкогольнаяПродукция",
+            "target": "ImportnayaAlkogolnayaProduktsiya",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДлинаЕдиницаИзмерения",
+            "target": "DlinaEdinitsaIzmereniya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ДлинаЗнаменатель",
+            "target": "DlinaZnamenatel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДлинаИспользовать",
+            "target": "DlinaIspolzovat",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДлинаМожноУказыватьВДокументах",
+            "target": "DlinaMozhnoUkazyvatVDokumentakh",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ДлинаЧислитель",
+            "target": "DlinaCHislitel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ИспользованиеХарактеристик",
+            "target": "IspolzovanieKHarakteristik",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ИспользоватьИндивидуальныйШаблонЦенника",
+            "target": "IspolzovatIndividualnyySHablonTSennika",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ИспользоватьИндивидуальныйШаблонЭтикетки",
+            "target": "IspolzovatIndividualnyySHablonEtiketki",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ИспользоватьУпаковки",
+            "target": "IspolzovatUpakovki",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Качество",
+            "target": "Kachestvo",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодДляПоиска",
+            "target": "KodDlyaPoiska",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Марка",
+            "target": "Marka",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НаборУпаковок",
+            "target": "NaborUpakovok",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГруппаФинансовогоУчета",
+            "target": "GruppaFinansovogoUcheta",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НоменклатураМногооборотнаяТара",
+            "target": "NomenklaturaMnogooborotnayaTara",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 18,
+            "scale": 6,
+            "source": "ОбъемДАЛ",
+            "target": "ObemDAL",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Описание",
+            "target": "Opisanie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПодакцизныйТовар",
+            "target": "PodaktsiznyyTovar",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПоставляетсяВМногооборотнойТаре",
+            "target": "PostavlyaetsyaVMnogooborotnoyTare",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Производитель",
+            "target": "Proizvoditel",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПроизводительИмпортерКонтрагент",
+            "target": "ProizvoditelImporterKontragent",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СкладскаяГруппа",
+            "target": "SkladskayaGruppa",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СрокГодности",
+            "target": "SrokGodnosti",
+            "type": "UInt64"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СтавкаНДС",
+            "target": "StavkaNDS",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ТипНоменклатуры",
+            "target": "TipNomenklatury",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ТоварнаяКатегория",
+            "target": "TovarnayaKategoriya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ФайлКартинки",
+            "target": "FaylKartinki",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ФайлОписанияДляСайта",
+            "target": "FaylOpisaniyaDlyaSayta",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОбъемЕдиницаИзмерения",
+            "target": "ObemEdinitsaIzmereniya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ОбъемЗнаменатель",
+            "target": "ObemZnamenatel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОбъемИспользовать",
+            "target": "ObemIspolzovat",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОбъемМожноУказыватьВДокументах",
+            "target": "ObemMozhnoUkazyvatVDokumentakh",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ОбъемЧислитель",
+            "target": "ObemCHislitel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ХарактеристикаМногооборотнаяТара",
+            "target": "KHarakteristikaMnogooborotnayaTara",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПлощадьЕдиницаИзмерения",
+            "target": "PloshchadEdinitsaIzmereniya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ПлощадьЗнаменатель",
+            "target": "PloshchadZnamenatel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СхемаОбеспечения",
+            "target": "SkhemaObespecheniya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СпособОбеспеченияПотребностей",
+            "target": "SposobObespecheniyaPotrebnostey",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПлощадьИспользовать",
+            "target": "PloshchadIspolzovat",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПлощадьМожноУказыватьВДокументах",
+            "target": "PloshchadMozhnoUkazyvatVDokumentakh",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ПлощадьЧислитель",
+            "target": "PloshchadCHislitel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЦеноваяГруппа",
+            "target": "TSenovayaGruppa",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ШаблонЦенника",
+            "target": "SHablonTSennika",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕдиницаДляОтчетов",
+            "target": "EdinitsaDlyaOtchetov",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "КоэффициентЕдиницыДляОтчетов",
+            "target": "KoeffitsientEdinitsyDlyaOtchetov",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ШаблонЭтикетки",
+            "target": "SHablonEtiketki",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СезоннаяГруппа",
+            "target": "SezonnayaGruppa",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КоллекцияНоменклатуры",
+            "target": "KollektsiyaNomenklatury",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Принципал",
+            "target": "Printsipal",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Контрагент",
+            "target": "Kontragent",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "РейтингПродаж",
+            "target": "ReytingProdazh",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОбособленнаяЗакупкаПродажа",
+            "target": "ObosoblennayaZakupkaProdazha",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГруппаАналитическогоУчета",
+            "target": "GruppaAnaliticheskogoUcheta",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодТНВЭД",
+            "target": "KodTNVED",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКВЭД",
+            "target": "KodOKVED",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКП",
+            "target": "KodOKP",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВладелецСерий",
+            "target": "VladeletsSeriy",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВладелецХарактеристик",
+            "target": "VladeletsKHarakteristik",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВладелецТоварныхКатегорий",
+            "target": "VladeletsTovarnykhKategoriy",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 5,
+            "scale": 3,
+            "source": "Крепость",
+            "target": "Krepost",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОсобенностьУчета",
+            "target": "OsobennostUcheta",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПродукцияМаркируемаяДляГИСМ",
+            "target": "ProduktsiyaMarkiruemayaDlyaGISM",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КиЗГИСМ",
+            "target": "KiZGISM",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КиЗГИСМВид",
+            "target": "KiZGISMVid",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КиЗГИСМСпособВыпускаВОборот",
+            "target": "KiZGISMSposobVypuskaVOborot",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КиЗГИСМGTIN",
+            "target": "KiZGISMGTIN",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КиЗГИСМРазмер",
+            "target": "KiZGISMRazmer",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПодконтрольнаяПродукцияВЕТИС",
+            "target": "PodkontrolnayaProduktsiyaVETIS",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АлкогольнаяПродукцияВоВскрытойТаре",
+            "target": "AlkogolnayaProduktsiyaVoVskrytoyTare",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодРаздел7ДекларацииНДС",
+            "target": "KodRazdel7DeklaratsiiNDS",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКВЭД2",
+            "target": "KodOKVED2",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКПД2",
+            "target": "KodOKPD2",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодВидаНоменклатурнойКлассификации",
+            "target": "KodVidaNomenklaturnoyKlassifikatsii",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НаименованиеВидаНоменклатурнойКлассификации",
+            "target": "NaimenovanieVidaNomenklaturnoyKlassifikatsii",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕдиницаИзмеренияТНВЭД",
+            "target": "EdinitsaIzmereniyaTNVED",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СтранаПроисхождения",
+            "target": "StranaProiskhozhdeniya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПрослеживаемыйТовар",
+            "target": "ProslezhivaemyyTovar",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодТРУ",
+            "target": "KodTRU",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ИмяПредопределенныхДанных",
+            "target": "ImyaPredopredelennykhDannykh",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Предопределенный",
+            "target": "Predopredelennyy",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Ссылка",
+            "target": "Ssylka",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПометкаУдаления",
+            "target": "PometkaUdaleniya",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЭтоГруппа",
+            "target": "EtoGruppa",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Родитель",
+            "target": "Roditel",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Наименование",
+            "target": "Naimenovanie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Код",
+            "target": "Kod",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НаименованиеЯзык1",
+            "target": "NaimenovanieYAzyk1",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВерсияДанных",
+            "target": "VersiyaDannykh",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Параметр.КодПервыеДвеБуквы",
+            "target": "ParametrKodPervyeDveBukvy",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕдиницаИзмеренияГуид",
+            "target": "EdinitsaIzmereniyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВесЕдиницаИзмеренияГуид",
+            "target": "VesEdinitsaIzmereniyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВидАлкогольнойПродукцииГуид",
+            "target": "VidAlkogolnoyProduktsiiGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВидНоменклатурыГуид",
+            "target": "VidNomenklaturyGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДлинаЕдиницаИзмеренияГуид",
+            "target": "DlinaEdinitsaIzmereniyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "МаркаГуид",
+            "target": "MarkaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НаборУпаковокГуид",
+            "target": "NaborUpakovokGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГруппаФинансовогоУчетаГуид",
+            "target": "GruppaFinansovogoUchetaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НоменклатураМногооборотнаяТараГуид",
+            "target": "NomenklaturaMnogooborotnayaTaraGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПроизводительГуид",
+            "target": "ProizvoditelGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПроизводительИмпортерКонтрагентГуид",
+            "target": "ProizvoditelImporterKontragentGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СкладскаяГруппаГуид",
+            "target": "SkladskayaGruppaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СтавкаНДСГуид",
+            "target": "StavkaNDSGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ТоварнаяКатегорияГуид",
+            "target": "TovarnayaKategoriyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ФайлКартинкиГуид",
+            "target": "FaylKartinkiGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ФайлОписанияДляСайтаГуид",
+            "target": "FaylOpisaniyaDlyaSaytaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОбъемЕдиницаИзмеренияГуид",
+            "target": "ObemEdinitsaIzmereniyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ХарактеристикаМногооборотнаяТараГуид",
+            "target": "KHarakteristikaMnogooborotnayaTaraGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПлощадьЕдиницаИзмеренияГуид",
+            "target": "PloshchadEdinitsaIzmereniyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СхемаОбеспеченияГуид",
+            "target": "SkhemaObespecheniyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СпособОбеспеченияПотребностейГуид",
+            "target": "SposobObespecheniyaPotrebnosteyGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЦеноваяГруппаГуид",
+            "target": "TSenovayaGruppaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ШаблонЦенникаГуид",
+            "target": "SHablonTSennikaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕдиницаДляОтчетовГуид",
+            "target": "EdinitsaDlyaOtchetovGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ШаблонЭтикеткиГуид",
+            "target": "SHablonEtiketkiGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СезоннаяГруппаГуид",
+            "target": "SezonnayaGruppaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КоллекцияНоменклатурыГуид",
+            "target": "KollektsiyaNomenklaturyGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПринципалГуид",
+            "target": "PrintsipalGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КонтрагентГуид",
+            "target": "KontragentGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "РейтингПродажГуид",
+            "target": "ReytingProdazhGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГруппаАналитическогоУчетаГуид",
+            "target": "GruppaAnaliticheskogoUchetaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодТНВЭДГуид",
+            "target": "KodTNVEDGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКВЭДГуид",
+            "target": "KodOKVEDGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКПГуид",
+            "target": "KodOKPGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВладелецСерийГуид",
+            "target": "VladeletsSeriyGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВладелецХарактеристикГуид",
+            "target": "VladeletsKHarakteristikGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВладелецТоварныхКатегорийГуид",
+            "target": "VladeletsTovarnykhKategoriyGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодРаздел7ДекларацииНДСГуид",
+            "target": "KodRazdel7DeklaratsiiNDSGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКВЭД2Гуид",
+            "target": "KodOKVED2Guid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКПД2Гуид",
+            "target": "KodOKPD2Guid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕдиницаИзмеренияТНВЭДГуид",
+            "target": "EdinitsaIzmereniyaTNVEDGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СтранаПроисхожденияГуид",
+            "target": "StranaProiskhozhdeniyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СсылкаГуид",
+            "target": "SsylkaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "РодительГуид",
+            "target": "RoditelGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПринципалТип",
+            "target": "PrintsipalTip",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КонтрагентТип",
+            "target": "KontragentTip",
+            "type": "String"
+          }
+        ],
+        "object": "Справочник.Номенклатура",
+        "projectExists": false,
+        "projectName": "segment_test_9b3a1acf1c7b_catalog_code_prefix",
+        "sourceSettings": {
+          "dataParameters": [
+            {
+              "enabled": true,
+              "name": "КодПервыеДвеБуквы",
+              "valueType": "Не определено"
+            }
+          ],
+          "grouping": [
+            {
+              "enabled": true,
+              "field": "КодПервыеДвеБуквы",
+              "function": "Первые две буквы",
+              "inclusive": false,
+              "path": "Код"
+            }
+          ],
+          "maxItemsPerBatch": null,
+          "numericSettings": [],
+          "objectKind": "Справочники",
+          "objectName": "Номенклатура",
+          "objectTable": "",
+          "periodicity": "",
+          "supported": true
+        },
+        "table": "segment_test_9b3a1acf1c7b_catalog_code_prefix",
+        "tableExists": false
+      },
+      "minimalDefinition": {
+        "connectionName": "demo Clickhouse - erp_25_demo_denis",
+        "guidColumnNames": {},
+        "includeGuids": true,
+        "includeMetadataTypes": true,
+        "maxItemsPerBatch": 0,
+        "object": "Справочник.Номенклатура",
+        "projectName": "segment_test_9b3a1acf1c7b_catalog_code_prefix_minimal",
+        "segment": "Первые две буквы",
+        "segmentField": "Код",
+        "selectedFields": [
+          "Код",
+          "Наименование",
+          "Параметр.КодПервыеДвеБуквы",
+          "Ссылка",
+          "СсылкаГуид"
+        ],
+        "tableName": "segment_test_9b3a1acf1c7b_catalog_code_prefix_minimal"
+      },
+      "minimalPreview": {
+        "connectionName": "demo Clickhouse - erp_25_demo_denis",
+        "fields": [
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Ссылка",
+            "target": "Ssylka",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Наименование",
+            "target": "Naimenovanie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Код",
+            "target": "Kod",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Параметр.КодПервыеДвеБуквы",
+            "target": "ParametrKodPervyeDveBukvy",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СсылкаГуид",
+            "target": "SsylkaGuid",
+            "type": "UUID"
+          }
+        ],
+        "object": "Справочник.Номенклатура",
+        "projectExists": false,
+        "projectName": "segment_test_9b3a1acf1c7b_catalog_code_prefix_minimal",
+        "sourceSettings": {
+          "dataParameters": [
+            {
+              "enabled": true,
+              "name": "КодПервыеДвеБуквы",
+              "valueType": "Не определено"
+            }
+          ],
+          "grouping": [
+            {
+              "enabled": true,
+              "field": "КодПервыеДвеБуквы",
+              "function": "Первые две буквы",
+              "inclusive": false,
+              "path": "Код"
+            }
+          ],
+          "maxItemsPerBatch": null,
+          "numericSettings": [],
+          "objectKind": "Справочники",
+          "objectName": "Номенклатура",
+          "objectTable": "",
+          "periodicity": "",
+          "supported": true
+        },
+        "table": "segment_test_9b3a1acf1c7b_catalog_code_prefix_minimal",
+        "tableExists": false
+      }
+    },
+    {
+      "case": "catalog_reference",
+      "definition": {
+        "connectionName": "demo Clickhouse - erp_25_demo_denis",
+        "guidColumnNames": {},
+        "includeGuids": true,
+        "includeMetadataTypes": true,
+        "maxItemsPerBatch": 1000,
+        "object": "Справочник.Номенклатура",
+        "projectName": "segment_test_9b3a1acf1c7b_catalog_reference",
+        "segment": "По значению",
+        "segmentField": "Ссылка",
+        "selectedFields": [],
+        "tableName": "segment_test_9b3a1acf1c7b_catalog_reference"
+      },
+      "preview": {
+        "connectionName": "demo Clickhouse - erp_25_demo_denis",
+        "fields": [
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕдиницаИзмерения",
+            "target": "EdinitsaIzmereniya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Артикул",
+            "target": "Artikul",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВариантОформленияПродажи",
+            "target": "VariantOformleniyaProdazhi",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВесЕдиницаИзмерения",
+            "target": "VesEdinitsaIzmereniya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ВесЗнаменатель",
+            "target": "VesZnamenatel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВесИспользовать",
+            "target": "VesIspolzovat",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВесМожноУказыватьВДокументах",
+            "target": "VesMozhnoUkazyvatVDokumentakh",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ВесЧислитель",
+            "target": "VesCHislitel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВестиУчетПоГТД",
+            "target": "VestiUchetPoGTD",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВестиУчетСертификатовНоменклатуры",
+            "target": "VestiUchetSertifikatovNomenklatury",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВидАлкогольнойПродукции",
+            "target": "VidAlkogolnoyProduktsii",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВидНоменклатуры",
+            "target": "VidNomenklatury",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АлкогольнаяПродукция",
+            "target": "AlkogolnayaProduktsiya",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НаименованиеПолное",
+            "target": "NaimenovaniePolnoe",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕдиницаИзмеренияСрокаГодности",
+            "target": "EdinitsaIzmereniyaSrokaGodnosti",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕстьТоварыДругогоКачества",
+            "target": "EstTovaryDrugogoKachestva",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ИмпортнаяАлкогольнаяПродукция",
+            "target": "ImportnayaAlkogolnayaProduktsiya",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДлинаЕдиницаИзмерения",
+            "target": "DlinaEdinitsaIzmereniya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ДлинаЗнаменатель",
+            "target": "DlinaZnamenatel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДлинаИспользовать",
+            "target": "DlinaIspolzovat",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДлинаМожноУказыватьВДокументах",
+            "target": "DlinaMozhnoUkazyvatVDokumentakh",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ДлинаЧислитель",
+            "target": "DlinaCHislitel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ИспользованиеХарактеристик",
+            "target": "IspolzovanieKHarakteristik",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ИспользоватьИндивидуальныйШаблонЦенника",
+            "target": "IspolzovatIndividualnyySHablonTSennika",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ИспользоватьИндивидуальныйШаблонЭтикетки",
+            "target": "IspolzovatIndividualnyySHablonEtiketki",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ИспользоватьУпаковки",
+            "target": "IspolzovatUpakovki",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Качество",
+            "target": "Kachestvo",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодДляПоиска",
+            "target": "KodDlyaPoiska",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Марка",
+            "target": "Marka",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НаборУпаковок",
+            "target": "NaborUpakovok",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГруппаФинансовогоУчета",
+            "target": "GruppaFinansovogoUcheta",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НоменклатураМногооборотнаяТара",
+            "target": "NomenklaturaMnogooborotnayaTara",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 18,
+            "scale": 6,
+            "source": "ОбъемДАЛ",
+            "target": "ObemDAL",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Описание",
+            "target": "Opisanie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПодакцизныйТовар",
+            "target": "PodaktsiznyyTovar",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПоставляетсяВМногооборотнойТаре",
+            "target": "PostavlyaetsyaVMnogooborotnoyTare",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Производитель",
+            "target": "Proizvoditel",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПроизводительИмпортерКонтрагент",
+            "target": "ProizvoditelImporterKontragent",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СкладскаяГруппа",
+            "target": "SkladskayaGruppa",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СрокГодности",
+            "target": "SrokGodnosti",
+            "type": "UInt64"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СтавкаНДС",
+            "target": "StavkaNDS",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ТипНоменклатуры",
+            "target": "TipNomenklatury",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ТоварнаяКатегория",
+            "target": "TovarnayaKategoriya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ФайлКартинки",
+            "target": "FaylKartinki",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ФайлОписанияДляСайта",
+            "target": "FaylOpisaniyaDlyaSayta",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОбъемЕдиницаИзмерения",
+            "target": "ObemEdinitsaIzmereniya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ОбъемЗнаменатель",
+            "target": "ObemZnamenatel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОбъемИспользовать",
+            "target": "ObemIspolzovat",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОбъемМожноУказыватьВДокументах",
+            "target": "ObemMozhnoUkazyvatVDokumentakh",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ОбъемЧислитель",
+            "target": "ObemCHislitel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ХарактеристикаМногооборотнаяТара",
+            "target": "KHarakteristikaMnogooborotnayaTara",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПлощадьЕдиницаИзмерения",
+            "target": "PloshchadEdinitsaIzmereniya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ПлощадьЗнаменатель",
+            "target": "PloshchadZnamenatel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СхемаОбеспечения",
+            "target": "SkhemaObespecheniya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СпособОбеспеченияПотребностей",
+            "target": "SposobObespecheniyaPotrebnostey",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПлощадьИспользовать",
+            "target": "PloshchadIspolzovat",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПлощадьМожноУказыватьВДокументах",
+            "target": "PloshchadMozhnoUkazyvatVDokumentakh",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "ПлощадьЧислитель",
+            "target": "PloshchadCHislitel",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЦеноваяГруппа",
+            "target": "TSenovayaGruppa",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ШаблонЦенника",
+            "target": "SHablonTSennika",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕдиницаДляОтчетов",
+            "target": "EdinitsaDlyaOtchetov",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 15,
+            "scale": 3,
+            "source": "КоэффициентЕдиницыДляОтчетов",
+            "target": "KoeffitsientEdinitsyDlyaOtchetov",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ШаблонЭтикетки",
+            "target": "SHablonEtiketki",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СезоннаяГруппа",
+            "target": "SezonnayaGruppa",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КоллекцияНоменклатуры",
+            "target": "KollektsiyaNomenklatury",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Принципал",
+            "target": "Printsipal",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Контрагент",
+            "target": "Kontragent",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "РейтингПродаж",
+            "target": "ReytingProdazh",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОбособленнаяЗакупкаПродажа",
+            "target": "ObosoblennayaZakupkaProdazha",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГруппаАналитическогоУчета",
+            "target": "GruppaAnaliticheskogoUcheta",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодТНВЭД",
+            "target": "KodTNVED",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКВЭД",
+            "target": "KodOKVED",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКП",
+            "target": "KodOKP",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВладелецСерий",
+            "target": "VladeletsSeriy",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВладелецХарактеристик",
+            "target": "VladeletsKHarakteristik",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВладелецТоварныхКатегорий",
+            "target": "VladeletsTovarnykhKategoriy",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 5,
+            "scale": 3,
+            "source": "Крепость",
+            "target": "Krepost",
+            "type": "Decimal"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОсобенностьУчета",
+            "target": "OsobennostUcheta",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПродукцияМаркируемаяДляГИСМ",
+            "target": "ProduktsiyaMarkiruemayaDlyaGISM",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КиЗГИСМ",
+            "target": "KiZGISM",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КиЗГИСМВид",
+            "target": "KiZGISMVid",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КиЗГИСМСпособВыпускаВОборот",
+            "target": "KiZGISMSposobVypuskaVOborot",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КиЗГИСМGTIN",
+            "target": "KiZGISMGTIN",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КиЗГИСМРазмер",
+            "target": "KiZGISMRazmer",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПодконтрольнаяПродукцияВЕТИС",
+            "target": "PodkontrolnayaProduktsiyaVETIS",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "АлкогольнаяПродукцияВоВскрытойТаре",
+            "target": "AlkogolnayaProduktsiyaVoVskrytoyTare",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодРаздел7ДекларацииНДС",
+            "target": "KodRazdel7DeklaratsiiNDS",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКВЭД2",
+            "target": "KodOKVED2",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКПД2",
+            "target": "KodOKPD2",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодВидаНоменклатурнойКлассификации",
+            "target": "KodVidaNomenklaturnoyKlassifikatsii",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НаименованиеВидаНоменклатурнойКлассификации",
+            "target": "NaimenovanieVidaNomenklaturnoyKlassifikatsii",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕдиницаИзмеренияТНВЭД",
+            "target": "EdinitsaIzmereniyaTNVED",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СтранаПроисхождения",
+            "target": "StranaProiskhozhdeniya",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПрослеживаемыйТовар",
+            "target": "ProslezhivaemyyTovar",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодТРУ",
+            "target": "KodTRU",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ИмяПредопределенныхДанных",
+            "target": "ImyaPredopredelennykhDannykh",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Предопределенный",
+            "target": "Predopredelennyy",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Ссылка",
+            "target": "Ssylka",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПометкаУдаления",
+            "target": "PometkaUdaleniya",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЭтоГруппа",
+            "target": "EtoGruppa",
+            "type": "Bool"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Родитель",
+            "target": "Roditel",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Наименование",
+            "target": "Naimenovanie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Код",
+            "target": "Kod",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НаименованиеЯзык1",
+            "target": "NaimenovanieYAzyk1",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВерсияДанных",
+            "target": "VersiyaDannykh",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Параметр.Ссылка",
+            "target": "ParametrSsylka",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕдиницаИзмеренияГуид",
+            "target": "EdinitsaIzmereniyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВесЕдиницаИзмеренияГуид",
+            "target": "VesEdinitsaIzmereniyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВидАлкогольнойПродукцииГуид",
+            "target": "VidAlkogolnoyProduktsiiGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВидНоменклатурыГуид",
+            "target": "VidNomenklaturyGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ДлинаЕдиницаИзмеренияГуид",
+            "target": "DlinaEdinitsaIzmereniyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "МаркаГуид",
+            "target": "MarkaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НаборУпаковокГуид",
+            "target": "NaborUpakovokGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГруппаФинансовогоУчетаГуид",
+            "target": "GruppaFinansovogoUchetaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "НоменклатураМногооборотнаяТараГуид",
+            "target": "NomenklaturaMnogooborotnayaTaraGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПроизводительГуид",
+            "target": "ProizvoditelGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПроизводительИмпортерКонтрагентГуид",
+            "target": "ProizvoditelImporterKontragentGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СкладскаяГруппаГуид",
+            "target": "SkladskayaGruppaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СтавкаНДСГуид",
+            "target": "StavkaNDSGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ТоварнаяКатегорияГуид",
+            "target": "TovarnayaKategoriyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ФайлКартинкиГуид",
+            "target": "FaylKartinkiGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ФайлОписанияДляСайтаГуид",
+            "target": "FaylOpisaniyaDlyaSaytaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ОбъемЕдиницаИзмеренияГуид",
+            "target": "ObemEdinitsaIzmereniyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ХарактеристикаМногооборотнаяТараГуид",
+            "target": "KHarakteristikaMnogooborotnayaTaraGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПлощадьЕдиницаИзмеренияГуид",
+            "target": "PloshchadEdinitsaIzmereniyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СхемаОбеспеченияГуид",
+            "target": "SkhemaObespecheniyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СпособОбеспеченияПотребностейГуид",
+            "target": "SposobObespecheniyaPotrebnosteyGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЦеноваяГруппаГуид",
+            "target": "TSenovayaGruppaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ШаблонЦенникаГуид",
+            "target": "SHablonTSennikaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕдиницаДляОтчетовГуид",
+            "target": "EdinitsaDlyaOtchetovGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ШаблонЭтикеткиГуид",
+            "target": "SHablonEtiketkiGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СезоннаяГруппаГуид",
+            "target": "SezonnayaGruppaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КоллекцияНоменклатурыГуид",
+            "target": "KollektsiyaNomenklaturyGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПринципалГуид",
+            "target": "PrintsipalGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КонтрагентГуид",
+            "target": "KontragentGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "РейтингПродажГуид",
+            "target": "ReytingProdazhGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ГруппаАналитическогоУчетаГуид",
+            "target": "GruppaAnaliticheskogoUchetaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодТНВЭДГуид",
+            "target": "KodTNVEDGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКВЭДГуид",
+            "target": "KodOKVEDGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКПГуид",
+            "target": "KodOKPGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВладелецСерийГуид",
+            "target": "VladeletsSeriyGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВладелецХарактеристикГуид",
+            "target": "VladeletsKHarakteristikGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ВладелецТоварныхКатегорийГуид",
+            "target": "VladeletsTovarnykhKategoriyGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодРаздел7ДекларацииНДСГуид",
+            "target": "KodRazdel7DeklaratsiiNDSGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКВЭД2Гуид",
+            "target": "KodOKVED2Guid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КодОКПД2Гуид",
+            "target": "KodOKPD2Guid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ЕдиницаИзмеренияТНВЭДГуид",
+            "target": "EdinitsaIzmereniyaTNVEDGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СтранаПроисхожденияГуид",
+            "target": "StranaProiskhozhdeniyaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СсылкаГуид",
+            "target": "SsylkaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "РодительГуид",
+            "target": "RoditelGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПараметрСсылкаГуид",
+            "target": "ParametrSsylkaGuid",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "ПринципалТип",
+            "target": "PrintsipalTip",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "КонтрагентТип",
+            "target": "KontragentTip",
+            "type": "String"
+          }
+        ],
+        "object": "Справочник.Номенклатура",
+        "projectExists": false,
+        "projectName": "segment_test_9b3a1acf1c7b_catalog_reference",
+        "sourceSettings": {
+          "dataParameters": [
+            {
+              "enabled": true,
+              "name": "Ссылка",
+              "valueType": "Не определено"
+            }
+          ],
+          "grouping": [
+            {
+              "enabled": true,
+              "field": "Ссылка",
+              "function": "",
+              "inclusive": false,
+              "path": "Ссылка"
+            }
+          ],
+          "maxItemsPerBatch": 1000,
+          "numericSettings": [],
+          "objectKind": "Справочники",
+          "objectName": "Номенклатура",
+          "objectTable": "",
+          "periodicity": "",
+          "supported": true
+        },
+        "table": "segment_test_9b3a1acf1c7b_catalog_reference",
+        "tableExists": false
+      },
+      "minimalDefinition": {
+        "connectionName": "demo Clickhouse - erp_25_demo_denis",
+        "guidColumnNames": {},
+        "includeGuids": true,
+        "includeMetadataTypes": true,
+        "maxItemsPerBatch": 1000,
+        "object": "Справочник.Номенклатура",
+        "projectName": "segment_test_9b3a1acf1c7b_catalog_reference_minimal",
+        "segment": "По значению",
+        "segmentField": "Ссылка",
+        "selectedFields": [
+          "Код",
+          "Наименование",
+          "Параметр.Ссылка",
+          "Ссылка",
+          "СсылкаГуид"
+        ],
+        "tableName": "segment_test_9b3a1acf1c7b_catalog_reference_minimal"
+      },
+      "minimalPreview": {
+        "connectionName": "demo Clickhouse - erp_25_demo_denis",
+        "fields": [
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Ссылка",
+            "target": "Ssylka",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Наименование",
+            "target": "Naimenovanie",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Код",
+            "target": "Kod",
+            "type": "String"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "Параметр.Ссылка",
+            "target": "ParametrSsylka",
+            "type": "UUID"
+          },
+          {
+            "nullable": true,
+            "precision": 0,
+            "scale": 0,
+            "source": "СсылкаГуид",
+            "target": "SsylkaGuid",
+            "type": "UUID"
+          }
+        ],
+        "object": "Справочник.Номенклатура",
+        "projectExists": false,
+        "projectName": "segment_test_9b3a1acf1c7b_catalog_reference_minimal",
+        "sourceSettings": {
+          "dataParameters": [
+            {
+              "enabled": true,
+              "name": "Ссылка",
+              "valueType": "Не определено"
+            }
+          ],
+          "grouping": [
+            {
+              "enabled": true,
+              "field": "Ссылка",
+              "function": "",
+              "inclusive": false,
+              "path": "Ссылка"
+            }
+          ],
+          "maxItemsPerBatch": 1000,
+          "numericSettings": [],
+          "objectKind": "Справочники",
+          "objectName": "Номенклатура",
+          "objectTable": "",
+          "periodicity": "",
+          "supported": true
+        },
+        "table": "segment_test_9b3a1acf1c7b_catalog_reference_minimal",
+        "tableExists": false
+      }
+    }
+  ]
+}

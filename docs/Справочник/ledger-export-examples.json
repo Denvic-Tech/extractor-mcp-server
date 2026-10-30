@@ -1,0 +1,24 @@
+[
+  {
+    "projectName": "Example ledger regulated",
+    "object": "РегистрБухгалтерии.Хозрасчетный",
+    "connectionName": "demo Clickhouse - erp_25_demo_denis",
+    "tableName": "example_ledger_regulated",
+    "segment": "День",
+    "maxItemsPerBatch": 0,
+    "includeGuids": true,
+    "includeMetadataTypes": true,
+    "selectedFields": []
+  },
+  {
+    "projectName": "Example ledger international",
+    "object": "РегистрБухгалтерии.Международный",
+    "connectionName": "demo Clickhouse - erp_25_demo_denis",
+    "tableName": "example_ledger_international",
+    "segment": "День",
+    "maxItemsPerBatch": 0,
+    "includeGuids": true,
+    "includeMetadataTypes": true,
+    "selectedFields": []
+  }
+]

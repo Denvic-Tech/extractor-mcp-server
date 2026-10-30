@@ -1,0 +1,8 @@
+# Скопируйте этот пример в bases.yaml и замените заглушки своими данными.
+# Рабочий bases.yaml содержит учётные данные и не должен попадать в Git.
+bases:
+  - base_id: erp
+    name: "Пример базы 1С"
+    url: "https://1c.example.test/erp/hs/extractor-projects/v1"
+    user: "REPLACE_WITH_1C_USER"
+    password: "REPLACE_WITH_1C_PASSWORD"
