@@ -1,275 +1,243 @@
-# Hosted project workflow
+# MCP: проекты и строки
 
-Ask the unresolved naming choice: native transliteration or English equivalents
-for table and field names. Preserve an explicit choice. The agent chooses English
-equivalents; the native wizard does not translate semantics automatically. Use
-the existing wizard for the source and `fieldChanges` for saved SQL mappings;
-preserve types, GUIDs and segment roles. See the naming and mapping section below.
+## Маршрут новой выгрузки
 
-API 3.3.5: сначала `list_bases`, выбери `base_id` и передавай его во все вызовы. Несколько HTTP-баз настраиваются YAML; DCC-базы обнаруживаются через DCC. Новую многоролевую сегментацию передавай массивом; описание - [partition-segments.md](partition-segments.md). Одно-сегментные примеры ниже остаются допустимым отдельным вариантом и не смешиваются с массивом.
+Сначала следуй [дереву решений](project-dialog.md): способ «Объекты» или «Запрос»,
+источник, окружение и приемник, сегменты и роли, затем поля и имена.
+Готовый запрос может не содержать параметров. После выбора сегмента добавь
+недостающие параметры и ограничения по смыслу и свяжи их с очередью; готовый
+текст передавай в `queryText`. Подробные преобразования для срезов, оборотов
+и условий - [источник «Запрос»](26-query-sources.md). Существующие параметры,
+расчеты, детализацию и уже согласованные ответы сохраняй.
+Для Query с сегментами получи штатный список сущностей, выбери владельца `object`
+с реальным отбором набора данных через параметр и затем настрой штатный обработчик.
+Полный Query передавай с `segmentation: []` без `object`. Автоматическое построение
+Query допускает одну ось; несколько осей требуют готового проекта или явно
+настроенного обработчика очереди. Чтение, запуск и field_mapping уже настроенного
+проекта этим пределом не ограничиваются.
+Зависимости для обогащения сохрани выключенными. Фиксированный параметр может
+управлять отбором, расчетный параметр сам по себе не является отбором; роли
+сегментов очереди назначаются отдельно. Выбор сохраняй при обновлении.
 
-## Error diagnostics
 
-MCP 3.3.7 preserves published API codes and `errorId` for HTTP and DCC. Updated EPA_Projects methods can also return `errorDetails` with sanitized native text and its module/line, plus Boolean `errorDetailsRedacted` and `errorDetailsTruncated` flags. Text is limited to 4000 characters. Messages containing sensitive markers are hidden entirely before truncation; arbitrary upstream `error` text is never used as detailed diagnostics.
+Для чтения и изменения параметров строки без перестроения источника читай
+[24-row-settings.md](row-settings.md): `rowSettings.saved`, capability
+`row_settings`, прямой SQL-update либо preview-план и штатное назначение каждого поля.
 
-The expected EPA contract remains 3.3.5. Older modules may omit details; use `errorId` to correlate the native log. An error never proves that no write occurred: reconcile the original `operation_id`, project and receiver before another attempt.
+MCP 3.3.8 сохраняет опубликованные коды API и errorId для HTTP и DCC. EPA может дополнительно вернуть очищенный errorDetails (до 4000 символов), errorDetailsRedacted и errorDetailsTruncated. Текст с признаками секретов скрывается целиком до сокращения; произвольное поле error не считается подробной диагностикой.
 
-## SQL operations and plan-based receivers
+Для ClickHouse, PostgreSQL, MySQL, MS SQL и Kafka перед записью читай [проверки приёмника](receiver-name-preflight.md).
 
-Check the selected base's actual readiness and the connected tools' input schemas.
-With `direct_sql_operations` and matching tool schemas, SQL supports the existing
-`create_project(definition=..., operation_id=...)`,
+API 3.3.5: сначала `list_bases`, выбери `base_id` и передавай его во все вызовы. Несколько HTTP-баз настраиваются YAML; DCC-базы обнаруживаются через DCC. Новую многоролевую сегментацию передавай массивом; описание - [16-catalog-document-segments.md](partition-segments.md). Одно-сегментные примеры ниже остаются допустимым отдельным вариантом и не смешиваются с массивом.
+
+## Прямые SQL-операции
+
+Передавай физическое имя таблицы в `tableName` без SQL-кавычек. При создании
+и в JSON-шаблоне MCP принимает до 100 символов: первая позиция - латинская
+или русская буква либо подчёркивание, далее также допустимы цифры и точки.
+Этот предел API не отменяет более строгих ограничений приёмника.
+Штатный помощник и драйвер проверяют ограничения выбранного приёмника.
+
+Сохраняй `Реализация.Товары` или `таблица.2` целиком как одно имя таблицы,
+включая регистр и кириллицу. Точка внутри `tableName` не задаёт схему или
+базу; их драйвер получает из штатных настроек подключения и строки проекта.
+Например, PostgreSQL экранирует `таблица.2` как один идентификатор в двойных
+кавычках. Не добавляй кавычки в JSON и не транслитерируй явно выбранное имя.
+Если выбор не задан, сначала предложи короткое английское имя по смыслу.
+
+Для сохранённого проекта используй фактические имена из `verify_project`;
+запуск не требует заново задавать `tableName`. Параметр создания `tableName`
+не переименовывает существующую таблицу. Допуск кириллицы и точек относится
+к таблицам; `columnNames`, `guidColumnNames` и `fieldChanges[].target`
+по-прежнему требуют имена колонок латиницей с цифрами и подчёркиваниями,
+начиная с буквы или подчёркивания, длиной до 100 символов.
+
+В SQL драйвер экранирует каждый компонент адреса отдельно. ClickHouse и MySQL
+используют обратные кавычки, MS SQL использует квадратные скобки, PostgreSQL
+использует двойные кавычки. Oracle также использует двойные кавычки. В Oracle
+имя без кавычек приводится к верхнему регистру, имя в кавычках сохраняет регистр.
+Для таблиц и колонок Oracle предел составляет 128 байт при `COMPATIBLE` от 12.2
+и 30 байт при более раннем значении. `ROWID` в верхнем регистре запрещён как
+имя колонки даже в кавычках.
+[Правила имён объектов Oracle](https://docs.oracle.com/en/database/oracle/oracle-database/26/sqlrf/Database-Object-Names-and-Qualifiers.html)
+
+При capability `direct_sql_operations` используй SQL-приёмник без отдельного
+preview: `create_project(definition=..., operation_id=...)`,
 `update_project(change=..., operation_id=...)`,
-`initialize_project_queue(project_guid=..., operation_id=...)` and
-`start_project_export(project_guid=..., operation_id=...)` without a separate preview.
-Every write requires an immutable UUID `operation_id`; updates retain a fresh
-`expectedState`. Direct input and `plan_id` are mutually exclusive. Native receiver,
-state and blocker checks remain inside the operation.
+`initialize_project_queue(project_guid=..., operation_id=...)` и
+`start_project_export(project_guid=..., operation_id=...)`.
+`operation_id` обязателен. Для изменения сохранённой настройки требуется
+свежий `expectedState`. Прямой payload и `plan_id` взаимоисключающие.
+Внутренний `directSql` выставляет MCP; это не параметр пользовательского
+определения проекта. Публикация 1С проверяет фактический SQL-приёмник внутри
+той же операции, сохраняя штатный Помощник, блокировки и проверки запуска.
 
-Kafka, AMQP and 1C Bus require the corresponding preview plan. DCC transport and
-Extractor's internal change queue do not make a SQL receiver a message receiver.
-SQL preview remains available when requested or needed to inspect generated fields.
-If the connected server lacks the capability or direct input schema, do not send
-an unsupported direct call. A request to run SQL without preview requires upgrading
-that installation. Use its documented legacy plan workflow only when that mode
-was explicitly selected or authorized; never silently substitute mandatory preview.
-Do not claim this capability is deployed merely because this skill describes it.
-Keep operation/task IDs, errors and actual status. Reconcile an uncertain original
-operation; do not replay it with a new ID. Acknowledged launch is not export success.
+Обязательный preview нужен для Kafka, AMQP и 1С Шины. DCC как транспорт
+команд и внутренняя очередь изменений Экстрактора не превращают SQL-приёмник
+в такой приёмник. Другие типы не классифицируй по догадке: читай доступный
+контракт. Если capability отсутствует, обнови методы, не обходи ограничение
+прямым HTTP или незадокументированным вызовом. Явно запрошенный пользователем
+просмотр плана остаётся отдельным чтением, а не обязательным SQL-шагом.
 
-## Receiver observations
+После разрешённого прямого запуска сохраняй `operationId`, `taskId` и
+`backgroundJobId`, читай фактический статус и диагностику. Повтор того же ID
+с другим действием или payload запрещён. Неопределённый исход сначала
+сверяй через исходную операцию; новый ID не устраняет риск повторной записи.
 
-For data-conversion/export diagnostics, use the native row setting
-“Расширенная проверка данных”. Read its current value before enabling it
-through an available native route within authorized diagnostics, preserving
-other settings. Inspect the native export log after the authorized run;
-respect correlation/truncation limits and do not invent an unsupported MCP
-parameter or treat this flag as proof of a fix.
+Для ошибки фоновой выгрузки читай `get_project_export_status` с исходным
+`task_id` и `include_diagnostics=true`, если база поддерживает
+`query_diagnostics`. История проекта даёт ограниченное окно сообщений,
+а не точную трассу задачи. Сохраняй доступный `errorId` для сопоставления
+с журналом 1С. «Расширенная проверка данных» строки может дополнить журнал
+при диагностике; она не заменяет проверку итогового статуса и приёмника.
 
-For documents and registers, before project preparation ask whether to show reference
-presentations: Yes or No, offering No. Reuse an existing explicit answer.
-For Yes, enable presentations; for No, set the native “Do not export” flag
-(`НеСоздаватьПоле`) while retaining mapping rows, GUIDs
-and compound-reference types. Do not substitute `selectedFields` row removal
-for this flag; use the native wizard mechanism supported by the actual API.
-Use the native Extractor wizard wherever supported. Export all reference GUIDs
-through its native `УникальныйИдентификатор` calculation and disable
-“Экранировать” for their SQL mappings. Keep native types, lengths and compound
-reference types; identify GUID fields from their actual calculation/source.
+## Диагностика ошибок
 
-For an information register, confirm LastSlice availability before choosing
-`СрезПоследних`. Offer Month as the default segment. If monthly segments are
-large (item prices, goods or batches), ask for an additional field and verify
-it against the selected infobase metadata before project preparation. Preserve explicit
-choices and running exports.
+Начиная с MCP 3.3.6 ошибки обоих транспортов сохраняют опубликованный код API и `errorId`. Обновлённый EPA_Projects может дополнительно вернуть `errorDetails` с очищенным текстом, модулем и строкой ошибки. Поле ограничено 4000 символами; Boolean-флаги `errorDetailsRedacted` и `errorDetailsTruncated` показывают скрытие и усечение. Сообщения с признаками секретов, параметров подключения или SQL скрываются целиком до усечения. Исходное произвольное поле `error` не используется как подробная диагностика.
 
-Read `readiness` for the selected base: `inspect_project_receiver` requires
-EPA 3.3.0+ in major 3 and capability `receiver_inspection`. Obtain the saved
-project reference and row mapping with `verify_project`, then call:
+Контракт EPA_Projects остаётся 3.3.5: наличие этой версии само по себе не гарантирует установку доработки `errorDetails`. Если подробностей нет, используй `errorId` для поиска в журнале. Текст ошибки не доказывает отсутствие записи: проверяй исходный `operation_id` и состояние проекта и приёмника перед новой попыткой.
 
-```json
-{"project_guid":"b81d6354-710c-4199-8a4c-f11a6ab63d1b","project_row_id":"","checks":["schema"],"base_id":"<selected base>"}
-```
+## Сохранённые поля и SQL-колонки
 
-If several rows exist, pass their specific saved identifier as `project_row_id`;
-an empty value does not select an arbitrary row. `checks` accepts unique `schema`,
-`count`, `sample`; default is `schema`. For `sample`, explicitly provide
-`sample_fields` (1..64 unique saved receiver columns or unambiguously mapped
-source fields) and integer `sample_limit` (1..100). Without `sample`, fields are
-empty and limit is 0.
+В обновлённых методах 3.3.5 `verify_project.fields` сохраняет все строки
+сопоставления, включая отключённые. `noExport` - штатный Boolean
+`НеСоздаватьПоле`: только явное `true` исключает строку из набора SQL-колонок.
+Предпросмотр показывает выгружаемые колонки. Сравнивай с ним экспортируемую
+часть сохранённого сопоставления, отдельно проверяя отключённые строки.
+Отсутствие флага в старой публикации не доказывает, что лишняя строка отключена.
 
-EPA uses the project's saved connection and table. Never add SQL or override
-the receiver. The response preserves counts as strings, typed values and NULL;
-limits and truncation are explicit. Keep per-check errors as diagnostics.
-`sourceEqualityVerified=false`: schema, count and samples do not prove source
-equality. This read does not create projects, initialize queues or start exports.
+`noEscape` содержит пять сохранённых Boolean без инверсии: `lineFeed`, `tab`,
+`quotes`, `backslash`, `carriageReturn` соответствуют штатным
+`НеЭкранироватьПС`, `НеЭкранироватьТАБ`, `НеЭкранироватьКАВЫЧКИ`,
+`НеЭкранироватьОБРАТНЫЙСЛЕШ`, `НеЭкранироватьВОЗВРАТКАРЕТКИ`.
+Галка «Экранировать» формы объединяет эти настройки и допускает смешанное
+состояние; не своди его к одному придуманному Boolean. Для подтверждённого
+GUID-поля выключенное экранирование означает, что все пять `noEscape` равны
+`true`. Назначение поля подтверждай его штатным вычислением, а не суффиксом.
 
+Сырые ссылочные поля и их представления могут оставаться в сопоставлении
+с `noExport:true`. Роли SQL-сегмента должны находиться на выгружаемых штатных
+вычислениях, включая весь вектор составного ключа. Не скрывай расхождение
+плана и сохранённых типов, ролей или числовой точности фильтрацией по имени.
+После обновления методов получай свежий `stateToken`: он включает эти
+сохранённые флаги и передаётся в `expectedState` без пересборки клиентом.
 
-Before preparing catalog or document rows, ask for the partition choice
-following [partition-segments.md](partition-segments.md). Do not automatically
-choose document day partitioning or catalog name prefixes.
+## Наблюдение приёмника существующего проекта
 
-## Connection selection
-
-Read `list_connections` before project work. It lists live connections of all
-types from 1C without secrets. Never treat an example connection name as a default.
-If empty, ask the user to configure a connection in Extractor 1C and refresh
-after confirmation. If exactly one, use it automatically. If several, show
-names/types and ask which to use for subsequent project development; reuse an
-explicit prior answer without asking again.
-
-Keep the choice in the current conversation and pass its `connectionName` on
-subsequent projects. Recheck the live list before project preparation. If the choice was
-removed, ask again; duplicate names require renaming in 1C. Do not share this
-choice between users or infobases. There is no server-global default; a fresh
-conversation without saved context must select again.
-
-MCP fills an omitted/empty connectionName only when one connection exists.
-Otherwise preview returns approved=false, planId=null and connectionSelection
-with the required user action. Explicit names are validated against the live
-list and bound into all plan rows; commit does not reselect. readiness.ready
-reports transport readiness, while connectionSelection reports selection state.
-Existing projects retain their verified connectionName during row updates.
-
-There is no ClickHouse type filter. Field types and target capabilities come
-from the native Extractor driver: verify saved settings/schema after a direct write, or inspect an optional preview before it. The legacy
-column-alteration operation still uses ClickHouse SQL; for other drivers it
-rejects before DDL and asks for column configuration in 1C. This is an operation
-limitation, not a restriction on choosing or creating projects.
-
-
-## Document tabular sections and header dates
-
-Use `Документ.<DocumentName>.<TabularSectionName>` as the source. Read its fields
-with `describe_object_fields`, then inspect `<source>.Ссылка` to confirm the
-header's `Дата` field has date type. The document-date partition path is
-`Ссылка.Дата`, not `Дата` or a section-row date such as `ДатаОтгрузки`.
-Leave `segmentField` empty for date segments `День` and `Месяц`.
-
-Verified example: `Документ.ЗаказКлиента.Товары`, `segment="День"`,
-`includeGuids=true`, `includeMetadataTypes=false`, all section fields requested
-(no selectedFields restriction). Preview returned 53 mappings, including
-`СсылкаДата`, `Параметр.ДатаДень`, and `СсылкаГуид`. These mapping names do not
-replace the partition path. Preserve the segment parameter and required GUID
-calculations when selecting fields; discover actual mappings for other objects.
-
-Before initialization or export, verify `verify_project_summary.rows[].grouping`:
-`enabled=true`, `field="ДатаДень"`, `path="Ссылка.Дата"`, `function="День"` for this
-example. Fix an incorrect path before proceeding. A tabular-section discovery
-error may require updating the API extension; do not substitute the header.
-
-Live validation on 2026-09-25: project `mcp25_ЗаказКлиента_Товары`, table
-`mcp25_customer_order_items`, correct saved path, initialization `succeeded`,
-then export `started`. The user chose not to wait, so export completion was
-not checked. No schedule was configured, per user choice. For initialization
-followed by a no-wait export, wait for initialization success first, then
-launch export and return task identifiers without polling export completion.
-
-Prefer compact tools so hosted agents do not receive entire metadata catalogs or state tokens. Use cursors until `nextCursor` is null.
-
-When the plan-based workflow is used, preview is a server-side immutable plan with a short lifetime and that write accepts its plan ID. SQL direct mode instead accepts the typed definition/change or project GUID described above. A completed `operationId` can be repeated safely and returns the stored result. An in-progress or indeterminate operation must be reconciled with `get_operation_status` and `verify_project_summary`.
-
-Before building `selectedFields`, call `describe_object_fields`. Intersect the minimal candidates for the object kind with the actual metadata field names. Include only confirmed fields and generated GUID or segment fields whose source exists. Do not use failed previews to discover missing attributes.
-
-For catalogs, default to `Ссылка` as an entity-named GUID column, `Наименование`, and `Код`; include each field only when present. Include `Группа` when present. Include ИНН, КПП and ОГРН for counterparties, and `Группа` and `ЕдиницаИзмерения` for nomenclature. Ask for the partition choice as described in partition-segments.md.
-
-For documents, default to the entity GUID, `Номер`, `Дата`, `Проведен`, `ПометкаУдаления`, and `Представление`; include only fields confirmed by metadata. Ask for the partition choice and inspect metadata first. For a chosen day segment prefer date-typed `Дата`, otherwise date-typed `Период`; use `maxItemsPerBatch: 0`. For a chosen reference segment use `По значению`, `segmentField: Ссылка` and `maxItemsPerBatch: 1000`. With explicit selectedFields preserve the actual generated segment parameter. Do not export every field automatically.
-
-Use the same Latin GUID column name on both sides of every relationship. Let the Extractor driver choose the database-native UUID type.
-
-## After creating a project
-
-Once all agreed project rows have been created and `verify_project_summary` succeeds, establish the user choices. Ask all unanswered questions together:
-
-1. Initialize the export queue? Yes / no.
-2. Run the project now? Yes / no.
-3. If running: wait for completion? Yes / no.
-4. Schedule the project? Yes / no. If yes, what schedule?
-
-Reuse explicit choices and parameters already supplied in the current task. No answer is not authorization. Scheduling alone does not authorize manual initialization or an immediate manual run. A no to scheduling means skip configuration, not disable an existing job.
-
-Ask only for missing parameters of the chosen schedule: daily time; weekly days and time; or an interval and daily window required by the API. Read and present the 1C time context. Do not separately ask for the execution user; use API-provided settings.
-
-Apply selected actions in order: initialize, wait for success, run manually, then configure scheduling. Wait for export completion only if selected; otherwise an acknowledged launch is sufficient. If a later action is currently blocked by the API, report that instead of silently waiting. Skip unselected actions. SQL direct initialization/export use separate operation UUIDs without mandatory preview; message receivers and explicitly chosen legacy plan mode use their respective plans. Scheduling still requires its own preview and plan. Follow each action with launch confirmation, task-result verification according to the waiting choice, or schedule readback. Stop dependent actions on an error or uncertain outcome and explain why. Enabling a schedule may itself start export; show this in preview. Do not repeat approval requests when the preview matches the user's existing authorization.
-
-Ask about waiting only when a run is selected and the preference is unknown. Yes means poll the task until a terminal result. No means return the acknowledged launch with taskId and available backgroundJobId, without polling until completion. Report started, not successfully completed; status can be requested later. Not waiting does not cancel the launch. Do not repeat an already stated wait/no-wait preference.
-
-## Scheduling an existing project
-
-Check `readiness` and verify that all three scheduling tools exist in the connected MCP tool list. If absent, report that the MCP server and 1C API extension need updating; do not substitute arbitrary BSL, direct HTTP or `update_project`. Ask only for missing schedule parameters: time, weekdays, or interval and daily window as required by the chosen mode. Do not ask for an execution user; Extractor general settings already define it.
-
-Resolve the project name with `list_projects`, then its UUID from `verify_project.projectRef`, then call `get_project_schedule(project_guid)`. Call `preview_project_schedule(change)` with `projectGuid`, boolean `enabled` and optional `schedule`:
-
-- Daily: `{"kind":"daily","time":"08:30:00"}`.
-- Weekly: `{"kind":"weekly","time":"08:30:00","weekdays":[1,3,5]}`; Monday is 1, Sunday is 7.
-- Interval: `{"kind":"interval","intervalMinutes":15,"startTime":"09:00:00","endTime":"18:00:00"}`; 1-1440 minutes, start strictly before end within one day.
-
-Times use `HH:MM:SS` in the reported 1C time context, not the client's assumed timezone. Omit `schedule` or use null to preserve settings when pausing (`enabled:false`) or resuming (`enabled:true`). A new job requires an explicit schedule. The execution user comes from Extractor general settings; there is no API parameter for choosing a different user.
-
-Present current and desired state, time context, execution user, activation and blockers. Enabling can immediately start export; enabled does not prove execution is permitted or completed. The schedule covers all project rows.
-
-After user approval, call `set_project_schedule` with only `plan_id` and a new UUID `operation_id`, then read actual state again. The immutable plan contains `expectedScheduleState`; never replace it. `approved:true` means the preview is valid, not that the user approved execution.
-
-After a network error, use `get_operation_status` and `get_project_schedule`; do not bypass an unresolved operation with a new ID. A stale link to a missing job requires native repair; the API does not silently recreate it. Read and preview need no license; schedule writes use the native license and support gate. Update both the 1C API extension and MCP server. Avoid concurrent edits by the native UI or administrator; the native scheduler does not provide atomic compare-and-set with API writes.
-
-### MCP call arguments
-
-Replace placeholders with actual returned values; never submit them literally.
-
-1. `verify_project`: `{"project_name":"<existing project name>"}`; read `projectRef`.
-2. `get_project_schedule`: `{"project_guid":"<projectRef>"}`.
-3. `preview_project_schedule`:
+Получи `projectRef` и сохранённое сопоставление через `verify_project`. Затем вызови:
 
 ```json
-{
-  "change": {
-    "projectGuid": "<projectRef>",
-    "enabled": true,
-    "schedule": {"kind": "daily", "time": "08:30:00"}
-  }
-}
+{"project_guid":"b81d6354-710c-4199-8a4c-f11a6ab63d1b","project_row_id":"","checks":["schema"],"base_id":"<выбранная база>"}
 ```
 
-4. Present the preview. After user approval, call `set_project_schedule`: `{"plan_id":"<returned planId>","operation_id":"<new UUID>"}`.
-5. Read `get_project_schedule` again with the same project UUID. Report actual schedule, `enabled`, `jobId` and blockers; do not claim export has completed.
+Инструмент `inspect_project_receiver` требует EPA 3.3.0+ в major 3 и capability `receiver_inspection`. Если строк несколько, укажи конкретный сохранённый идентификатор; пустой идентификатор не означает произвольный выбор строки. По умолчанию проверяется только схема. `checks` содержит уникальные `schema`, `count`, `sample`. Для `sample` явно задай `sample_fields` (1..64 уникальных имён сохранённых колонок приёмника или однозначно соответствующих полей источника) и `sample_limit` (целое 1..100). Без `sample` поля пусты, лимит 0. Не добавляй SQL, connection/table override, не исключай поля проекта.
 
-For pause, use `{"change":{"projectGuid":"<projectRef>","enabled":false,"schedule":null}}` at step 3. Resume uses the same request with `enabled:true`. Changing times uses a new explicit `schedule`. Keep preview, approval and readback for all these operations.
+EPA использует сохранённое подключение и таблицу; Python SQL не выполняет. Количество передаётся строкой с `exact:true`, типизированные ячейки содержат объявленный SQL-тип и признаки кодировки/усечения. Ответ ограничен 256 KB, строки выборки - 512 символами с признаком усечения. Ошибку или неподдерживаемый приёмник сохраняй как диагностику, не называй успешной проверкой.
 
-### Hourly repetition and native 1C fields
+`sourceEqualityVerified=false` всегда: схема, количество и выборка приёмника не доказывают равенство данным 1С. Метод не создаёт проекты, не инициализирует очередь и не запускает выгрузку.
 
-“Every day, once an hour” maps to two native settings:
+Логический API: `POST projects/receiver/inspect` с `projectGuid`, `rowIdentifier`, `checks`, `sampleFields`, `sampleLimit`. Прямой транспорт посылает запрос на существующий `projects/verify` с внутренним `receiverInspection:true`; пользователь этот признак не задаёт. DCC передаёт логический маршрут без признака. Произвольные маршруты и автоматический переход на другой транспорт запрещены.
 
-- «Общие» -> «Повторять каждые»: 1 day (`ПериодПовтораДней = 1`).
-- «Дневное» -> «Повторять через»: 3600 seconds (`ПериодПовтораВТечениеДня = 3600`).
 
-Use MCP `kind="interval"`, `intervalMinutes=60`; `daily` means one run per day. «Повторять с паузой» is a pause after the previous execution completes, not a repetition interval. The user's native example has zero pause and no end time.
+Для справочников и документов перед подготовкой проекта согласуй режим и упаковку
+по [16-catalog-document-segments.md](partition-segments.md).
+Не назначай автоматически День документам или префикс Наименование справочникам.
 
-The start time anchors runs within the day. A 3600-second interval alone does not imply runs exactly on the hour. Preserve an explicitly requested start time; do not turn a time shown in an illustration into a default for other projects.
+## Срез последних: выбор сегмента
 
-An unset native end time is different from an explicit `23:59:59`. The current interval API requires both `startTime` and `endTime`, with start strictly before end; it cannot yet express an interval without an end-time limit. Do not send unsupported empty values or silently add a limit. Explain the difference and agree on a window if none was specified. `00:00:00-23:59:59` is an explicitly selectable window, not an exact copy of unset native fields. Recheck this limitation against the actual contract when the API changes.
+Для источника `РегистрСведений.<Имя>.СрезПоследних` первым вариантом
+сегмента по умолчанию всегда предлагай **Месяц**. Перед подготовкой проекта согласуй
+выбор, если пользователь его ещё не задал. После выбора месяца используй
+`segment: "Месяц"` для подтверждённого поля периода; роли сегментации
+согласуй отдельно. День или другой сегмент допустимы по выбору пользователя.
+Не меняй уже сохранённый проект или запущенную выгрузку только из-за этого
+предпочтения. Правило одинаково для прямого HTTP и DCC.
 
-After applying, read back activity, interval, start/end times and job ID. `PROJECT_ALREADY_RUNNING` means the project is currently executing; it proves neither successful export completion nor that the new schedule caused that run.
+Сначала подтверди по метаданным, что регистр сведений поддерживает
+`СрезПоследних`. Для больших месячных сегментов (например, цены номенклатуры,
+товары или партии) спроси дополнительное поле сегментации. Предложи только
+поля, подтверждённые метаданными этой базы, и согласуй их роль вместе с месяцем
+до подготовки проекта. Не назначай дополнительное поле по одному названию регистра.
 
-## Run a project
+## Выбор подключения
 
-Check that `preview_project_export`, `start_project_export` and `get_project_export_status` are available. If missing, update MCP and our `ExtractorProjectsAPI` extension; the Extractor core requires no changes. Never fall back to the old native HTTP launch/status handlers, arbitrary BSL or direct publication calls.
+### Восстановление отсутствующей таблицы MySQL
 
-1. Find the project with `list_projects`, then read `verify_project(project_name).projectRef`.
-2. Read `get_project_export_status(project_guid)` for an overview. Without a task ID it selects the latest export, prioritizing a running record.
-3. For SQL with the confirmed direct capability/schema, use the authorized `start_project_export(project_guid=..., operation_id=...)` without preview. Native checks stay inside the operation. The whole project uses its saved rows, handlers and queue; the schedule is unchanged and the queue is not reset.
-4. For Kafka, AMQP, 1C Bus or an explicitly chosen legacy plan mode, call `preview_project_export`, inspect current state, execution user, activation and blockers, then apply the exact returned `plan_id` with a new operation UUID if authorized. Do not ask again for authorization already supplied. Show execution identity only when actually provided.
-5. Save `result.taskId` and `result.backgroundJobId`. If waiting is selected, poll `get_project_export_status(project_guid, task_id)` with that task ID; otherwise return the launch confirmation and IDs without further polling. Space out polls and report progress during long runs.
+При подтверждённом `exists:false` и capability `mysql_receiver_repair` используй
+существующий `update_project(change=..., operation_id=...)` для SQL при
+`direct_sql_operations`; необязательный preview позволяет заранее прочитать план.
+Если выбран поддержанный режим с планом, используй `preview_project` ->
+`get_project_plan` -> `update_project`. Это отдельный закрытый вариант определения
+с ровно пятью полями: `projectName`, свежий `expectedState` из `verify_project`,
+`currentTableName`, `receiverRepair:"create_missing_mysql"` и `textColumns`.
+Список содержит уникальные имена сохранённых колонок приёмника, выбранных
+для явного перевода строки в TEXT. Допускаются обычные строковые реквизиты,
+штатные строки типа метаданных, представления единственного enum-типа и
+вычисление `ИмяПеречисления` с подтверждённым enum-параметром. UUID-вычисление
+не становится строковым кандидатом из-за SQL-типа VARCHAR. Подключение берётся из проекта;
+`connectionName`, SQL, BSL и сериализованный native шаблон не передаются.
 
-`launchStatus: started` confirms task/job creation, not export success. `already_running` or `initializing` returns an existing task; no new export started. `rejected` is a refusal before launch and needs the cause resolved before a new authorized operation; plan mode also needs a fresh preview. Reconcile an uncertain original operation first. Execution statuses `succeeded`, `failed`, `cancelled` are terminal; `pending` and `running` are not. `unknown` and `not_found` never prove success. Native cleanup may remove tasks older than three days. Start/end timestamps are UTC milliseconds. Status reads never delete job messages.
+Штатное сопоставление GUID/UUID сохраняется, включая тип, длину и имена
+колонок. Для устранения ширины строки выбирай подтверждённые обычные
+строковые поля, сохраняя поля ключей и сегментов. EPA сопоставляет настройку
+с исходным полем; MCP не угадывает назначение колонки по её имени и не
+вводит отдельный запрет GUID. Вычисления, обработчики и исходные типы 1С
+не меняются; меняется только явно выбранный SQL-тип приёмника. Для отказа
+получения блокировки создания EPA возвращает `PROJECT_CREATE_BUSY` с
+`writeApplied:false`; MCP сохраняет его как `rejected`. Старые неопределённые
+операции этим кодом задним числом не подтверждаются.
 
-`get_operation_status` tracks the MCP request. Its `completed` may even contain a rejected launch; inspect the result. Export task IDs, background job IDs and scheduled job IDs are distinct.
+Проверь все сохранённые поля, а при выбранном preview - все страницы полей плана: состав полей, имена, GUID и остальные
+типы сохраняются, меняются только явно показанные строковые колонки.
+Существующая физическая таблица, изменившееся состояние проекта или
+неподдерживаемая публикация запрещают ремонт. Для прямого SQL используй `update_project(change=..., operation_id=...)` со свежим `expectedState`; в режиме с планом после одобренного preview
+используй `update_project(plan_id, operation_id)`. Сохраняй исходный operation ID
+при неопределённом исходе. Не создавай второй проект и не повторяй общий
+create: остальные строки и таблицы должны остаться неизменными. После записи
+снова вызови `verify_project` и `inspect_project_receiver`; завершение операции
+само по себе не подтверждает успешное создание таблицы.
 
-On a lost response or unknown outcome, read operation status and the known task. Do not start again with a new plan or ID. Unresolved operations block further launches for the same project in the persistent MCP operation store; reading status does not release this block. The latest task alone cannot identify a lost request. Administrator reconciliation is required and there is no public force-reset command. Never delete or replace the operation store to bypass this protection.
+Перед разработкой проектов прочитай `list_connections` (живой список всех типов
+из 1С, без параметров и паролей). Не используй имя из примера как настройку.
 
-## Queue initialization
+- Пустой список: попроси настроить подключение в Экстракторе 1С; после сообщения
+  о готовности перечитай список. Не создавай подключение и проект автоматически.
+- Одно подключение: используй его по умолчанию без дополнительного вопроса.
+- Несколько: покажи имена и типы, спроси, какое использовать для дальнейшей
+  разработки проектов. Уже явно выбранное пользователем не переспрашивай.
 
-The native HTTP export launch has no separate initialization mode. Use direct `initialize_project_queue(project_guid=..., operation_id=...)` for SQL with the confirmed capability/schema; use `preview_project_initialization` and its `plan_id` for message receivers or an explicitly chosen legacy plan mode. The API invokes native `ИнициализироватьПроект`.
+Сохраняй выбранное имя в контексте текущего диалога и передавай `connectionName`
+в следующих проектах. Перед каждым новым предпросмотром сверяй живой список.
+Если выбор исчез или имя стало неоднозначным, спроси заново; при одинаковых
+именах попроси переименовать подключения в 1С. Не переноси выбор между базами
+или пользователями. В новом диалоге при отсутствии сохранённого контекста
+снова выполни выбор; общего серверного подключения по умолчанию нет.
 
-1. Resolve the existing project's `projectRef` with `verify_project`.
-2. For direct SQL, perform the authorized initialization with a new operation UUID; the native operation validates enabled rows, handlers, current state and blockers.
-3. For message receivers or explicitly chosen legacy plan mode, preview initialization, inspect queue/eligible rows, handlers, current state, execution user, blockers and activation, then apply the exact plan if authorized. Existing explicit authorization remains valid.
-4. Poll `get_project_export_status(project_guid, task_id)` with the returned task ID. Its taskType is initialization; omitting the ID still reads the latest export.
+При пустом `connectionName` MCP автоматически подставляет единственное
+подключение. При нуле или нескольких возвращает `approved=false`, `planId=null`
+и `connectionSelection` с подсказкой; сначала выполни указанный шаг. Явный
+выбор проверяется по живому списку, затем фиксируется в плане для всех строк.
+При записи подключение не выбирается заново. `readiness.ready` означает
+доступность сервера, а готовность выбора отражена в `connectionSelection`.
 
-Only enabled rows with queue usage run their enabled native primary-initialization handlers. Those handlers may clear or refill queues and execute stored logic. The API does not start export afterwards; an existing schedule may consume the prepared queue. No eligible rows or handlers means a blocked plan. The current HTTP user needs project modification rights or the native initialization role `Экс_ИнициализацияОчередиПроектов`.
+При изменении существующего проекта используй его `connectionName` из
+`verify_project_summary`; текущий выбор для новых проектов не переносит его
+на другой приёмник. При добавлении строк подключение проекта сохраняется.
 
-`started` requires task polling. The native implementation can fall back to synchronous execution: `finished` carries a separate `status` (succeeded, failed or cancelled), not unconditional success. already_running, initializing and rejected do not prove a new initialization started. Successful handlers do not guarantee a nonempty queue.
+Фильтра по ClickHouse нет. Типы полей и возможности определяет штатный драйвер
+Экстрактора; проверяй предпросмотр выбранного приёмника. Старая операция изменения
+колонок существующей таблицы через MCP пока использует SQL ClickHouse: для
+других драйверов она отклоняется до DDL с предложением настроить колонки в 1С.
+Это ограничение операции изменения колонок, а не выбора или создания проекта.
 
-Uncertain initialization and export outcomes block both launch types for the same project, including new plan and operation IDs. Read known task and operation status and reconcile; never delete the store or retry under a new ID. Completed request status alone does not mean initialization succeeded.
 
-## Standalone enumeration GUID
+Для обычной работы используй `readiness`, `search_metadata`, `describe_object_fields`, `list_connections`, `list_projects`, `verify_project_summary`, `preview_project`, `get_project_plan`, `create_project`, `update_project` и `get_operation_status`. Полные инструменты оставлены для совместимости и диагностики.
 
-For an explicitly selected `Перечисление.<Name>` source, `includeGuids` must
-control the native enumeration GUID calculation. The native wizard and base
-settings determine its function, calculation name and SQL type; never compute
-or convert UUIDs in MCP. Verify actual saved fields with `verify_project`, or use an optional native preview. This does not
-automatically enable GUIDs of enum-valued attributes in documents, registers
-or other sources. Do not create an empty extra enumeration row; a separate
-row requires an explicitly selected enumeration.
+`describe_object` принимает объект или цепочку однозначно ссылочных полей. Для примитива ожидается ошибка `Field is not an object`, для неоднозначного составного типа - `Field has multiple object types`.
+
+Для SQL используй прямые операции из раздела выше. В сценарии с preview `preview_project` сохраняет точный payload как короткоживущий план; передай `planId` и новый UUID `operationId` в разрешённую запись без пересборки определения. Завершённый идентификатор безопасно возвращает сохранённый результат; неопределённый статус требует проверки проекта.
+
+Пустой `selectedFields` означает все поля. `guidColumnNames` сопоставляет исходное GUID-вычисление с именем колонки приёмника. При capability `column_names` необязательный `columnNames` задаёт SQL-имена любых полей сопоставления до проверки драйвером и создания таблицы: `{"ЗаполнениеДоступностиДляГрафикаПроизводстваКоличествоИнтервалов":"grafikProizvodstvaKolichestvoIntervalov"}`. Словари не должны пересекаться по источникам; итоговые имена должны быть уникальны. До записи проверь длину всех имён по [правилам приёмника](receiver-name-preflight.md). `segment="День"` группирует по периоду; `segment="Первые две буквы"` требует текстовое поле; `segment="По значению"` требует ключевое поле.
 
 ## Имена полей и признак выгрузки
 
@@ -308,8 +276,25 @@ Preview необязателен; если нужен, передавай объ
 Опущенное свойство сохраняется; `noExport:false` включает, `true` отключает
 выгрузку без удаления SQL-колонки. `target` - итоговый идентификатор латиницей.
 `guidColumnNames` остаётся только для GUID при формировании нового источника;
-не используй его для обычных полей. Patch не создаёт отсутствующее поле источника:
-сначала добавь поле штатным помощником через изменение строки проекта.
+не используй его для обычных полей.
+
+При наличии capability `field_selection` строку можно указать числовым
+`rowIdentifier` из `verify_project` вместо `currentTableName`. Для имён таблиц
+с кириллицей или точками, например `Реализация.Товары`, используй именно
+этот селектор: прежний `currentTableName` принимает только латинское имя
+с цифрами и подчёркиваниями. Передавай ровно один селектор, с актуальным
+`expectedState`; не меняй имя таблицы ради прохождения проверки.
+Если одиночная строка не содержит `rowIdentifier` в ответе, получи его через
+`inspect_project_receiver(checks=["schema"])` по `projectRef` с пустым
+`project_row_id` и проверь совпадение таблицы. Этот пустой селектор допустим
+только для проекта с одной строкой. В fieldChanges передай полученное
+значение как целое число; не подставляй номер строки по предположению.
+Драйвер экранирует это имя целиком по правилам СУБД. Для нового прямого
+поля источника передай в `fieldChanges` элемент с `source`, `target` и
+`add: true`. Экстрактор добавит поле в выбор источника и создаст колонку через
+драйвер. Для исключения сохранённого поля из выгрузки передай `noExport: true`
+без `add`. Колонка и ранее выгруженные значения сохраняются. После записи
+перечитай проект и проверь схему приёмника.
 
 Изменение маппинга сохраняет тип, точность, вычисления, экранирование, источник,
 сегменты и остальные строки. Сегмент нельзя отключить. Коллизии имён, неизвестные
@@ -326,3 +311,328 @@ Preview необязателен; если нужен, передавай объ
 Существующие строки заполнятся после отдельно разрешённой повторной выгрузки.
 DDL и запись 1С не атомарны: при неопределённом исходе сверяй прежнюю операцию,
 маппинг и физическую схему, не повторяй запись с новым ID.
+
+## После создания проекта
+
+После завершения создания всех согласованных строк и успешного `verify_project_summary` проверь, указал ли пользователь дальнейшие действия. Если нет, одним сообщением спроси:
+
+1. Инициализировать очередь выгрузки? Да / нет.
+2. Выполнить проект сейчас? Да / нет.
+3. Если запускать: дождаться завершения проекта? Да / нет.
+4. Поставить проект на расписание? Да / нет. Если да: какое расписание?
+
+Не повторяй вопросы, на которые пользователь уже ответил в текущей задаче. Решения независимы: «да» для расписания не означает разрешения немедленной ручной выгрузки или инициализации. Отсутствие ответа не означает «да». Ответ «нет» на расписание означает не настраивать его, а не отключать уже существующее задание.
+
+Для расписания уточни только недостающие параметры выбранного режима: ежедневно - время; по дням недели - дни и время; каждые N минут/часов - интервал и окно суток, требуемое текущим API. Проверь часовой контекст 1С и покажи его в preview. Пользователя выполнения отдельно не спрашивай: используй сведения API.
+
+Выполни выбранные действия последовательно: инициализация очереди, затем после её успешного завершения ручная выгрузка, затем настройка расписания. Завершения ручной выгрузки дожидайся только при выбранном ожидании; при отказе достаточно подтверждённого запуска. Если последующее действие API сейчас не допускает, сообщи об этом, не включай ожидание молча. Если действие не выбрано, пропусти его. Для SQL инициализация и запуск используют прямой режим с отдельными `operation_id`, без preview; для приёмников-очередей нужны соответствующие планы. Проверь запуск либо итог задачи согласно выбранному ожиданию, или перечитай расписание. При ошибке либо неопределённом результате останови зависимые действия и сообщи причину. Включение расписания само может запустить выгрузку - предупреди об этом в его preview. Не запрашивай повторного согласия на уже разрешённые действия.
+
+Вопрос об ожидании задавай только при выбранном запуске и неизвестном режиме ожидания. «Да» - проверять `taskId` до итогового статуса. «Нет» - после подтверждения запуска вернуть `taskId` и доступный `backgroundJobId`, завершить наблюдение без опроса до окончания. Сообщать «запущен», а не «успешно выполнен»; позже статус можно запросить отдельно. Отказ от ожидания не отменяет запуск. Ранее указанное «не жди» или «дождись» не переспрашивать.
+
+## Транспорт и кодировка
+
+Вызывай инструменты настроенного MCP-сервера напрямую. Не запускай промежуточный Python-клиент через PowerShell и не печатай полные Unicode-ответы MCP в терминал: Windows PowerShell может неверно декодировать UTF-8 и показать исправные данные как mojibake.
+
+Если настроенный MCP-сервер не появился в текущем сеансе после изменения конфигурации или авторизации, сообщи, что требуется переподключение или перезапуск клиента. Не подменяй штатный MCP терминальным клиентом только ради продолжения работы. Диагностику терминала применяй лишь по явному запросу пользователя и не используй её ответы как источник кириллических имён объектов или полей.
+
+Не трактуй искажённое отображение терминала как повреждение файла, проекта или ответа сервера без проверки исходных байтов либо прямого MCP-ответа.
+
+## Изменение существующего проекта
+
+При добавлении строк передавай сохранённый `connectionName` проекта на верхнем
+уровне `change` и в каждой добавляемой строке. EPA проверяет оба уровня;
+одного имени внутри `rows` в старом прямом MCP-маршруте недостаточно.
+Исправленный MCP связывает единое явно выбранное имя до сохранения payload
+операции. Это нормализация запроса, а не смена подключения или новый preview.
+Несовпадающие явно заданные подключения отклоняются.
+
+Перед каждой отдельной записью получай `stateToken` через `verify_project`. Для SQL выполняй разрешённый прямой `update_project(change=..., operation_id=...)`; для приёмника-очереди используй preview и точный `plan_id`. После записи вызывай `verify_project_summary`. Разрешение на уже согласованные действия повторно не запрашивай.
+
+При добавлении нескольких строк добавляй их по одной. После каждой строки проверяй таблицу назначения, выбранные поля, типы GUID и сегмент партицирования. Не отправляй повторную запись после неопределённого сетевого результата, пока не проверишь текущее состояние проекта.
+
+## Выбор полей и сегмент
+
+При одном способе сегментации используй простой режим: у выбранного сегмента
+`regular:true`, `extended:false`, `initialization:false`. Штатный обработчик
+инициализации использует регулярные параметры, если отдельные параметры
+инициализации не заданы. Флаг `initialization:true` включает расширенный режим
+помощника даже при единственном сегменте, поэтому не ставь его автоматически.
+Для явно запрошенной расширенной сегментации отдельно согласуй сегменты
+регулярной выгрузки и инициализации; для инициализации обычно нужен более
+крупный период. Не выбирай его без уточнения, если требование неоднозначно.
+
+У документов и регистров сохраняй идентификаторы всех выбранных ссылочных
+полей и тип составной ссылки. До подготовки проекта спроси: «Показывать представления
+ссылочных полей в регистре/документе - да или нет?», предлагая «Нет».
+Не переспрашивай уже данный ответ. При «Да» включай представления; при «Нет»
+отмечай штатным признаком «Не выгружать» (`НеСоздаватьПоле`), сохраняя строки сопоставления.
+Удаление строки через `selectedFields` не равнозначно этому признаку.
+Используй штатные настройки помощника; не придумывай параметр MCP, если его
+нет в контракте. Не удаляй GUID-поля вместе с представлениями; проверяй точные
+вычисляемые имена и сохранённые признаки после записи проекта.
+
+Источник, вычисления и сопоставление строй по максимуму через штатный помощник
+Экстрактора. GUID всех ссылочных полей выгружай штатной функцией
+`УникальныйИдентификатор`; у подтверждённых GUID-полей SQL-сопоставления
+выключай «Экранировать». Подтверждай семантику по функции и источнику, а не
+по имени колонки. Сохраняй штатные типы, длины и типы составных ссылок.
+
+В живых проверках подписок одной инициализации недостаточно. Для оборотов
+выручки проверь перепроведение ранее проведенной реализации с движениями
+этого регистра; для номенклатуры - перезапись существующего элемента; для валют -
+запись элемента и существующего курса без изменения значений. Выполняй записи
+только в разрешенной тестовой базе со свежей резервной копией. Проверяй ключи
+сегментов в очереди, затем выгрузку и приемник; один прирост счетчика очереди
+не доказывает работу подписки из-за дедупликации.
+
+### Табличная часть документа: дата из шапки
+
+Источник: `Документ.<ИмяДокумента>.<ИмяТабличнойЧасти>`. Прочитай его поля
+через `describe_object_fields`, затем раскрой `<источник>.Ссылка` и проверь
+поле `Дата` шапки. Путь сегментации по дате документа - `Ссылка.Дата`,
+а не `Дата` и не дата строки (`ДатаОтгрузки`). Для сегментов День и Месяц
+оставляй `segmentField` пустым: путь выбирает API.
+
+Проверенный пример: `Документ.ЗаказКлиента.Товары`, `segment="День"`,
+`includeGuids=true`, `includeMetadataTypes=false`, без ограничения selectedFields
+(запрошены все поля табличной части). Предпросмотр вернул 53 сопоставления,
+включая `СсылкаДата`, `Параметр.ДатаДень`, `СсылкаГуид`. Это имена сопоставлений,
+не заменяющие путь `Ссылка.Дата`. При явном отборе сохраняй параметр сегмента
+и нужные GUID-вычисления; проверяй фактические имена для других объектов.
+
+После создания проверь `verify_project_summary.rows[].grouping`: для примера
+`enabled=true`, `field="ДатаДень"`, `path="Ссылка.Дата"`, `function="День"`.
+Если путь неверен, исправь его до инициализации и запуска. При ошибке чтения
+табличной части проверь версию API-расширения, не заменяй источник шапкой.
+
+В живой базе 2026-09-25 подтверждены создание `mcp25_ЗаказКлиента_Товары`,
+таблица `mcp25_customer_order_items`, правильный путь, инициализация `succeeded`
+и последующий запуск `started`. Пользователь выбрал запуск без ожидания:
+завершение выгрузки не проверялось. Расписание не задано по выбору пользователя.
+При запросе инициализации и запуска без ожидания сначала дождись успеха
+инициализации, затем запусти выгрузку и верни taskId и backgroundJobId
+без опроса завершения выгрузки.
+
+`selectedFields` отбирает поля сопоставления по имени источника, включая вычисления и параметры. Это не только реквизиты из `describe_object_fields`. Точные имена подтверждай через `verify_project` аналогичной настроенной строки (`fields[].source`, `calculated`, `sourceSettings`) и предпросмотр. Не подменяй их именами колонок приёмника.
+
+Для сегмента «Первые две буквы» по `Наименование` одного `Наименование` в `selectedFields` недостаточно: нужно также `Параметр.НаименованиеПервыеДвеБуквы`. Имя без префикса встречается в настройках сегмента, но не является его именем в `fields[].source`.
+
+Для UUID ссылки включай подтверждённое вычисление `СсылкаГуид` в `selectedFields`. `includeGuids=true` создаёт вычисление, а `guidColumnNames` задаёт имя колонки, но эти настройки не сохраняют поле при явном отборе, если оно не выбрано.
+
+GUID самой ссылки и GUID ссылочного параметра сегмента могут быть разными
+вычислениями. Независимо от вывода ссылки и её представления сохраняй фактическое
+GUID-поле роли из сохранённых native-настроек либо необязательного preview/get_project_plan; исходное `Параметр.Ссылка`
+или `Параметр.Регистратор` его не заменяет.
+Для любого подключения правило относится к любому выбранному полю сегмента,
+фактически имеющему ссылочный тип по метаданным/native preview; `Ссылка` и
+`Регистратор` - лишь примеры. Исходный типизированный параметр участвует в
+отборе запроса 1С: не заменяй его GUID-выражением или GUID-строкой. После
+получения значения штатная функция/модуль Э1С `УникальныйИдентификатор`
+обрабатывает его тип и вычисляет GUID для SQL-поля соответствующей роли сегмента.
+Вывод самой ссылки необязателен; показ/скрытие представления роль GUID не меняет.
+Точную связь исходного поля, параметра, GUID-вычисления и SQL-роли читай из
+сохранённых настроек `verify_project` либо необязательного native preview/get_project_plan: имя `Параметр.<Поле>` не конструируй по догадке.
+Сохраняй штатные тип и длину GUID; галка «Экранировать» у GUID должна быть снята.
+Даты, строки, числа, булевы значения и другие нессылочные типы этим правилом не меняй.
+При прямом SQL после записи проверь фактическое поле роли через `verify_project`;
+при выбранном preview проверь его и до записи. Описание контракта не заменяет проверку работающей базы.
+
+Не угадывай имя GUID-параметра по суффиксу. Читай подтверждённые сохранённые
+native-настройки; если их недостаточно для явного отбора, используй необязательный
+полный preview без ограничения полей и сохрани поля всех ролей.
+
+Проверенный фрагмент определения для `Справочник.Валюты` (проект `mcp20_Валюты`, создание и проверка успешны):
+
+```json
+{
+  "segment": "Первые две буквы",
+  "segmentField": "Наименование",
+  "includeGuids": true,
+  "includeMetadataTypes": false,
+  "selectedFields": [
+    "СсылкаГуид",
+    "Код",
+    "Наименование",
+    "НаименованиеПолное",
+    "ПометкаУдаления",
+    "Параметр.НаименованиеПервыеДвеБуквы"
+  ],
+  "guidColumnNames": {"СсылкаГуид": "CurrencyGuid"}
+}
+```
+
+Не переноси имена вычислений и параметров на другие объекты или сегменты без проверки. Не заменяй явный отбор пустым списком ради обхода ошибки: это расширит выгрузку до всех полей.
+
+## Ошибки предпросмотра
+
+При проверке расширенной сегментации сверяй не только `grouping` и роли
+сопоставления, но и `sourceSettings.parameterSelection` полного `verify_project`:
+параметры регулярной выгрузки и инициализации должны быть выбраны в наборе
+данных (`enabled: true`). Это отдельные настройки. Если публикация не возвращает
+`parameterSelection`, не утверждай, что выбор полей набора данных проверен.
+
+HTTP 409 без тела ошибки не устанавливает причину отказа. Используй подробности журнала соответствующего вызова; сообщение `Project not found` при проверке ещё не созданного проекта не объясняет отказ `preview_project`.
+
+`Selected fields must include the segment field` означает, что в явном отборе отсутствует поле сопоставления, отмеченное как поле сегмента. Проверь точное имя параметра сегмента, даже если исходный реквизит уже выбран. После исправления проверь актуальные настройки; для режима с планом получи новый preview. Не повторяй неизменённый запрос без новых данных.
+
+
+## Расписание
+
+Проверь `readiness` и наличие трёх инструментов расписания в фактическом списке MCP-инструментов. Если их нет, сообщи о необходимости обновить MCP-сервер и расширение API 1С; не заменяй их произвольным BSL, прямым HTTP или `update_project`. Если пользователь не указал время, дни или интервал и окно суток для выбранного режима, уточни недостающие параметры. Пользователя выполнения отдельно не запрашивай: он уже задан в общих настройках Экстрактора.
+
+Получи имя проекта через `list_projects`, затем UUID из `verify_project.projectRef`. Прочитай `get_project_schedule(project_guid)`, затем вызови `preview_project_schedule(change)` с `projectGuid`, `enabled` и необязательным `schedule`:
+
+- Ежедневно: `{"kind":"daily","time":"08:30:00"}`.
+- По дням недели: `{"kind":"weekly","time":"08:30:00","weekdays":[1,3,5]}`. Понедельник - 1, воскресенье - 7.
+- Интервал: `{"kind":"interval","intervalMinutes":15,"startTime":"09:00:00","endTime":"18:00:00"}`. От 1 до 1440 минут; начало строго раньше конца в пределах суток.
+
+Пауза: `enabled:false`, `schedule:null`; включение с прежними настройками: `enabled:true`, `schedule:null`. Поле `schedule` можно пропустить. Новому заданию требуется расписание. Время передавай как `HH:MM:SS` в часовом контексте 1С; не предполагай часовой пояс клиента. Пользователь выполнения берётся из общих настроек Экстрактора 1С, отдельного параметра для его выбора нет.
+
+Покажи `current`, `desired`, `timeContext`, `executionUser`, `activation` и причины блокировки из preview. Включённое расписание не доказывает разрешённый или состоявшийся запуск. Включение может запустить выгрузку всего проекта, включая все строки. Пауза не останавливает уже запущенную выгрузку.
+
+При `approved:true` сохрани `planId`. После подтверждения пользователя передай только `plan_id` и новый UUID `operation_id` в `set_project_schedule`, затем снова прочитай `get_project_schedule`. План уже содержит `expectedScheduleState`, защищающий от изменений после preview. `approved` означает допустимость плана, а не согласие пользователя.
+
+При сетевой ошибке прочитай `get_operation_status` и фактическое расписание. Завершённый `operationId` возвращает сохранённый результат, неопределённый не выполняется повторно. Не обходи неопределённость новым ID. Устаревшая связь с удалённым заданием требует штатного восстановления; API не пересоздаёт её автоматически.
+
+Чтение и preview доступны без лицензии; запись проверяет лицензию и срок поддержки. Требуется обновление расширения API 1С и MCP-сервера. Избегай одновременной правки штатной формой или администратором: штатный планировщик не предоставляет атомарной операции сравнения и записи с API.
+
+### Пример последовательности MCP-вызовов
+
+Аргументы передаются объектом JSON. Значения в угловых скобках заменяются фактическими ответами, а не отправляются буквально.
+
+1. `verify_project`: `{"project_name":"<имя существующего проекта>"}`. Возьми `projectRef` из ответа.
+2. `get_project_schedule`: `{"project_guid":"<projectRef>"}`.
+3. `preview_project_schedule`:
+
+```json
+{
+  "change": {
+    "projectGuid": "<projectRef>",
+    "enabled": true,
+    "schedule": {"kind": "daily", "time": "08:30:00"}
+  }
+}
+```
+
+4. Покажи preview пользователю. При его подтверждении вызови `set_project_schedule`: `{"plan_id":"<planId из preview>","operation_id":"<новый UUID>"}`.
+5. `get_project_schedule`: `{"project_guid":"<projectRef>"}`. В отчёте укажи фактическое расписание, `enabled`, `jobId` и блокировки; не называй это выполненной выгрузкой.
+
+Для паузы на шаге 3 используй `{"change":{"projectGuid":"<projectRef>","enabled":false,"schedule":null}}`. Для возобновления - тот же запрос с `enabled:true`. Изменение времени использует тот же порядок с новым `schedule`. Шаги подтверждения и контрольного чтения сохраняются во всех случаях.
+
+### Почасовой повтор и поля диалога 1С
+
+Запрос «каждый день, раз в час» соответствует двум настройкам:
+
+- «Общие» / «Повторять каждые»: 1 день (`ПериодПовтораДней = 1`).
+- «Дневное» / «Повторять через»: 3600 секунд (`ПериодПовтораВТечениеДня = 3600`).
+
+Через MCP используй `kind="interval"`, `intervalMinutes=60`; `daily` означает один запуск в день. «Повторять с паузой» - пауза после завершения предыдущего выполнения, а не интервал повторения. В примере пользователя пауза равна нулю, время окончания не задано.
+
+Время начала определяет привязку запусков внутри суток. Из интервала 3600 секунд не следует запуск ровно в начале каждого часа. Сохраняй явно заданное время начала; не переноси время с иллюстрации на другой проект как значение по умолчанию.
+
+Незаполненное время окончания не является явно заданным `23:59:59`. Текущий API требует `startTime` и `endTime` для `interval`, причём начало должно быть раньше окончания. Интервал без ограничения времени окончания пока не представлен в API. Не отправляй неподдерживаемые пустые значения и не добавляй ограничение молча: объясни различие и согласуй окно, если оно не задано. Окно `00:00:00-23:59:59` допустимо как явно выбранный вариант, но не как точная копия незаполненных полей диалога. При обновлении API перепроверь это ограничение по актуальному контракту.
+
+После применения перечитай активность, интервал, время начала/окончания и идентификатор задания. `PROJECT_ALREADY_RUNNING` означает, что проект сейчас выполняется; это не доказательство успешного завершения выгрузки или запуска именно новым расписанием.
+
+## Запуск проекта
+
+При диагностике ошибок формирования или преобразования данных используй
+штатный флаг строки **«Расширенная проверка данных»**. Сначала прочитай его
+фактическое значение; включай через доступный штатный маршрут в рамках
+согласованной диагностики, сохраняя остальные настройки строки и проекта.
+После разрешённого запуска анализируй подробности в штатном логе выгрузки.
+Не придумывай для флага отсутствующий параметр MCP и не считай включение
+флага доказательством исправления. Связывай лог с фактическим запуском с учётом
+ограничений `diagnostics.correlation` и усечения ответа.
+
+Проверь наличие `preview_project_export`, `start_project_export`, `get_project_export_status` в списке инструментов. При отсутствии сообщи, что нужны обновление MCP и нашего расширения `ExtractorProjectsAPI`. Ядро Экстрактора не изменяется. Не заменяй эти методы старым HTTP `НачатьВыгрузку` / `СтатусВыгрузки`, произвольным кодом или прямым вызовом публикации.
+
+1. Найди существующий проект через `list_projects`; получи UUID из `verify_project(project_name).projectRef`.
+2. Прочитай `get_project_export_status(project_guid)`. Без `task_id` это обзор последней выгрузки с приоритетом выполняющейся задачи.
+3. Для SQL при capability `direct_sql_operations` выполняй разрешённый `start_project_export(project_guid=..., operation_id=...)` без отдельного preview. Штатные проверки текущего состояния и блокировок выполняет 1С внутри операции. Запускается весь проект со всеми строками по сохранённым настройкам и очереди, включая штатные обработчики. Пользователь запуска - текущий HTTP-пользователь, а не пользователь расписания.
+4. Для Kafka, AMQP и 1С Шины сначала вызови `preview_project_export(project_guid)`, проверь `current`, `executionUser`, `activation`, `blockers`. При `approved:true` выполни разрешённый `start_project_export(plan_id=..., operation_id=...)`. Повторного разрешения на уже согласованный запуск не запрашивай.
+5. Сохрани `result.taskId` и `result.backgroundJobId`. При выбранном ожидании читай `get_project_export_status(project_guid, task_id)` с этим `taskId`, пока не получишь итог. При отказе от ожидания верни подтверждение запуска и идентификаторы без дальнейшего опроса. При длительном выполнении делай паузы между проверками и сообщай пользователю состояние.
+
+`launchStatus: started` подтверждает создание задачи и фонового задания, но не успех выгрузки. `already_running` или `initializing` означают, что новая выгрузка не запущена; проверяй возвращённую задачу. `rejected` означает отказ до запуска; после устранения причины для режима с планом нужен свежий preview, для прямого SQL - новая разрешённая операция с актуальными проверками. Неопределённый исход исходной операции сначала сверяй, не повторяй её с новым ID. Для фактической выгрузки `succeeded` означает успех, `failed` - ошибку, `cancelled` - отмену; `running` и `pending` ещё не итог. `unknown` и `not_found` не считать успехом. Старые задачи могут удаляться штатной очисткой через три дня. Время `startedAtMs` / `finishedAtMs` указано в UTC миллисекундах.
+
+`get_operation_status(operation_id)` отслеживает запрос MCP, а не выполнение выгрузки. Его `completed` может содержать даже `launchStatus: rejected`; всегда смотри результат. `taskId`, `backgroundJobId` и `jobId` расписания - разные идентификаторы. Повторное чтение состояния не удаляет сообщения фонового задания.
+
+При сетевой ошибке, `unknown` или некорректном ответе сначала прочитай `get_operation_status` и состояние известной задачи. Не повторяй запуск с новым ID или планом. Неразрешённая операция блокирует новые старты того же проекта в постоянном хранилище MCP; чтение статуса не снимает блокировку. Последняя задача не доказывает, что именно потерянный запрос её создал. Требуется сверка администратором; публичной команды принудительного сброса нет. Не удаляй хранилище операций ради повтора.
+
+### Необязательная диагностика запроса
+
+Для исходной задачи можно вызвать тот же
+`get_project_export_status(project_guid, task_id, include_diagnostics=true)`.
+Нужны явный `task_id` и capability `query_diagnostics` выбранной публикации
+EPA. Если capability отсутствует, диагностика отклоняется до чтения истории.
+Обычный вызов сохраняет прежний контракт: `includeDiagnostics` не отправляется
+вообще, даже при явно заданном `include_diagnostics=false`.
+
+`diagnostics` содержит ограниченную историю проекта в окне времени задачи:
+`scope="project_history"`, `correlation="time_window"` либо `"unavailable"`,
+`complete=false`, `parametersFormat="native_log_text"`, `events`, `warnings`
+и `truncated`. История не хранит идентификатор задачи, поэтому совпадение окна
+не доказывает точную принадлежность сообщения этой задаче. Это представления
+параметров из лога, а не типизированные значения для повторного исполнения.
+
+У события есть `atMs`, `order`, `rowIdentifier`, `table`, `partition`, `kind`,
+`text`, `textTruncated`, `textRedacted`. Значения времени и порядка сохраняют
+нативную шкалу 1С: не объявляй их Unix-временем. `kind` различает текст запроса,
+параметры запроса, сериализованные параметры и ошибку. Ответ ограничен:
+до 100 событий, до 4000 символов текста события; нативный сервер дополнительно
+ограничивает общий объём. Учитывай усечение, маскирование и предупреждения.
+
+`available=false` не означает пустую выборку источника или успешный запрос.
+Логирование могло быть отключено, история очищена либо исполнение ещё не дошло
+до записи запроса. Диагностика не выполняет запрос заново, не запускает проект
+и не меняет очередь. Не заменяй её произвольным SQL/BSL при отсутствии поддержки.
+
+## Инициализация очереди
+
+Штатный HTTP `НачатьВыгрузку` не предоставляет отдельной инициализации. Используй существующий MCP `initialize_project_queue`: прямой режим для SQL при capability `direct_sql_operations`, режим с `preview_project_initialization` для Kafka, AMQP и 1С Шины. API вызывает штатный `ИнициализироватьПроект`.
+
+1. Найди существующий проект и получи `projectRef` через `verify_project`.
+2. Для SQL выполни разрешённый `initialize_project_queue(project_guid=..., operation_id=...)` без preview. Проверки очереди, активных задач, пользователя и причин блокировки остаются штатными внутри операции 1С.
+3. Для Kafka, AMQP и 1С Шины сначала вызови `preview_project_initialization(project_guid)`, проверь причины блокировки и затем используй его `plan_id` с новым UUID операции. Ранее данное разрешение сохраняется.
+4. Сохрани `taskId` и читай `get_project_export_status(project_guid, task_id)` до итога. Без `task_id` читается последняя выгрузка, а не инициализация. У созданной задачи `taskType: initialization`.
+
+Выполняются сохранённые обработчики первичной инициализации активных строк с включённой очередью. Они могут очищать или заново заполнять очередь. API не запускает выгрузку вслед за инициализацией, но действующее расписание может обработать подготовленную очередь. Нет подходящих строк или обработчиков - исправь настройки, не обходи блокировку. Пользователь запуска текущий HTTP-пользователь; право даёт изменение проекта или роль `Экс_ИнициализацияОчередиПроектов`.
+
+`started` означает создание фонового запуска; следи за задачей. `finished` означает, что штатный синхронный fallback завершился: поле `status` может быть `succeeded`, `failed` или `cancelled`. Это не безусловный успех. `already_running`, `initializing` и `rejected` не подтверждают новый запуск. Успешное завершение обработчиков не гарантирует непустую очередь.
+
+При неопределённом исходе не повторяй ни инициализацию, ни выгрузку с новым ID или планом. Оба действия блокируются для того же проекта до сверки неопределённой операции. Повтор завершённого ID возвращает сохранённый ответ; `get_operation_status.completed` не доказывает успех инициализации. Не сбрасывай хранилище ради повтора.
+
+
+## Кооперативная остановка выбранной выгрузки
+
+Используй `preview_project_export_cancellation(project_guid, task_id)`, затем при разрешённой остановке и `approved:true` вызови `cancel_project_export(plan_id, operation_id)`. Сохраняй точные `projectGuid`, `taskId` и UUID операции. `cancelStatus: requested` подтверждает только запись сигнала остановки; читай исходную задачу до конечного статуса. Очередь сохраняется.
+
+Неопределённый UUID остановки не выполняется повторно и его история сохраняется. Для кооперативного сигнала допускается новый запрос с новым UUID только после нового одобренного preview той же задачи: 1С под блокировкой повторно проверяет `expectedTaskState` и отсутствие сигнала остановки. Изменённое состояние или уже выставленный сигнал отклоняются. Ещё выполняющийся запрос остановки (`in_progress`) блокирует другой запрос. Это узкое правило относится к сигналу остановки; оно не разрешает повторный запуск выгрузки, инициализации, создания проекта или DDL при неопределённом исходе. Не сбрасывай хранилище и не переключай экземпляр MCP ради обхода блокировки.
+
+## GUID отдельного перечисления
+
+Для явно выбранного standalone-источника `Перечисление.<Имя>` флаг
+`includeGuids` должен управлять штатным GUID-вычислением перечисления.
+Функцию, имя вычисления и SQL-тип формирует помощник по настройкам базы;
+не вычисляй и не конвертируй UUID в MCP. Проверяй фактический состав в native preview.
+Это не включает автоматически GUID enum-реквизитов документов, регистров
+или других источников. Не создавай пустую дополнительную строку перечисления:
+отдельная строка нужна только для явно выбранного перечисления.
+
+### Составной ключ сегмента со ссылками и примитивами
+
+Фактическое описание типов одного поля может разрешать одновременно ссылки,
+строку, число, дату и Булево (например, зависимые значения ПВХ или журнал операций).
+Для такого mixed-ключа одного GUID недостаточно: для нессылочных значений он
+не определён, поэтому разные значения могут ошибочно объединиться в SQL-сегмент.
+Штатный общий механизм Э1С должен сформировать полный вектор роли: GUID,
+`ПолноеИмяМетаданных` и применимые по фактическому описанию типов вычисления
+`ЕслиТипСтрока` / `ЕслиТипЧисло` / `ЕслиТипДата` / `ЕслиТипБулево`.
+Исходный типизированный параметр остаётся в запросе 1С. Чисто примитивный ключ
+сохраняет прежний путь; собственные GUID-конвертеры или имена частей не вводи.
+Подтверди поддержку и все части роли через сохранённые native-настройки; при необходимости используй необязательный preview до записи;
+в явном `selectedFields` сохрани каждую фактическую часть, а не только GUID.
+Описание этого контракта не заменяет проверку работающей базы и совпадения
+штатных функций в очереди и буфере выгрузки.
+
+Для standalone Enum без сегментации передавай `segmentation: []`: этот вариант проверяется native preview; старый `segment: ""` не используй как эквивалент для перечислений. Не придумывай сегмент только ради прохождения прежней валидации.

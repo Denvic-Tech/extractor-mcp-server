@@ -129,6 +129,7 @@ SERVER_INSTRUCTIONS += """ For authorized immediate SQL export call start_projec
 
 SERVER_INSTRUCTIONS += """ Queue initialization is separate from export. When explicitly authorized, initialize a SQL project directly with initialize_project_queue(project_guid=..., operation_id=...). For Kafka, AMQP and 1C Bus use preview_project_initialization and then initialize_project_queue(plan_id=..., operation_id=...). Never provide both a plan and direct input; operation_id is required in either mode. Native initialization handlers may clear or refill queues; existing schedules may consume prepared data. Do not initialize merely because export was requested. Poll get_project_export_status using the returned taskId (taskType initialization); without taskId it still reads latest export. A finished launch means native synchronous fallback ended: inspect its status, not just launchStatus. Uncertain initialization and export operations block both kinds of new launch for the same project."""
 
+SERVER_INSTRUCTIONS += """ For a ready 1C query use existing create/preview with queryText and explicit segmentation. Reuse the object segment-choice dialog. Bind generated queue grouping names to query parameters through queryParameterNames; fixed typed values belong in queryParameters. Prefer virtual-table parameters for register segments and WHERE conditions for catalogs/documents. Each queued segment runs the same query with its own parameters. Query sources require query_sources; never submit executable BSL or rewrite query business logic."""
 SERVER_INSTRUCTIONS += """ Call list_bases before base-specific work. Pass the same base_id to discovery, preview, commit and status tools. Direct HTTP bases come from the configured YAML bases_file or environment settings; DCC bases are all accessible connectors advertising extractor-1c/2.0 and the mcp command. There is no automatic transport fallback. If DCC waiting expires, query get_operation_status with the same operation_id and base_id; never submit another write to replace an uncertain request."""
 
 SERVER_INSTRUCTIONS += """ For bounded native query/history diagnostics use get_project_export_status with the original task_id and include_diagnostics=true only when the selected EPA advertises query_diagnostics. This reads project history within a task time window; it is incomplete and cannot prove exact task correlation, typed parameters or replay. Keep native timestamp units and log text semantics. Ordinary status omits diagnostics and works with older EPA. Never replace unavailable diagnostics with arbitrary code or query execution."""
@@ -506,16 +507,18 @@ def preview_project_template(request: ProjectTemplateRequest, metadata_snapshot_
 def _preview_project_definition(definition: ProjectPreview, metadata_snapshot_id: str | None = None) -> Any:
     """Resolve receiver and store the exact approved native preview input once."""
     raw_payload = definition.model_dump(exclude_none=True)
+    if _uses_query_source(raw_payload):
+        _require_query_source_capability()
     if _uses_column_names(raw_payload):
         _require_column_names_capability()
     if isinstance(definition, ProjectFieldMappingChange):
         # A saved-field patch is already bound to its receiver. Never rebuild
         # the helper definition or add connection overrides to this contract.
-        _require_field_mapping_capability()
+        _require_field_mapping_capability("rowIdentifier" in raw_payload)
         preview = call_api("projects/preview", raw_payload)
         if (not isinstance(preview, dict)
                 or preview.get("projectName") != definition.projectName
-                or preview.get("currentTableName") != definition.currentTableName
+                or not _matches_field_mapping_row(raw_payload, preview)
                 or preview.get("requested") != raw_payload["fieldChanges"]):
             raise ToolError("Invalid native field mapping preview; no plan was created")
         summary = preview_summary(preview)
@@ -919,12 +922,25 @@ def _commit(plan_id: str | None, operation_id: str, action: str,
                 raise ToolError("Direct SQL operations require the direct_sql_operations EPA capability; update EPA")
             if "fieldChanges" in direct_payload and "field_mapping" not in capabilities:
                 raise ToolError("Field mapping changes require the field_mapping EPA capability; update EPA")
+            if (
+                "fieldChanges" in direct_payload
+                and "rowIdentifier" in direct_payload
+                and "field_selection" not in capabilities
+            ):
+                raise ToolError("Row field selection requires the field_selection EPA capability; update EPA")
             if _uses_column_names(direct_payload) and "column_names" not in capabilities:
                 raise ToolError("Column names require the column_names EPA capability; update EPA")
             _remember_direct_capability(published)
         except Exception:
             store.reject(operation_id, {"code": "DIRECT_SQL_CAPABILITY_UNAVAILABLE",
                          "error": "Native direct SQL capability could not be confirmed.", "writeApplied": False})
+            raise
+    if _uses_query_source(plan.payload):
+        try:
+            _require_query_source_capability()
+        except Exception:
+            store.reject(operation_id, {"code": "QUERY_SOURCES_UNAVAILABLE",
+                         "error": "Native query source capability could not be confirmed.", "writeApplied": False})
             raise
     route = {"create": "projects/create", "update": "projects/update",
              "schedule": "projects/schedule/set", "export": "projects/export/start",
@@ -952,7 +968,7 @@ def _validate_execution_result(action, payload, operation_id, result):
     if action == "update" and "fieldChanges" in payload:
         if (not isinstance(result, dict) or result.get("ok") is not True
                 or result.get("projectName") != payload["projectName"]
-                or result.get("currentTableName") != payload["currentTableName"]
+                or not _matches_field_mapping_row(payload, result)
                 or result.get("requested") != payload["fieldChanges"]):
             operation_store().mark_indeterminate(operation_id, result)
             raise ToolError("Field mapping update is indeterminate; verify the original operation and saved fields")
@@ -991,6 +1007,22 @@ def _validate_execution_result(action, payload, operation_id, result):
             raise ToolError("Project execution is indeterminate; read get_operation_status and task status before any new start")
 
 
+def _uses_query_source(payload: dict[str, Any]) -> bool:
+    if "queryText" in payload:
+        return True
+    definition = payload.get("definition")
+    if isinstance(definition, dict) and _uses_query_source(definition):
+        return True
+    return any(_uses_query_source(row) for row in payload.get("rows", []) if isinstance(row, dict))
+
+
+def _require_query_source_capability() -> None:
+    published = call_api("service/readiness", {})
+    capabilities = published.get("capabilities") if isinstance(published, dict) else None
+    if not isinstance(capabilities, list) or "query_sources" not in capabilities:
+        raise ToolError("Query sources require the query_sources EPA capability; update EPA")
+
+
 def _uses_column_names(payload: dict[str, Any]) -> bool:
     """Находит новые имена в одиночном, заменяемом и многострочном определении."""
     if payload.get("columnNames"):
@@ -1009,11 +1041,21 @@ def _require_column_names_capability() -> None:
         raise ToolError("Column names require the column_names EPA capability; update EPA")
 
 
-def _require_field_mapping_capability() -> None:
+def _matches_field_mapping_row(
+    payload: dict[str, object], response: dict[str, object]
+) -> bool:
+    if "rowIdentifier" in payload:
+        return str(response.get("rowIdentifier")) == str(payload["rowIdentifier"])
+    return response.get("currentTableName") == payload["currentTableName"]
+
+
+def _require_field_mapping_capability(needs_field_selection: bool = False) -> None:
     published = call_api("service/readiness", {})
     capabilities = published.get("capabilities") if isinstance(published, dict) else None
     if not isinstance(capabilities, list) or "field_mapping" not in capabilities:
         raise ToolError("Field mapping changes require the field_mapping EPA capability; update EPA")
+    if needs_field_selection and "field_selection" not in capabilities:
+        raise ToolError("Row field selection requires the field_selection EPA capability; update EPA")
 
 
 def _write_project(action: str, plan_id: str | None, operation_id: str, direct: Any) -> Any:

@@ -1,23 +1,59 @@
-# Native project-row settings
+# Настройки строки проекта
 
-Before changing queue limits, batching, concurrency, buffer/block sizes,
-block deletion, advanced data checking or parameter-expansion thresholds,
-read the server skill with `get_skill(skill_id="extractor1c",
-document="references/24-row-settings.md")`.
+Настройки принадлежат строке `Экс_Проекты.Транформация`, а не источнику или
+всему проекту. Перед использованием `rowSettings` проверь capability
+**`row_settings`** в readiness выбранной базы. Одна версия методов `3.3.5`
+не доказывает поддержку: старые установки могут не иметь capability.
+Если её нет, не отправляй неподдерживаемые поля.
 
-Require readiness capability `row_settings`; methods version 3.3.5 alone is
-insufficient. Read actual values from the selected row's `rowSettings.saved`.
-For SQL with confirmed `direct_sql_operations` and direct input schema, use
-`update_project(change=..., operation_id=...)` without preview; otherwise use the
-corresponding plan workflow. Keep fresh `expectedState`, exact `currentTableName`
-and a nonempty `rowSettings` patch. Preserve omitted values;
-zero and false are explicit values, null is invalid. Verify the saved result.
-Changing these settings does not initialize queues, run exports or perform DDL.
+## Чтение и изменение
 
-The keys are `maxQueueRecords`, `queueBatchSize`, `maxThreads`,
-`threadWaitTimeout`, `bufferSize`, `blockSize`, `deleteInBlocks`,
-`deleteBlockSize`, `advancedDataCheck` and `parameterExpansionThreshold`.
-Native defaults differ by field; do not infer their meaning from zero.
-`queueBatchSize` and legacy `maxItemsPerBatch` refer to the same native field;
-conflicting explicit values are invalid. Reuse native wizard/property methods,
-not separate execution algorithms or arbitrary code.
+Читай фактические значения в `rowSettings.saved` соответствующей строки.
+Это сохранённые значения, а не обещание фактического размера пакета или числа
+потоков. Штатная подготовка учитывает режим выполнения, драйвер и лицензию.
+
+Для SQL при capability `direct_sql_operations` используй существующий
+`update_project(change=..., operation_id=...)` без отдельного preview.
+Для изменения только настроек строки передай `projectName`, свежий
+`expectedState`, точный `currentTableName` и непустой `rowSettings`.
+Для Kafka, AMQP и 1С Шины сначала получи `preview_project`, затем запиши
+неизменённый `plan_id` с новым `operation_id`. После записи перечитай проект.
+Не перестраивай
+источник и сопоставление ради изменения лимита или флага. Настройка сама
+не создаёт таблицы, не инициализирует очередь и не запускает выгрузку.
+
+Пропущенное свойство сохраняет текущее значение. `0` и `false` являются
+явными значениями. `null`, неизвестные ключи, дробные числа и строки вместо
+чисел/Boolean недопустимы. После записи сверяй запрошенные значения: обычная
+запись может ограничивать параметры лицензией; успешный ответ не должен
+скрывать отличающееся сохранённое значение.
+
+## Параметры и штатное назначение
+
+| JSON | Поле 1С | Назначение и смысл нуля |
+|---|---|---|
+| `maxQueueRecords` | `ОбрабатыватьЗаписейОчереди` | Предел записей очереди за запуск. `0` не ограничивает. |
+| `queueBatchSize` | `КоличествоЭлементовОчередиВОднойВыгрузке` | Объединяет элементы очереди в одну выгрузку. Сохранённый `0` штатно используется как `1`. Это та же настройка, что прежний `maxItemsPerBatch`. |
+| `maxThreads` | `МаксимальноеКоличествоПотоков` | Предел потоков. При значении меньше `1`, выполнении без потоков или в файловой базе используется `1`. Лицензия может ограничить значение. |
+| `threadWaitTimeout` | `ТаймаутОжиданияВыполненияФоновыхЗаданий` | Таймаут штатного ожидания фоновых заданий. `0` заменяется на `3`; это не команда принудительной отмены задания. |
+| `bufferSize` | `РазмерБуфера` | Одновременно извлекаемые записи: `0` используется как `1000`, положительное число задаёт размер, отрицательное означает полное чтение выборки. |
+| `blockSize` | `РазмерБлокаВыгрузки` | Записи в блоке выгрузки. `0` либо значение больше штатного размера драйвера использует размер драйвера; в исследованном коде он равен `1000`. Не копируй алгоритм в MCP вместо штатной подготовки. |
+| `deleteInBlocks` | `УдалятьБлоками` | Включает блочное удаление при последующей выгрузке. Изменение флага само не удаляет данные. |
+| `deleteBlockSize` | `КоличествоУдаляемыхЗаписей` | При `deleteInBlocks=true` значение `0` используется как `10000`; при выключенном флаге блочное удаление не используется. |
+| `advancedDataCheck` | `РасширеннаяПроверкаДанных` | Расширенная проверка и преобразование данных для диагностики. Значение `false` у строки не отменяет включение на уровне общих настроек, проекта или поля. Подробности читай в штатном логе. |
+| `parameterExpansionThreshold` | `КоличествоЗаписейДляРасширенияПараметров` | Порог различных регулярных ключей для объединения по существующему расширенному ключу. `0` не отключает механизм: нужны также расширенный ключ и остальные штатные условия. |
+
+Два флага имеют строгий тип Boolean. Числовые поля целые: `maxThreads` от `0`
+до `99`; `bufferSize` от `-9999999999` до `9999999999`; остальные от `0`
+до `9999999999`. Это границы метаданных, а не рекомендуемые рабочие значения.
+
+При создании `maxItemsPerBatch` и `rowSettings.queueBatchSize` обозначают одно
+поле. Если оба явно переданы с разными значениями, запрос отклоняется.
+Не превращай отсутствующий прежний параметр в явный `0`, конфликтующий
+с выбранным `queueBatchSize`.
+
+При создании структуры используй штатный помощник; при изменении - штатную
+проверенную запись свойств и обычную запись проекта. Не добавляй отдельные
+алгоритмы выполнения, произвольный BSL или SQL. Роли сегментации, детализацию,
+ссылочные GUID, представления и их экранирование проверяй отдельно: эти десять
+настроек их не заменяют.

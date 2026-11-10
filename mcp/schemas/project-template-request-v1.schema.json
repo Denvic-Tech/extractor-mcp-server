@@ -107,7 +107,7 @@
         },
         "tableName": {
           "maxLength": 100,
-          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+          "pattern": "^[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё0-9_.]*$",
           "title": "Tablename",
           "type": "string"
         },

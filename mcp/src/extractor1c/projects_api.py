@@ -169,8 +169,63 @@ class RowSettings(StrictRequest):
                 if key in self.model_fields_set}
 
 
+class QueryParameter(StrictRequest):
+    """A fixed typed 1C query value; segment values come from the native queue."""
+
+    name: str = Field(pattern=r"^[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*$", max_length=100)
+    type: Literal["string", "number", "boolean", "date", "reference", "enum"]
+    value: str | StrictInt | float | StrictBool | list[str | StrictInt | float | StrictBool]
+    object: str | None = Field(default=None, max_length=512,
+                              pattern=r"^[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*\.[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*$")
+
+    @model_validator(mode="after")
+    def valid_typed_value(self):
+        from datetime import datetime
+        import math
+
+        if self.type in {"reference", "enum"}:
+            if not self.object:
+                raise ValueError("Reference and enum parameters require their metadata object")
+            if self.type == "enum" and not self.object.startswith("Перечисление."):
+                raise ValueError("Enum parameter requires Перечисление.<Имя>")
+            if self.type == "reference" and self.object.split(".")[0] not in {
+                "Справочник", "Документ", "ПланСчетов", "ПланВидовХарактеристик",
+                "ПланВидовРасчета", "БизнесПроцесс", "Задача",
+            }:
+                raise ValueError("Reference parameter requires reference metadata")
+        elif "object" in self.model_fields_set:
+            raise ValueError("Only reference and enum parameters accept object")
+        values = self.value if isinstance(self.value, list) else [self.value]
+        if not values or len(values) > 500:
+            raise ValueError("Fixed parameter lists require 1..500 values")
+        for value in values:
+            if self.type == "boolean":
+                valid = type(value) is bool
+            elif self.type == "number":
+                valid = type(value) in {int, float} and math.isfinite(value)
+            else:
+                valid = isinstance(value, str) and len(value) <= 4096
+                if valid and self.type == "date":
+                    valid = re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}", value) is not None
+                    if valid:
+                        try:
+                            datetime.fromisoformat(value)
+                        except ValueError:
+                            valid = False
+                elif valid and self.type == "reference":
+                    valid = re.fullmatch(r"[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}", value) is not None
+                elif valid and self.type == "enum":
+                    valid = re.fullmatch(r"[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*", value) is not None
+            if not valid:
+                raise ValueError("Fixed parameter value does not match its declared type")
+        return self
+
+
 class ProjectDefinition(ObjectRequest, ProjectName, ProjectConnection):
-    tableName: str = Field(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$", max_length=100)
+    # У полного Query нет обязательного объекта привязки. Для объектного источника
+    # и Query с сегментацией непустой object проверяется ниже.
+    object: str = Field(default="", pattern=r"^[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*(?:\.[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*){1,2}$", max_length=512)
+    tableName: str = Field(pattern=r"^[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё0-9_.]*$", max_length=100)
     segment: Literal["", "День", "Месяц", "Первые две буквы", "По значению"] = ""
     segmentation: list[Segmentation] | None = Field(default=None, max_length=500)
     periodicity: Literal["", "Час", "День", "Неделя", "Месяц", "Квартал", "Полугодие", "Период",
@@ -184,6 +239,40 @@ class ProjectDefinition(ObjectRequest, ProjectName, ProjectConnection):
     maxItemsPerBatch: StrictInt = Field(default=0, ge=0, le=1000000)
     selectedFields: list[str] = Field(default_factory=list, max_length=500)
     rowSettings: RowSettings | None = None
+    queryText: str | None = Field(default=None, min_length=1, max_length=200000)
+    queryParameterNames: dict[str, str] | None = Field(default=None, max_length=500)
+    queryParameters: list[QueryParameter] | None = Field(default=None, max_length=500)
+
+    @model_validator(mode="after")
+    def valid_query_source(self):
+        query_keys = {"queryText", "queryParameterNames", "queryParameters"}
+        specified = query_keys & self.model_fields_set
+        if not specified:
+            if not self.object:
+                raise ValueError("Object source requires object")
+            return self
+        if self.queryText is None or not self.queryText.strip() or "\x00" in self.queryText:
+            raise ValueError("Query source requires nonblank queryText")
+        if any(getattr(self, key) is None for key in specified):
+            raise ValueError("Omit unused query source properties instead of null")
+        if self.segmentation is None:
+            raise ValueError("Query source requires an explicit segmentation array")
+        if self.segmentation and not self.object:
+            raise ValueError("Segmented Query requires the selected parameter-controlled object")
+        identifier = r"[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]{0,99}"
+        names = self.queryParameterNames or {}
+        if any(not re.fullmatch(identifier, key) or not re.fullmatch(identifier, value)
+               for key, value in names.items()):
+            raise ValueError("Invalid query segment parameter name")
+        aliases = [name.casefold() for name in names.values()]
+        if len(set(aliases)) != len(aliases):
+            raise ValueError("Duplicate query segment parameter names")
+        if names and not self.segmentation:
+            raise ValueError("Parameter bindings require segmentation")
+        fixed = [parameter.name.casefold() for parameter in self.queryParameters or []]
+        if len(set(fixed)) != len(fixed) or set(fixed) & set(aliases):
+            raise ValueError("Duplicate or overlapping fixed and segment query parameters")
+        return self
 
     @model_validator(mode="after")
     def segment_matches(self):
@@ -217,6 +306,11 @@ class ProjectDefinition(ObjectRequest, ProjectName, ProjectConnection):
     def api_payload(self, handler):
         """Do not emit mutually exclusive simple fields alongside a grouping array."""
         payload = handler(self)
+        if self.queryText is not None and not self.object:
+            payload.pop("object", None)
+        for key in ("queryText", "queryParameterNames", "queryParameters"):
+            if getattr(self, key) is None:
+                payload.pop(key, None)
         # Старые EPA используют закрытую схему: новый пустой ключ им не отправляем.
         if not self.columnNames:
             payload.pop("columnNames", None)
@@ -486,15 +580,24 @@ class FieldMappingChange(StrictRequest):
                         pattern=r"^[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*(?:\.[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*)*$")
     target: str | None = Field(default=None, pattern=r"^[A-Za-z_][A-Za-z0-9_]*$", max_length=100)
     noExport: StrictBool | None = None
+    add: Literal[True] | None = None
 
     @model_validator(mode="before")
     @classmethod
     def explicit_changes(cls, value: object) -> object:
         if isinstance(value, dict):
+            if "add" in value and value["add"] is not True:
+                raise ValueError("add must be Boolean true")
             changes = {key: item for key, item in value.items() if key != "source"}
             if not changes or any(item is None for item in changes.values()):
-                raise ValueError("Specify target or noExport; omit unchanged properties")
+                raise ValueError("Specify target, noExport or add; omit unchanged properties")
         return value
+
+    @model_validator(mode="after")
+    def validate_addition(self) -> "FieldMappingChange":
+        if self.add and (self.target is None or self.noExport is not None or "." in self.source):
+            raise ValueError("Addition requires target and a direct source field")
+        return self
 
     @model_serializer(mode="wrap")
     def explicit_payload(self, handler: SerializerFunctionWrapHandler) -> dict[str, object]:
@@ -503,14 +606,19 @@ class FieldMappingChange(StrictRequest):
 
 
 class ProjectFieldMappingChange(ProjectName):
-    """Change existing fields without rebuilding the native source or mapping."""
+    """Patch one saved row without rebuilding its source or mapping."""
 
     expectedState: str = Field(min_length=1, max_length=524288)
-    currentTableName: str = Field(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$", max_length=100)
+    currentTableName: str | None = Field(default=None, pattern=r"^[A-Za-z_][A-Za-z0-9_]*$", max_length=100)
+    rowIdentifier: int | None = Field(default=None, strict=True, gt=0)
     fieldChanges: list[FieldMappingChange] = Field(min_length=1, max_length=500)
 
     @model_validator(mode="after")
     def unique_sources(self) -> "ProjectFieldMappingChange":
+        if (self.currentTableName is None) == (self.rowIdentifier is None):
+            raise ValueError("Specify exactly one row selector")
+        if self.rowIdentifier is None and any(change.add for change in self.fieldChanges):
+            raise ValueError("Field addition requires rowIdentifier")
         sources = [change.source for change in self.fieldChanges]
         if len(set(sources)) != len(sources):
             raise ValueError("Duplicate mapping sources")
@@ -518,6 +626,12 @@ class ProjectFieldMappingChange(ProjectName):
         if len(set(targets)) != len(targets):
             raise ValueError("Duplicate target column names")
         return self
+
+    @model_serializer(mode="wrap")
+    def omit_unused_selector(self, handler: SerializerFunctionWrapHandler) -> dict[str, object]:
+        payload = handler(self)
+        payload.pop("currentTableName" if self.currentTableName is None else "rowIdentifier", None)
+        return payload
 
 
 class ProjectReceiverRepair(ProjectName):

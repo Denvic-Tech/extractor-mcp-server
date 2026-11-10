@@ -10,7 +10,7 @@ class TemplateDefinition(ProjectName, ProjectConnection):
     """Native metadata source, including tabular sections and virtual tables."""
 
     object: str = Field(pattern=r"^[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*(?:\.[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]*){1,2}$", max_length=512)
-    tableName: str = Field(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$", max_length=100)
+    tableName: str = Field(pattern=r"^[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё0-9_.]*$", max_length=100)
     segmentation: list[Segmentation] = Field(max_length=500)
     periodicity: Literal["", "Час", "День", "Неделя", "Месяц", "Квартал", "Полугодие", "Период",
                          "Запись", "Регистратор", "Секунда", "Минута", "Декада", "Авто"] | None = None

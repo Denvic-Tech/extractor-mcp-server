@@ -1,168 +1,284 @@
 ---
 name: extractor1c
-description: Create, inspect, verify and update Extractor 1C projects, run exports and manage schedules through MCP; develop and validate Extractor MCP and 1C API methods with mandatory regression tests.
+description: Создавать, читать, проверять и обновлять проекты выгрузки 1С, запускать выгрузку и управлять расписаниями через MCP и JSON API 1С; разрабатывать и проверять методы Экстрактора и MCP обязательными регрессионными тестами.
 ---
 
-# Extractor 1C Cloud
+# Экстрактор 1С: облачный MCP
 
-Before create_project, check every final receiver field name after native
-transliteration, including generated GUID/type and segment fields. Read
-[receiver name preflight](references/receiver-name-preflight.md). Explicit
-`columnNames` require the selected EPA's `column_names` capability.
+## Дерево решений для новой выгрузки
 
-For common requests about setup, start/stop, connectivity, metadata and project
-diagnostics, read [prompt examples](references/prompt-examples.md). Adapt examples
-to the connected installation; preserve the user's selected base and action scope.
+Начинай с первого неизвестного ответа. Для существующего проекта используй
+сохраненные настройки; повторный опрос о создании ему не нужен.
 
-When preparing a new project, try to propose meaningful English field and table
-names immediately, with concrete examples rather than transliteration. If the
-naming choice is unresolved, offer English translation first and native
-transliteration second. Preserve names already chosen by the user.
-Preserve an explicit preference without asking again. The native wizard has
-transliteration and editable SQL mapping names, not a semantic English translator.
-For English names choose meaningful equivalents, use `tableName` at creation,
-`columnNames` for new fields with capability `column_names`, and `fieldChanges`
-for saved mappings. With capability `field_mapping`, use the
-existing update_project and fresh expectedState to rename any saved field or set
-`noExport:false` to include it. Preserve types, GUIDs and segment roles and verify
-the saved mapping and physical schema. Read [workflow](references/workflow.md).
+1. **Способ.** Спроси: «Как будем выгружать: объекты 1С или готовый запрос 1С?»
+   Явно выбранный способ сохраняй и этот вопрос пропускай.
+2. **Источник.** Для объектов спроси: «Какие объекты и данные нужно выгружать?»
+   Для запроса попроси готовый текст для исследования, если его еще нет.
+   Если назван отчет, уточни отчет и вариант СКД, получи текст доступным штатным
+   способом. Если доступа нет, попроси предоставить текст. Запрос может не
+   содержать параметров: после выбора сегментов ты добавишь их по смыслу.
+3. **Окружение.** Уточни только недостающие базу, маршрут и подключение.
+   Проверь доступ, версии, capabilities и приемник. Подтверди объекты и типы
+   полей по метаданным; для Query получи штатный список сущностей запроса.
+4. **Сегменты.** Предложи варианты, включая отсутствие сегментации, затем
+   согласуй поле, функцию и роли. Порядок общий с объектами. Для `СрезПоследних`
+   первым предложи `Месяц`. Сохраняй уже выбранные сегменты и роли.
+5. **Параметры запроса.** Если сегменты выбраны, исследуй существующие параметры:
+   подходящие свяжи с очередью, недостающие добавь вместе с ограничениями.
+   Для регистров предпочитай параметры виртуальных таблиц и явные границы
+   периода; для справочников и документов - условия отбора. Сохраняй расчеты,
+   поля и детализацию. Фиксированные параметры задавай отдельно от сегментов.
+   В штатном списке выбери сущность, набор данных которой управляется отбором
+   через параметр, и только затем настрой обработчик. Зависимости для обогащения
+   сохраняй выключенными. Расчетные параметры не являются отбором; параметр
+   отбора и его роль сегмента очереди - отдельные решения.
+   Автопостроение Query поддерживает одну ось с тремя независимыми флагами
+   ролей. Несколько осей требуют явно настроенного обработчика или готового
+   проекта; чтение, запуск и field_mapping такого проекта не ограничиваются.
+   Для полного Query передавай `segmentation: []` без `object`.
+6. **Результат.** Уточни состав полей и имена, проверь определение, создай проект
+   разрешенным способом и перечитай настройки и схему. Инициализацию, запуск,
+   проверку данных, повторную выгрузку и расписание выполняй в согласованном
+   объеме. Принятие команды не подтверждает выгрузку.
+
+Полное дерево и вопросы по видам объектов: [сценарий диалога](references/project-dialog.md).
+Для ветви «Запрос» читай [параметризацию и очередь](references/26-query-sources.md).
+Ее capability `query_sources` требуется в обоих маршрутах. Отсутствие параметров
+в исходном тексте не является основанием отказать в источнике «Запрос».
+
+До create_project проверяй длину всех итоговых SQL-имён по выбранному приёмнику;
+для явных коротких имён используй `columnNames` при capability `column_names`.
+Порядок, единицы длины и пример - в references/22-receiver-preflight.md.
+
+`tableName` передавай как точное физическое имя без SQL-кавычек, включая
+кириллицу и точки: `Реализация.Товары` - одно имя таблицы. Не разбивай его
+на схему и таблицу и не транслитерируй явно выбранное имя. При запуске
+используй сохранённое имя; для изменения полей такой строки выбирай
+сохранённый `rowIdentifier` при capability `field_selection`; порядок его
+получения описан в [проверке имён](references/receiver-name-preflight.md).
+Правила имён таблиц не расширяют допустимые имена колонок.
+
+Для запросов об установке, запуске/остановке, проверке подключения, просмотре
+полей, проектов и диагностике читай [примеры запросов](references/prompt-examples.md).
+Они связывают формулировки пользователя с инструментами и границами действий.
+
+Перед новым проектом старайся сразу предлагать английские названия полей и
+таблиц по смыслу, а не транслитерацию. Покажи конкретные варианты имён;
+если выбор ещё не задан, первым предложи английский перевод, вторым -
+штатную транслитерацию. Уже заданные имена и явный выбор пользователя сохраняй.
+
+Явное пожелание пользователя «на английском» уже определяет выбор;
+повторно не спрашивай. В помощнике есть штатная транслитерация и ручное
+редактирование SQL-маппинга, автоматического семантического перевода нет.
+Для английского варианта агент подбирает названия по смыслу, таблицу задаёт
+через `tableName`, новые поля - через `columnNames` при capability `column_names`,
+сохранённые поля переименовывает через `fieldChanges`.
+Сохраняй GUID, типы, вычисления и роли сегментов. Не выдавай перевод агента
+за функцию помощника. Контракт и проверка - [10-mcp-projects.md](references/workflow.md).
+
+Для переименования любого сохранённого поля и включения/отключения выгрузки
+используй существующий `update_project` с `fieldChanges` и свежим `expectedState`
+при capability `field_mapping`. `noExport:false` включает поле, `true` отключает.
+Это не перестроение источника. После записи перечитай маппинг и SQL-схему;
+переименование не заполняет старые строки новыми значениями.
 
 ## Составные поля: сегменты и GUID
 
-Составные поля никогда не выбирай как сегменты: запрет действует и для нескольких ссылочных типов, и для смеси ссылок с примитивами. До выбора проверь фактическое описание типов поля; для сегмента допускается один конкретный тип. Не перестраивай существующий проект автоматически: согласуй замену составного сегмента.
+Ссылочные поля, выбранные сегментом регулярной выгрузки `По значению` без функции агрегации, выгружай пакетами по 500 элементов (`maxItemsPerBatch: 500`). Это относится к `Ссылка`, `Регистратор` и другим ссылочным полям, в том числе составным из нескольких ссылочных типов. До выбора проверь фактические типы и штатное сопоставление Экстрактора; сохраняй штатные GUID-вычисления и тип ссылочного значения. Правило не распространяется на произвольные нессылочные поля или смесь ссылок с примитивами. Для сегментов с функцией по датам (`День`, `Месяц`) или строкам (`Первые две буквы`, подстрока) используй `maxItemsPerBatch: 0`, если у строки нет регулярного ссылочного сегмента с пакетизацией 500. Сегмент инициализации согласуй отдельно. После записи проверь роли сегментов, типы и пакетизацию через `verify_project`. Существующие проекты автоматически не перестраивай.
 
 GUID любых составных полей вычисляй только штатной функцией Экстрактора 1С `УникальныйИдентификатор` в буфере. Не подменяй её SQL/query-функцией UUID или собственным конвертером. Правило действует для всех экспортируемых составных полей, включая поля без роли сегмента.
 
-## SQL operations and plan-based receivers
+## Порядок работы с пользователем
 
-For SQL, preview is optional when actual readiness confirms `direct_sql_operations`
-and the connected tool schemas support direct inputs. Kafka, AMQP and 1C Bus
-require preview; DCC transport and the internal change queue do not change the
-receiver type. Check the connected installation rather than assuming an upgrade.
-Keep immutable operation UUIDs, update `expectedState`, task IDs, errors/status
-and unknown-outcome reconciliation. For exact calls and an explicitly chosen
-legacy mode, read [SQL operations](references/workflow.md#sql-operations-and-plan-based-receivers).
+Для новой выгрузки сначала выполни выбор способа выше. Затем продолжай с первого
+неуточнённого этапа; уже полученные ответы повторно не спрашивай:
 
-Before preparing a project, select the receiver connection and verify it from
-the executing 1C server through the native Extractor driver. MCP readiness
-confirms access to 1C, not access from 1C to the receiver. Use a supported
-connection check, or a successful schema inspection of an existing project
-using that same connection. If neither is available, ask for the native 1C
-connection check; do not invent an MCP tool or create a diagnostic project.
-On timeout or authentication failure, stop dependent project preparation,
-report the known 1C host, receiver endpoint and errorId, and resume only after
-a successful check or the user's explicit selection of another connection.
-Do not retry preview with altered fields or segments to bypass a network error.
+1. **Установка и развёртывание.** Проверь существующую установку, базу,
+   платформу и маршрут. Уточняй только неизвестное; настройку и совместимость
+   веди по [20-deployment-architecture.md](references/deployment-architecture.md)
+   и [CONFIG.md](CONFIG.md).
+2. **Подключения.** Получи живой список, покажи пользователю названия и типы
+   приёмников без секретов, сохрани уже сделанный выбор. Проверь доступ к
+   выбранному приёмнику со стороны 1С по
+   [22-receiver-preflight.md](references/receiver-name-preflight.md).
+3. **Источник.** Для ранее выбранных объектов уточни их состав и точные имена
+   по метаданным. Для выбранного запроса получи текст и исследуй параметры,
+   затем подтверди объект, из которого формируются сегменты очереди.
+4. **Настройка проекта.** Задавай вопросы в порядке из
+   [23-project-dialog.md](references/project-dialog.md): состав источников,
+   простая/расширенная сегментация и её роли, поля и связи, имена проекта и
+   таблиц. Известные ответы и явное разрешение повторно не запрашивай.
+5. **Подготовка и создание.** Для SQL используй прямую разрешённую операцию
+   без отдельного preview, затем перечитай поля проекта и схему приёмника.
+   Для Kafka, AMQP и 1С Шины сначала проверь preview и его план.
+   Создание настроек, создание SQL-таблиц и успешная выгрузка - разные результаты.
+6. **Инициализация, запуск и расписание.** Выясни только ещё не заданные
+   решения; дождись подтверждённого результата, если пользователь просил ждать.
 
-When developing or fixing Extractor MCP or its 1C API, read
-[development-tests.md](references/development-tests.md). Run the full automated
-suite after code changes and all ten live test projects after changes to project
-construction or export execution. Re-reading old successful task receipts does
-not validate a changed build. Use a local development checkout for these tests.
+Типовые вопросы по каждому виду сущности и правила сокращения диалога
+собраны в [23-project-dialog.md](references/project-dialog.md).
 
-For the universal fact tree, assigned account analytics and native build version,
-read [reference-tree.md](references/reference-tree.md). Present tree as a tree.
+Если пользователь уже разрешил создание, инициализацию и выгрузку, выполняй
+их одним последовательным прогоном с проверкой фактического результата.
+Для SQL capability `direct_sql_operations` разрешает прямой режим существующих
+инструментов с обязательным `operation_id`. Обязательный preview оставляй
+для Kafka, AMQP и 1С Шины. Тип определяй по фактическому приёмнику, а не по
+транспорту MCP/DCC или внутренней очереди регистрации изменений 1С.
+Если прямой режим недоступен, требуется обновление методов; не подменяй его
+скрытой обязательной цепочкой preview. Для существующего проекта не
+перестраивай источник ради запуска.
+После ошибки читай статус исходной операции и журнал; неопределённый исход
+не повторяй с новым ID. Успешный preview не заменяет выгрузку и сверку.
 
-Prefer the `Обороты` virtual table for accumulation-register exports when
-available and suitable; see references/accumulation-registers.md.
-For turnovers, default the grain to `Регистратор`. Ask for the partition roles,
-offering Day for regular export and Month for initialization. Preserve explicit
-choices. Before project preparation, ask whether to show reference presentations in a
-document/register: Yes or No, offering No. Reuse an existing answer. For No,
-set the native “Do not export” flag; for Yes, enable presentations. Retain
-mapping rows, identifiers and compound types.
-Use the native Extractor wizard wherever supported. Export every reference
-identifier using its native `УникальныйИдентификатор` function; disable
-“Экранировать” for confirmed GUID mappings to SQL. Preserve native GUID types
-and lengths and identify fields by their function/source, not their suffix.
+Перед сравнением плана с сохранёнными полями читай раздел о `noExport`
+и пяти native-флагах `noEscape` в
+[10-mcp-projects.md](references/workflow.md).
 
-For `РегистрСведений.<Name>.СрезПоследних`, always offer **Месяц** (Month)
-as the first default partition-segment option. Agree on an unspecified choice
-before project preparation; do not automatically choose Day. Preserve explicit choices,
-existing project settings and running exports. This applies to HTTP and DCC.
-First confirm that LastSlice is available. For large monthly segments (item
-prices, goods or batches), ask for an additional segmentation field and confirm
-it from the selected infobase metadata before project preparation.
+Перед подготовкой проекта сначала выбери подключение и проверь доступ к
+приёмнику со стороны исполняющей 1С. Только после успешной проверки переходи
+к полям и сегментам; preview используй по выбранному режиму. `readiness.ready=true` проверяет доступ MCP к 1С,
+а не соединение 1С с приёмником. Порядок и ограничения проверки описаны в
+[22-receiver-preflight.md](references/receiver-name-preflight.md).
 
-Use `analyze_reference_graph` for outgoing links of any entity and document
-sections. Expand selected dotted paths with `expand_paths`. Periodic information
-registers are skipped. Analytics keys follow exact metadata targets, never name heuristics.
+Перед созданием/изменением проекта для ClickHouse, PostgreSQL, MySQL, MS SQL
+или Apache Kafka читай [22-receiver-preflight.md](references/receiver-name-preflight.md).
+Проверь итоговые имена, типы, размеры, ключи и глобальный режим UUID/String.
+Не исключай поля и не меняй сохранённые имена молча. Навык задаёт порядок
+проверки; он не расширяет контракт API и не исправляет драйвер.
 
-Use only the `extractor1c` MCP tools. Call `list_skills` and then `get_skill` to read server-published Markdown instructions and references. Never construct SQL, execute arbitrary 1C code, or call the 1C publication directly.
+Исходи из глобальных настроек конкретной базы и штатного помощника Экстрактора.
+Для ссылок и GUID сохраняй выбранные ими тип, длину и представление; не задавай
+их жёстко и не переноси из другой базы. Проект-образец применяй только в
+согласованном объёме, не превращай его в общий шаблон. Если штатное
+сопоставление корректно, дополнительные запреты не нужны.
+Исправляя широкую строку, выбирай для TEXT подходящие обычные строковые поля,
+не подменяя штатное сопоставление GUID; проверяй семантику, а не суффикс имени.
 
-For project work, read [workflow.md](references/workflow.md). For accumulation registers also read [accumulation-registers.md](references/accumulation-registers.md).
-For project-row runtime parameters, read [row-settings.md](references/row-settings.md)
-and the referenced server skill. Require the actual `row_settings` capability.
+Для транспорта DCC читай
+[21-dcc-metadata.md](references/dcc-metadata.md): экономное чтение сохранённого
+снимка, фиксация snapshotId и preview задачей через исходящий обмен 1С.
+В этом режиме прямой доступ MCP к web-публикации 1С не требуется.
 
-For requests to schedule daily or weekly exports, run every N minutes, pause or resume automatic export, follow the scheduling workflow below. Scheduling an existing project does not require creating the project again or changing its rows.
+При разработке и исправлении MCP или API Экстрактора обязательно читай
+[18-development-tests.md](references/development-tests.md) и выполняй
+указанные проверки до сдачи работы. После изменений кода запускай полный
+набор тестов; после изменений формирования или выполнения выгрузки проверяй
+все десять реальных тестовых проектов на применённой сборке.
+
+Для дерева связей факта, аналитики счетов и проверки версии методов 1С читай
+[17-reference-tree.md](references/reference-tree.md). Показывай tree деревом.
+
+Для регистров накопления предпочитай виртуальную таблицу `Обороты`, если
+она доступна и соответствует задаче; подробности в references/15-accumulation-registers.md.
+Детализация по умолчанию - `Регистратор`. Сегменты согласуй, предлагая
+`День` для регулярной выгрузки и `Месяц` для инициализации; сохраняй уже
+выбранную схему. При подготовке документа или регистра спроси: «Показывать
+представления ссылочных полей - да или нет?». Предлагай «Нет»; уже данный
+ответ не переспрашивай. При «Нет» отмечай представления штатным признаком
+«Не выгружать», при «Да» включай их; GUID и типы составных ссылок сохраняй.
+Подготовку проекта выполняй по максимуму через штатный помощник Экстрактора.
+Выгружай GUID всех ссылочных полей через штатную функцию
+`УникальныйИдентификатор`; у подтверждённых GUID-полей сопоставления с SQL
+снимай флаг «Экранировать». Подробности - в references/15-accumulation-registers.md.
+
+Для `РегистрСведений.<Имя>.СрезПоследних` всегда первым вариантом сегмента
+по умолчанию предлагай **Месяц**. Если выбор ещё не задан, согласуй его
+перед подготовкой проекта; не назначай День автоматически. Уже выбранный сегмент
+и настройки существующего проекта сохраняй. Правило действует для HTTP и DCC.
+При больших месячных сегментах спроси дополнительное поле сегментации
+(например, для цен номенклатуры, товаров или партий), подтвердив его по метаданным.
+
+Для анализа снежинки любой сущности используй `analyze_reference_graph`.
+Граф содержит прямые ссылки и табличные части документов; выбранные ссылочные
+пути раскрывай через `expand_paths`. Периодические регистры сведений пропускаются.
+Ключи аналитики раскрывай по подтверждённым ссылкам, без догадок по имени.
+
+Клиент вызывает только MCP-инструменты. Сервер использует выбранный прямой HTTP или DCC v2 маршрут; произвольного выполнения кода и шаблонов в этом процессе нет.
+
+Для операций с проектами читай [10-mcp-projects.md](references/workflow.md). При подготовке или изменении выгрузки регистра накопления дополнительно читай [15-accumulation-registers.md](references/accumulation-registers.md). Для запуска и диагностики читай [CONFIG.md](CONFIG.md), для изменения развёртывания - [20-deployment-architecture.md](references/deployment-architecture.md).
+Для лимитов очереди, потоков, буфера, блоков, расширенной проверки данных
+и порога расширения параметров читай
+[24-row-settings.md](references/row-settings.md). Используй фактические
+значения строки и capability `row_settings`, не угадывай смысл нулевого значения.
+
+Для запросов «поставь на расписание», «запускай каждый день», «каждые N минут», «приостанови» или «возобнови» применяй раздел «Расписание проекта» ниже. Установка расписания уже созданного проекта не требует повторного создания проекта или настройки его строк.
 
 ## Транспорт и версия
 
-MCP - 3.3.7, ожидаемый контракт EPA_Projects - 3.3.5; readiness возвращает отдельно mcpVersion, expectedOneCMethodsVersion и фактическую oneCMethodsVersion; Экстрактор поддерживается начиная с 3.16.1.34. Для маршрута `dcc` поддерживается DCC начиная с 2.0.2. Фактическую версию и capabilities выбранной базы проверяй через `readiness`: обновление MCP не обновляет методы в 1С. Вызови `list_bases`, выбери `base_id` и передавай его во все операции. В прямом HTTP-режиме базы перечислены в YAML на сервере; в DCC-режиме базы обнаруживаются через DCC, а 1С сама получает команды. DCC-маршрут не обращается к публикации 1С. `segmentation` передаётся массивом группировок с явным `field` и тремя Boolean-ролями; объект с `mode` не используется.
+MCP - 3.3.8, ожидаемый контракт EPA_Projects - 3.3.5; readiness возвращает отдельно mcpVersion, expectedOneCMethodsVersion и фактическую oneCMethodsVersion; Экстрактор поддерживается начиная с 3.16.1.34. Для маршрута `dcc` поддерживается DCC начиная с 2.0.2. Фактическую версию и capabilities выбранной базы проверяй через `readiness`: обновление MCP не обновляет методы в 1С. Вызови `list_bases`, выбери `base_id` и передавай его во все операции. В прямом HTTP-режиме базы перечислены в YAML на сервере; в DCC-режиме базы обнаруживаются через DCC, а 1С сама получает команды. DCC-маршрут не обращается к публикации 1С. `segmentation` передаётся массивом группировок с явным `field` и тремя Boolean-ролями; объект с `mode` не используется.
 
-For receiver observations, use `inspect_project_receiver` only after readiness
-confirms EPA 3.3.0+ and capability `receiver_inspection`. Read the receiver section
-in [workflow.md](references/workflow.md) for exact arguments and limits. Receiver
-observations do not prove equality with the source.
+### Обязательный выбор маршрута при дублировании базы
 
-### Mandatory route choice when the same base is available twice
+Если в `.env` настроено подключение к DCC и одна и та же база 1С доступна
+через web-публикацию и как коннектор DCC, до подготовки проекта или запуска
+выгрузки обязательно спроси: «Эта база доступна напрямую через web-публикацию
+1С и через DCC. Через какой маршрут выполнять работу: напрямую или через DCC?»
+Дождись ответа; не выбирай маршрут по умолчанию или по доступности сервера.
+Явный выбор пользователя сохраняй для этой базы в текущем диалоге, повторно
+не спрашивай без изменения условий. Все команды, данные и статусы операции
+проводятся через выбранный маршрут. Порядок проверки и настройки описан
+в [CONFIG.md](CONFIG.md), раздел «Одна база доступна по двум маршрутам».
 
-If `.env` contains a configured DCC connection and the same 1C base is available
-both through a direct web publication and as a DCC connector, before preparing
-a project or starting export ask: "This base is available directly through the
-1C web publication and through DCC. Which route should we use: direct or DCC?"
-Wait for the answer; do not choose by default or by server availability. Reuse
-an explicit choice for this base in the current conversation unless conditions
-change. Keep commands, data and status checks on the chosen route. Match bases
-using confirmed identifiers and registration details, not only display names.
-The current MCP instance exposes one configured route; DCC credentials alone
-do not activate a second route. If the selected route is unavailable, configure
-or select the appropriate MCP instance and check `list_bases` / `readiness`.
-Do not substitute another route or transfer preview plans between instances.
+## Создание и изменение состава проекта
 
-## Creating projects and changing their contents
+Для справочников и документов спроси о выборе сегмента перед подготовкой проекта:
+документы - по периоду (День) или по Ссылка; справочники - по первым двум
+буквам Наименование/Код или по Ссылка. По Ссылка нужна упаковка по 500.
+Если выбор уже задан, повторно не спрашивай. Читай
+[16-catalog-document-segments.md](references/partition-segments.md).
 
-Ask for the partition choice unless already specified: documents by day or
-Ссылка; catalogs by the first two characters of Наименование/Код or Ссылка.
-Reference partitioning uses batches of 1000. Read
-[partition-segments.md](references/partition-segments.md) before project preparation.
+Сначала выполни выбор подключения: 0 - настройка в 1С, 1 - автоматически, несколько - выбор пользователя с повторным использованием в диалоге. Читай раздел «Выбор подключения» в [10-mcp-projects.md](references/workflow.md).
 
-First follow "Connection selection" in [workflow.md](references/workflow.md): none requires 1C configuration, one is automatic, several require a user choice reused in the conversation.
+Для табличной части документа с сегментацией по дате шапки читай раздел
+«Табличная часть документа: дата из шапки» в [10-mcp-projects.md](references/workflow.md).
+Проверь путь `Ссылка.Дата` в сохранённом проекте перед инициализацией и запуском.
 
-For a document tabular section partitioned by the header date, read "Document
-tabular sections and header dates" in [workflow.md](references/workflow.md).
-Verify the saved partition path is `Ссылка.Дата` before initialization and export.
+1. Проверь `readiness`, затем получи подключения и проекты; метаданные ищи через `search_metadata`.
+2. Раскрывай поля через компактный `describe_object_fields`; полный `describe_object` используй только для диагностики.
+   Для справочников и документов сначала прочитай метаданные. В `selectedFields` используй имена полей сопоставления Экстрактора, включая необходимые GUID-вычисления и параметр сегмента. Они могут отсутствовать в метаданных; см. раздел «Выбор полей и сегмент» [10-mcp-projects.md](references/workflow.md).
+3. Для SQL при capability `direct_sql_operations` используй прямой `create_project(definition=..., operation_id=...)` или `update_project(change=..., operation_id=...)`. Сохраняй штатные проверки и свежий `expectedState` при изменении существующего проекта.
+4. Для Kafka, AMQP и 1С Шины сначала вызови `preview_project`, сохрани точный `planId`, затем передай его с `operation_id` в разрешённую операцию. Прямой payload и `plan_id` вместе не передавай. Уже данное разрешение повторно не запрашивай.
+5. После записи вызови `verify_project_summary`. При неопределённом результате сначала вызови `get_operation_status` и проверь состояние; не повторяй запись с новым идентификатором.
 
-1. Call `readiness`, then use `search_metadata`, `describe_object_fields`, `list_connections`, and `list_projects` for discovery.
-2. Present the intended entities and target tables to the user before any write.
-3. For SQL with the confirmed direct capability/schema, use the authorized `create_project(definition=..., operation_id=...)` or `update_project(change=..., operation_id=...)`, retaining a fresh `expectedState` for updates.
-4. For Kafka, AMQP, 1C Bus or an explicitly chosen legacy plan-based workflow, obtain `preview_project` or `preview_project_properties` and keep its exact `planId`. Pass it with a new UUID `operation_id` without rebuilding the payload. Direct input and `plan_id` are mutually exclusive. Reuse existing explicit authorization.
-5. Add related rows one at a time and call `verify_project_summary` after every write.
-6. If a write result is uncertain, call `get_operation_status` and verify project state. Never retry with another operation ID until the state is resolved.
+Перед созданием уточни сегменты партицирования, префикс проекта и отдельный префикс таблиц, если пользователь их не задал. В вопросах называй настройку именно «сегментом партицирования», а не «группировкой». Для регистра накопления предложи `День` для регулярной выгрузки и `Месяц` для инициализации; дождись выбора, если он ещё не задан. Создание проекта не запускает выгрузку данных.
 
-Call the setting a **partition segment**, not a grouping. Project creation configures an export but does not start data export.
+Во время изменения живого проекта сначала доведи согласованную операцию до проверенного состояния. Не отвлекайся на рефакторинг клиента, сервера или навыка до итогового `verify_project`, если техническая проблема не блокирует продолжение.
 
-For scheduling, use `get_project_schedule`, `preview_project_schedule`, then after user approval `set_project_schedule(plan_id, operation_id)` and read back. Read the scheduling section in [workflow.md](references/workflow.md). Enabling can start export of the whole project; show the 1C time context, execution user from Extractor general settings, activation and blockers. A row's `disabled` flag is not schedule activity.
 
-For hourly repetition and screenshots of the native 1C schedule dialog, read 'Hourly repetition and native 1C fields' in [workflow.md](references/workflow.md). Distinguish repetition intervals, pauses after execution, and daily time limits.
+## Действия после создания проекта
 
-## After creating a project
+После создания и успешной проверки проекта выясни решения пользователя:
 
-After creation and successful verification, establish the user choices:
+1. Инициализировать очередь выгрузки? Да / нет.
+2. Выполнить проект сейчас? Да / нет.
+3. Если запускать: дождаться завершения проекта? Да / нет.
+4. Поставить проект на расписание? Да / нет; если да, на какое?
 
-1. Initialize the export queue? Yes / no.
-2. Run the project now? Yes / no.
-3. If running: wait for completion? Yes / no.
-4. Schedule the project? Yes / no; if yes, what schedule?
+Уже заданные решения и параметры не переспрашивай. Остальные вопросы задай одним сообщением. Порядок выполнения и необходимые параметры расписания описаны в разделе «После создания проекта» [10-mcp-projects.md](references/workflow.md).
 
-Do not ask again for choices or parameters already supplied. Bundle the unanswered questions in one message. Follow 'After creating a project' in [workflow.md](references/workflow.md) for execution order and schedule details.
+Вопрос об ожидании задавай только при выбранном запуске и неизвестном режиме ожидания. «Да» - проверять `taskId` до итогового статуса. «Нет» - после подтверждения запуска вернуть `taskId` и доступный `backgroundJobId`, завершить наблюдение без опроса до окончания. Сообщать «запущен», а не «успешно выполнен»; позже статус можно запросить отдельно. Отказ от ожидания не отменяет запуск. Ранее указанное «не жди» или «дождись» не переспрашивать.
 
-Ask about waiting only when a run is selected and the preference is unknown. Yes means poll the task until a terminal result. No means return the acknowledged launch with taskId and available backgroundJobId, without polling until completion. Report started, not successfully completed; status can be requested later. Not waiting does not cancel the launch. Do not repeat an already stated wait/no-wait preference.
+## Расписание проекта
 
-## Immediate export
+После подключения прочитай серверные инструкции через `list_skills` и `get_skill`. Для расписания читай раздел «Расписание» в [10-mcp-projects.md](references/workflow.md). Используй `get_project_schedule`, `preview_project_schedule`, затем после подтверждения `set_project_schedule(plan_id, operation_id)` и повторное чтение. Расписание действует на весь проект. Включение может запустить выгрузку; покажи часовой контекст 1С, пользователя выполнения из общих настроек Экстрактора и момент активации из preview. `disabled` у строки не управляет расписанием.
 
-Read 'Run a project' in [workflow.md](references/workflow.md). For SQL with the confirmed direct capability/schema, use the authorized `start_project_export(project_guid=..., operation_id=...)` without preview. For message receivers or an explicitly chosen legacy plan workflow, obtain `preview_project_export` and start with its `plan_id`. If waiting was selected, poll `get_project_export_status(project_guid, task_id)` using the returned task ID; otherwise return launch confirmation and task ID. Show the whole project and confirmed execution-user/activation details; do not invent missing identity. Existing explicit authorization remains valid for the agreed operation. A completed MCP operation is not a completed export. Never retry an uncertain launch with a new plan or operation ID.
+Для запроса «каждый день, раз в час» и примеров стандартного диалога 1С читай раздел «Почасовой повтор и поля диалога 1С» в [10-mcp-projects.md](references/workflow.md). Различай интервал повторения, паузу после выполнения и ограничения времени суток.
 
-## Queue initialization
+## Немедленный запуск и проверка выполнения
 
-For initializing or preparing an export queue, read 'Queue initialization' in [workflow.md](references/workflow.md). For SQL with the confirmed direct capability/schema, use `initialize_project_queue(project_guid=..., operation_id=...)` without preview. For message receivers or an explicitly chosen legacy plan workflow, obtain `preview_project_initialization` and pass its `plan_id`. Poll `get_project_export_status` with its returned task ID. Initialization is a separate action; an export request alone does not authorize it.
+Для «запусти выгрузку», «выполни проект» и «проверь результат запуска» читай раздел «Запуск проекта» в [10-mcp-projects.md](references/workflow.md). Для SQL при capability `direct_sql_operations` вызывай `start_project_export(project_guid=..., operation_id=...)` без отдельного preview; для Kafka, AMQP и 1С Шины используй `preview_project_export` и запуск по его `plan_id`. Статус читай через `get_project_export_status(project_guid, task_id)` по возвращённому `taskId`.
+
+Запускается весь проект по сохранённым настройкам и очереди. Укажи проект, пользователя запуска и немедленную активацию по фактическому ответу. Существующее явное разрешение на запуск сохраняется; повторно его не запрашивай. `completed` операции MCP означает обработку запроса, успешную выгрузку подтверждает только `status: succeeded`. При неопределённости не повторяй запуск с новым планом или ID.
+
+Для диагностирования исходной задачи используй тот же
+`get_project_export_status(project_guid, task_id, include_diagnostics=true)`
+только при capability `query_diagnostics`. Это ограниченная история проекта
+в окне задачи, без точной корреляции и типизированного повтора параметров;
+проверяй `available`, `complete`, усечение и предупреждения. Подробности -
+«Необязательная диагностика запроса» в
+[10-mcp-projects.md](references/workflow.md). Обычный статус остаётся
+совместимым со старой публикацией без включения диагностики.
+
+## Инициализация очереди
+
+Для «инициализируй очередь» или «подготовь очередь выгрузки» читай раздел «Инициализация очереди» в [10-mcp-projects.md](references/workflow.md). Для SQL при capability `direct_sql_operations` вызывай `initialize_project_queue(project_guid=..., operation_id=...)` без preview. Для Kafka, AMQP и 1С Шины получи план через `preview_project_initialization`. Статус читай через `get_project_export_status` по возвращённому `taskId`. Это отдельное действие: не инициализируй очередь только потому, что пользователь попросил выгрузку.

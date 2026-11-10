@@ -1,35 +1,64 @@
-# Universal reference tree and 1C methods build version
+# Общее дерево связей факта и версия методов 1С
 
-Use `analyze_reference_graph` for accumulation/accounting registers, documents
-and sections, catalogs, charts of accounts, characteristic plans, nonperiodic
-information registers and enums. Show `tree` with each discovery path. Enums
-are terminal export candidates. Preserve polymorphic branches, repeated paths
-and cycle/identity references. Skip periodic information registers.
-Virtual register tables use base-register metadata for analysis; verify actual
-export columns separately through saved native settings and receiver schema, or an optional preview. Never equate a metadata link with
-a verified join or observed usage in movements.
+Используй один `analyze_reference_graph` для регистров накопления, документов
+и их табличных частей, регистров бухгалтерии, справочников, планов счетов,
+ПВХ, непериодических регистров сведений и перечислений.
+Показывай результат `tree` деревом, сохраняя пути обнаружения.
+Перечисления - конечные ветки и кандидаты для отдельных строк выгрузки.
+Составной тип имеет отдельные ветки. Повторяющиеся сущности сохраняются под
+каждым путём; cycle/identity содержат referenceToObject. Периодические РС
+пропускаются. Для виртуальных таблиц регистров связи читаются по основному
+регистру: это дерево метаданных, не подтверждение состава колонок виртуальной
+таблицы. Состав выгрузки отдельно проверяется через сохранённые настройки и схему приёмника; preview/get_project_plan используйте при выбранном режиме с планом или для дополнительной диагностики.
 
-For an accounting register or chart root pass
-`account_scope={"codes":["51"],"includeSubaccounts":true,"maxAccounts":200,"maxKinds":1000}`.
-For another root a single linked chart must be discoverable unambiguously.
-The tree reads chart -> account/subaccounts by hierarchy -> assigned subconto
-kind -> characteristic plan -> the individual kind's allowed value types.
-It replaces broad standard subconto metadata unions for scoped registers.
-Primitive types remain visible but are not entity export candidates.
-Use accountAnalytics.exportCandidates as candidates to agree with the user;
-do not automatically create projects or treat allowed types as observed values.
+## Проводки и назначенные виды субконто
 
-Read-only under the current 1C user's permissions. A missing or inaccessible
-account is reported explicitly. Limits: 20 codes, maxAccounts 1-1000,
-maxKinds 1-5000, 2000 value-type descriptions in the native response.
-max_nodes also caps the occurrence tree; max_depth caps metadata hops and account
-ancestry separately from kind/plan/type semantic levels. Check complete,
-truncated and warnings before claiming completeness. Expand candidates' outgoing
-links with another graph analysis and selected expand_paths.
+```json
+{
+  "object": "РегистрБухгалтерии.Хозрасчетный",
+  "account_scope": {
+    "codes": ["51"],
+    "includeSubaccounts": true,
+    "maxAccounts": 200,
+    "maxKinds": 1000
+  }
+}
+```
 
-For journal exports, native sources Хозрасчетный.Субконто (normalized rows)
-and Хозрасчетный.ДвиженияССубконто (debit/credit columns) were verified in ERP.
-Verify actual native settings in the selected database; preview is optional for capable SQL direct mode and required in the plan workflow. Preserve GUID/type, movement side and line
-number. Joining normalized subconto multiplies journal rows and their amounts.
+Ветка: факт -> план счетов -> счёт и его субсчета -> назначенный вид субконто ->
+ПВХ -> допустимые типы значения выбранного вида. Субсчета определяются по
+иерархии, не префиксу кода. Назначения читаются по данным счетов, тип - по
+конкретному элементу ПВХ, не общему составному типу плана. При account_scope
+широкие стандартные поля субконто регистра заменяются этой веткой назначений.
+Для документа account_scope допустим, только если граф нашёл ровно один
+связанный план счетов. Для корня ПланСчетов используется этот план.
 
-Read readiness.oneCMethodsVersion and oneCCapabilities from the selected deployed base. MCP version is 3.3.7 and the expected EPA_Projects contract is 3.3.5; read readiness.mcpVersion and expectedOneCMethodsVersion separately, Extractor versions starting with 3.16.1.34 are supported. The `dcc` route requires DCC 2.0.2 or later. account_scope requires account_subconto_settings. Never substitute a local version for an unavailable deployed version. Segmentation uses an array; read [partition-segments.md](partition-segments.md). Platform 8.3.5 and compatibility mode 8.2 require separate runtime validation.
+Кандидаты из accountAnalytics.exportCandidates - лишь назначенные допустимые
+типы. Метод не проверяет фактическое использование значений в проводках,
+не читает суммы/остатки, не создаёт проекты и не запускает выгрузку.
+Права текущего пользователя сохраняются; отсутствие счёта неотличимо от его
+недоступности и явно отмечается. complete/warnings относятся к видимой области.
+
+Лимиты: 20 точных кодов, maxAccounts 1-1000, maxKinds 1-5000, до 2000 описаний
+типов в ответе 1С. max_nodes ограничивает также число узлов дерева, max_depth -
+переходы метаданных и уровни иерархии счетов (служебные уровни ПВХ/типа отдельно).
+При truncated, complete=false или warnings не утверждай полноту и не добавляй
+частичный список в проект автоматически. Дальнейшие ссылки кандидатов раскрывай
+отдельным анализом соответствующей сущности с expand_paths.
+
+## Источники журнала
+
+Базовый регистр может не содержать субконто в сопоставлениях.
+Штатные источники, проверенные живым preview в ERP:
+Хозрасчетный.Субконто - отдельные записи (12 полей),
+Хозрасчетный.ДвиженияССубконто - субконто Дт/Кт колонками (69 полей).
+Проверяй доступность и реальные поля конкретной базы, не подставляй имена
+полей по аналогии. У отдельных записей сохраняй регистратор GUID/тип,
+номер строки, ВидДвижения, ВидГуид и ЗначениеГуид/Тип. Соединение размножает
+проводки: суммы нельзя повторно суммировать без учёта зерна.
+
+## Версия сборки методов 1С
+
+MCP: 3.3.6; ожидаемый контракт EPA_Projects: 3.3.5. Читай readiness.mcpVersion и expectedOneCMethodsVersion отдельно от фактической oneCMethodsVersion. Экстрактор: начиная с 3.16.1.34. Читай readiness.oneCMethodsVersion и oneCCapabilities фактически опубликованной базы. Для account_scope нужна capability account_subconto_settings. Отсутствующая версия означает непроверенную совместимость; не подставляй локальную версию. Контракт сегментации - массив; см. [описание](partition-segments.md). Платформа 8.3.5 и совместимость 8.2 проверяются отдельно от версии Экстрактора.
+
+Версии MCP и EPA проверяй раздельно через readiness выбранной базы. Для DCC нужен выпуск 2.0.2 или новее. Платформа 8.3.5 и режим совместимости 8.2 требуют отдельной проверки выполнения.

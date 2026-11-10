@@ -132,7 +132,7 @@ def test_mcp_protocol_and_backend_dispatch():
             "clientInfo": {"name": "test", "version": "1"},
         })
         assert initialized["serverInfo"]["name"] == "extractor1c"
-        assert initialized["serverInfo"]["version"] == "3.3.7"
+        assert initialized["serverInfo"]["version"] == "3.3.8"
         assert "preview_project" in initialized["instructions"]
         assert "list_skills" in initialized["instructions"]
         assert "get_skill" in initialized["instructions"]
@@ -297,7 +297,7 @@ def test_mcp_protocol_and_backend_dispatch():
         segmentation_text = json.loads(segmentation["content"][0]["text"])["content"]
         assert "`0` для сегментов по периоду" in segmentation_text
         assert "`0` для сегментов по префиксу строки" in segmentation_text
-        assert "`1000` только для сегмента `По значению`" in segmentation_text
+        assert "`500` для регулярного сегмента `По значению`" in segmentation_text
         assert "Пересеки список кандидатов с фактическими именами полей" in segmentation_text
         assert "Если поле `Дата` существует и имеет тип `Дата`" in segmentation_text
         assert "`maxItemsPerBatch: 0`" in segmentation_text
