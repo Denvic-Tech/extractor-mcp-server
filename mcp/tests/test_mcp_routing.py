@@ -7,9 +7,10 @@ import pytest
 from mcp.server.fastmcp.exceptions import ToolError
 
 from extractor1c import mcp_server as server
-from extractor1c.mcp_auth import authenticated_principal
-from extractor1c.projects_api import ApiSettings
-from extractor1c.transport import DccOperationPending, Target, resolve_target
+from extractor1c.interface.http.auth import authenticated_principal
+from extractor1c.infrastructure.settings import ApiSettings
+from extractor1c.domain.epa.errors import DccOperationPending
+from extractor1c.infrastructure.targets import Target, resolve_target
 
 
 def settings(tmp_path):
@@ -20,9 +21,9 @@ def settings(tmp_path):
 
 def test_base_selection_is_explicit_and_routes_all_nested_calls(tmp_path, monkeypatch):
     config = settings(tmp_path)
-    monkeypatch.setattr(server, "ApiSettings", lambda **kwargs: config)
+    monkeypatch.setattr(server.runtime, "ApiSettings", lambda **kwargs: config)
     calls = []
-    monkeypatch.setattr(server, "call_target", lambda target, route, body, **kwargs:
+    monkeypatch.setattr(server.runtime, "call_target", lambda target, route, body, **kwargs:
                         calls.append((target.base_id, route)) or [])
     with pytest.raises(ToolError, match="choose an accessible"):
         server.list_projects()
@@ -35,8 +36,8 @@ def test_base_selection_is_explicit_and_routes_all_nested_calls(tmp_path, monkey
 def test_store_is_partitioned_by_base_and_authenticated_principal(tmp_path):
     config = settings(tmp_path)
     a, b = resolve_target(config, "a"), resolve_target(config, "b")
-    original_settings = server.ApiSettings
-    server.ApiSettings = lambda **kwargs: config
+    original_settings = server.runtime.ApiSettings
+    server.runtime.ApiSettings = lambda **kwargs: config
     try:
         paths = []
         for target, principal in [(a, "client1"), (b, "client1"), (a, "client2")]:
@@ -49,13 +50,13 @@ def test_store_is_partitioned_by_base_and_authenticated_principal(tmp_path):
                 server._target.reset(t)
         assert len(set(paths)) == 3
     finally:
-        server.ApiSettings = original_settings
+        server.runtime.ApiSettings = original_settings
 
 
 def test_legacy_stdio_store_does_not_follow_a_changed_url_or_user(tmp_path, monkeypatch):
     config = ApiSettings(_env_file=None, operation_db=str(tmp_path / "legacy.sqlite"),
                          url="https://first.test", user="one", password="secret")
-    monkeypatch.setattr(server, "ApiSettings", lambda **kwargs: config)
+    monkeypatch.setattr(server.runtime, "ApiSettings", lambda **kwargs: config)
     paths = []
     for url, user in [("https://first.test", "one"), ("https://second.test", "one"),
                       ("https://first.test", "two")]:
@@ -75,8 +76,8 @@ def test_relative_operation_store_is_anchored_to_env_file(tmp_path, monkeypatch)
     elsewhere = tmp_path / "agent-working-directory"
     elsewhere.mkdir()
     config = ApiSettings(_env_file=None, operation_db="state/operations.sqlite3")
-    monkeypatch.setattr(server, "ApiSettings", lambda **kwargs: config)
-    monkeypatch.setattr(server, "ENV_FILE", installation / ".env")
+    monkeypatch.setattr(server.runtime, "ApiSettings", lambda **kwargs: config)
+    monkeypatch.setattr(server.runtime.config, "ENV_FILE", installation / ".env")
     monkeypatch.chdir(elsewhere)
     store = server.operation_store()
     assert Path(store.path) == installation / "state/operations.sqlite3"
@@ -89,8 +90,8 @@ def test_relative_operation_store_is_anchored_to_env_file(tmp_path, monkeypatch)
 def test_dcc_uncertain_write_recovers_same_operation_without_resubmission(tmp_path, monkeypatch):
     config = ApiSettings(_env_file=None, transport="dcc", operation_db=str(tmp_path / "ops.sqlite"))
     target = Target(config, "connector", "target-identity")
-    monkeypatch.setattr(server, "ApiSettings", lambda **kwargs: config)
-    monkeypatch.setattr(server, "resolve_target", lambda *args: target)
+    monkeypatch.setattr(server.runtime, "ApiSettings", lambda **kwargs: config)
+    monkeypatch.setattr(server.runtime, "resolve_target", lambda *args: target)
     token = server._target.set(target)
     try:
         store = server.operation_store()
@@ -102,10 +103,10 @@ def test_dcc_uncertain_write_recovers_same_operation_without_resubmission(tmp_pa
     def pending(selected, route, body, operation_id=None, **kwargs):
         submitted.append(operation_id)
         raise DccOperationPending(operation_id)
-    monkeypatch.setattr(server, "call_target", pending)
+    monkeypatch.setattr(server.runtime, "call_target", pending)
     with pytest.raises(ToolError, match=operation_id):
         server.create_project(plan.plan_id, operation_id, base_id="connector")
-    monkeypatch.setattr(server, "get_target_operation", lambda selected, identity:
+    monkeypatch.setattr(server.runtime, "get_target_operation", lambda selected, identity:
                         {"operation_id": identity, "task_id": identity, "status": "completed", "result_ready": True,
                          "http_status": 200, "method": "projects/create", "result": {"created": True}})
     result = server.get_operation_status(operation_id, base_id="connector")
@@ -117,7 +118,7 @@ def test_dcc_uncertain_write_recovers_same_operation_without_resubmission(tmp_pa
 
 def test_preview_plan_cannot_be_read_from_another_base(tmp_path, monkeypatch):
     config = settings(tmp_path)
-    monkeypatch.setattr(server, "ApiSettings", lambda **kwargs: config)
+    monkeypatch.setattr(server.runtime, "ApiSettings", lambda **kwargs: config)
     token = server._target.set(resolve_target(config, "a"))
     try:
         plan = server.operation_store().create_plan("create", {"name": "x"}, {}, 900)
@@ -131,8 +132,8 @@ def test_preview_plan_cannot_be_read_from_another_base(tmp_path, monkeypatch):
 def test_remote_diagnostics_do_not_clear_uncertain_write(tmp_path, monkeypatch, remote_status):
     config = ApiSettings(_env_file=None, transport="dcc", operation_db=str(tmp_path / "ops.sqlite"))
     target = Target(config, "connector", "identity")
-    monkeypatch.setattr(server, "ApiSettings", lambda **kwargs: config)
-    monkeypatch.setattr(server, "resolve_target", lambda *args: target)
+    monkeypatch.setattr(server.runtime, "ApiSettings", lambda **kwargs: config)
+    monkeypatch.setattr(server.runtime, "resolve_target", lambda *args: target)
     token = server._target.set(target)
     try:
         store = server.operation_store()
@@ -144,10 +145,10 @@ def test_remote_diagnostics_do_not_clear_uncertain_write(tmp_path, monkeypatch, 
     def pending(*args, **kwargs):
         calls.append(kwargs["operation_id"])
         raise DccOperationPending(operation_id)
-    monkeypatch.setattr(server, "call_target", pending)
+    monkeypatch.setattr(server.runtime, "call_target", pending)
     with pytest.raises(ToolError):
         server.create_project(plan.plan_id, operation_id, base_id="connector")
-    monkeypatch.setattr(server, "get_target_operation", lambda *args: {
+    monkeypatch.setattr(server.runtime, "get_target_operation", lambda *args: {
         "operation_id": operation_id, "task_id": operation_id, "method": "projects/create",
         "status": remote_status, "diagnostic": "requires review", "result_ready": remote_status == "failed",
         "http_status": 409 if remote_status == "failed" else None,
@@ -161,17 +162,17 @@ def test_remote_diagnostics_do_not_clear_uncertain_write(tmp_path, monkeypatch, 
 def test_pending_read_is_resumable_only_by_the_same_principal(tmp_path, monkeypatch):
     config = ApiSettings(_env_file=None, transport="dcc", operation_db=str(tmp_path / "ops.sqlite"))
     target = Target(config, "connector", "target")
-    monkeypatch.setattr(server, "ApiSettings", lambda **kwargs: config)
-    monkeypatch.setattr(server, "resolve_target", lambda *args: target)
+    monkeypatch.setattr(server.runtime, "ApiSettings", lambda **kwargs: config)
+    monkeypatch.setattr(server.runtime, "resolve_target", lambda *args: target)
     operation_id = str(uuid4())
     def pending(*args, **kwargs):
         raise DccOperationPending(operation_id)
-    monkeypatch.setattr(server, "call_target", pending)
+    monkeypatch.setattr(server.runtime, "call_target", pending)
     principal = authenticated_principal.set("owner")
     try:
         with pytest.raises(ToolError, match=operation_id):
             server.list_projects(base_id="connector")
-        monkeypatch.setattr(server, "get_target_operation", lambda *args:
+        monkeypatch.setattr(server.runtime, "get_target_operation", lambda *args:
                             {"task_id": operation_id, "status": "completed", "result_ready": True, "http_status": 200,
                              "method": "projects/list", "result": []})
         assert server.get_operation_status(operation_id, base_id="connector")["result"] == []
@@ -189,8 +190,8 @@ def test_pending_read_is_resumable_only_by_the_same_principal(tmp_path, monkeypa
 def test_changed_relay_task_cannot_complete_after_mcp_restart(tmp_path, monkeypatch, action):
     config = ApiSettings(_env_file=None, transport="dcc", operation_db=str(tmp_path / "ops.sqlite"))
     target = Target(config, "connector", "restart-target")
-    monkeypatch.setattr(server, "ApiSettings", lambda **kwargs: config)
-    monkeypatch.setattr(server, "resolve_target", lambda *args: target)
+    monkeypatch.setattr(server.runtime, "ApiSettings", lambda **kwargs: config)
+    monkeypatch.setattr(server.runtime, "resolve_target", lambda *args: target)
     operation, task = str(uuid4()), str(uuid4())
     route = "projects/list" if action == "read" else "projects/create"
     context = server._target.set(target)
@@ -204,8 +205,8 @@ def test_changed_relay_task_cannot_complete_after_mcp_restart(tmp_path, monkeypa
     finally:
         server._target.reset(context)
     server._operation_store.cache_clear()
-    monkeypatch.setattr(server, "call_target", lambda *args, **kwargs: pytest.fail("No resubmission allowed"))
-    monkeypatch.setattr(server, "get_target_operation", lambda *args: {
+    monkeypatch.setattr(server.runtime, "call_target", lambda *args, **kwargs: pytest.fail("No resubmission allowed"))
+    monkeypatch.setattr(server.runtime, "get_target_operation", lambda *args: {
         "operation_id": operation, "task_id": str(uuid4()), "method": route,
         "status": "completed", "result_ready": True, "http_status": 200, "result": {"ok": True}})
     with pytest.raises(ToolError, match="identity changed"):

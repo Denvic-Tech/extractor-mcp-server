@@ -9,11 +9,12 @@ from mcp.server.fastmcp.exceptions import ToolError
 from pydantic import ValidationError
 
 from extractor1c import mcp_server as server
-from extractor1c.operation_store import OperationStore, OperationIndeterminate
-from extractor1c.projects_api import (
-    ApiSettings, ProjectsApiClient, ProjectsApiError, ProjectSchedulePreview,
-    ProjectScheduleSet, ScheduleDefinition,
-)
+from extractor1c.infrastructure.operation_store import OperationStore
+from extractor1c.domain.operations.errors import OperationIndeterminate
+from extractor1c.infrastructure.settings import ApiSettings
+from extractor1c.infrastructure.onec_http import ProjectsApiClient
+from extractor1c.domain.epa.errors import ProjectsApiError
+from extractor1c.domain.schedules import ProjectSchedulePreview, ProjectScheduleSet, ScheduleDefinition
 
 GUID = "4eac24a8-18ba-4ad0-a595-2dba2017bf14"
 
@@ -65,7 +66,7 @@ def test_schedule_request_requires_project_state_and_real_boolean():
 @pytest.fixture
 def store(tmp_path):
     value = OperationStore(tmp_path / "operations.sqlite3")
-    with patch.object(server, "operation_store", return_value=value):
+    with patch.object(server.runtime, "operation_store", return_value=value):
         yield value
 
 
@@ -73,7 +74,7 @@ def create_plan(enabled=True, schedule=None):
     change = ProjectSchedulePreview(projectGuid=GUID, enabled=enabled, schedule=schedule)
     preview = {"approved": True, "expectedScheduleState": "old-schedule",
                "current": {"enabled": False}, "desired": {"enabled": enabled}}
-    with patch.object(server, "call_api", return_value=preview) as backend:
+    with patch.object(server.runtime, "call_api", return_value=preview) as backend:
         result = server.preview_project_schedule(change)
         backend.assert_called_once_with("projects/schedule/preview", change.model_dump())
     return result
@@ -87,7 +88,7 @@ def test_preview_binds_schedule_and_replays_completed_result(store):
     assert server.get_project_plan(plan.plan_id)["summary"] == plan.preview
     operation = str(uuid.uuid4())
     actual = {"enabled": True, "jobId": "job", "schedule": {"kind": "daily", "time": "08:30:00"}}
-    with patch.object(server, "call_api", return_value=actual) as backend:
+    with patch.object(server.runtime, "call_api", return_value=actual) as backend:
         first = server.set_project_schedule(plan.plan_id, operation)
         repeated = server.set_project_schedule(plan.plan_id, operation)
         backend.assert_called_once_with("projects/schedule/set", plan.payload)
@@ -100,7 +101,7 @@ def test_preview_binds_schedule_and_replays_completed_result(store):
 def test_pause_resume_preserves_settings_and_rejects_wrong_action(store):
     planned = create_plan(enabled=False)
     assert store.get_plan(planned["planId"]).payload["schedule"] is None
-    with patch.object(server, "call_api") as backend, pytest.raises(ToolError):
+    with patch.object(server.runtime, "call_api") as backend, pytest.raises(ToolError):
         server.update_project(planned["planId"], str(uuid.uuid4()))
     backend.assert_not_called()
 
@@ -111,7 +112,7 @@ def test_pause_resume_preserves_settings_and_rejects_wrong_action(store):
     {"expectedScheduleState": "state"},
 ])
 def test_unapproved_preview_never_issues_plan(store, preview):
-    with patch.object(server, "call_api", return_value=preview):
+    with patch.object(server.runtime, "call_api", return_value=preview):
         result = server.preview_project_schedule(ProjectSchedulePreview(projectGuid=GUID, enabled=True))
     assert result["planId"] is None
     assert not result["approved"]
@@ -119,21 +120,21 @@ def test_unapproved_preview_never_issues_plan(store, preview):
 
 @pytest.mark.parametrize("preview", [None, [], {"approved": True}, {"approved": True, "expectedScheduleState": ""}])
 def test_malformed_preview_never_issues_plan(store, preview):
-    with patch.object(server, "call_api", return_value=preview), pytest.raises(ToolError):
+    with patch.object(server.runtime, "call_api", return_value=preview), pytest.raises(ToolError):
         server.preview_project_schedule(ProjectSchedulePreview(projectGuid=GUID, enabled=True))
 
 
 def test_uncertain_schedule_write_is_not_repeated_and_can_be_read_back(store):
     planned = create_plan()
     operation = str(uuid.uuid4())
-    with patch.object(server, "call_api", side_effect=ToolError("connection lost")) as backend:
+    with patch.object(server.runtime, "call_api", side_effect=ToolError("connection lost")) as backend:
         with pytest.raises(ToolError):
             server.set_project_schedule(planned["planId"], operation)
         with pytest.raises(ToolError, match="indeterminate"):
             server.set_project_schedule(planned["planId"], operation)
         assert backend.call_count == 1
     assert server.get_operation_status(operation)["status"] == "indeterminate"
-    with patch.object(server, "call_api", return_value={"enabled": True}) as backend:
+    with patch.object(server.runtime, "call_api", return_value={"enabled": True}) as backend:
         assert server.get_project_schedule(GUID)["enabled"] is True
         backend.assert_called_once_with("projects/schedule/get", {"projectGuid": GUID})
 

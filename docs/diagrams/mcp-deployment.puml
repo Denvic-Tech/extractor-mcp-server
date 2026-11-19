@@ -57,8 +57,4 @@ MCP -[#2E8B64]-> WEB : direct_http\nHTTP(S)
 MCP -[#3975C6]-> DCC : dcc\nHTTPS
 WEB -[hidden]right-> DCC
 
-note bottom of MCP
-  Для конкретной базы
-  выбирается один маршрут
-end note
 @enduml

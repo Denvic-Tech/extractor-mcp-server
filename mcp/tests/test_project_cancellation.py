@@ -7,7 +7,7 @@ import pytest
 from mcp.server.fastmcp.exceptions import ToolError
 
 from extractor1c import mcp_server as server
-from extractor1c.operation_store import OperationStore
+from extractor1c.infrastructure.operation_store import OperationStore
 
 GUID = "4eac24a8-18ba-4ad0-a595-2dba2017bf14"
 TASK = "2e129faa-5715-4be0-94b7-36833249e5fc"
@@ -17,12 +17,12 @@ JOB = "0d217bff-9e86-4200-aa7e-7b37de99d3d4"
 @pytest.fixture
 def store(tmp_path):
     value = OperationStore(tmp_path / "operations.sqlite3")
-    with patch.object(server, "operation_store", return_value=value):
+    with patch.object(server.runtime, "operation_store", return_value=value):
         yield value
 
 
 def preview():
-    with patch.object(server, "call_api", return_value={
+    with patch.object(server.runtime, "call_api", return_value={
         "approved": True, "expectedTaskState": "task-state",
     }) as backend:
         result = server.preview_project_export_cancellation(GUID, TASK)
@@ -37,7 +37,7 @@ def test_stop_acknowledgement_replays_without_second_request(store):
     operation = str(uuid.uuid4())
     response = {"cancelStatus": "requested", "projectGuid": GUID,
                 "taskId": TASK, "backgroundJobId": JOB}
-    with patch.object(server, "call_api", return_value=response) as backend:
+    with patch.object(server.runtime, "call_api", return_value=response) as backend:
         assert server.cancel_project_export(plan, operation)["result"] == response
         assert server.cancel_project_export(plan, operation)["replayed"]
     backend.assert_called_once_with("projects/export/cancel", store.get_plan(plan).payload)
@@ -52,7 +52,7 @@ def test_stop_acknowledgement_replays_without_second_request(store):
 def test_uncertain_result_allows_fresh_stop_plan_without_changing_old_operation(store, response):
     plan = preview()
     operation = str(uuid.uuid4())
-    with patch.object(server, "call_api", return_value=response):
+    with patch.object(server.runtime, "call_api", return_value=response):
         with pytest.raises(ToolError, match="indeterminate"):
             server.cancel_project_export(plan, operation)
     previous = store.operation_status(operation)
@@ -61,7 +61,7 @@ def test_uncertain_result_allows_fresh_stop_plan_without_changing_old_operation(
     other = preview()
     acknowledgement = {"cancelStatus": "requested", "projectGuid": GUID,
                        "taskId": TASK, "backgroundJobId": JOB}
-    with patch.object(server, "call_api", return_value=acknowledgement) as backend:
+    with patch.object(server.runtime, "call_api", return_value=acknowledgement) as backend:
         result = server.cancel_project_export(other, str(uuid.uuid4()))
     backend.assert_called_once_with("projects/export/cancel", store.get_plan(other).payload)
     assert result["result"] == acknowledgement
@@ -71,10 +71,10 @@ def test_uncertain_result_allows_fresh_stop_plan_without_changing_old_operation(
 def test_uncertain_operation_id_does_not_repeat_native_request(store):
     plan = preview()
     operation = str(uuid.uuid4())
-    with patch.object(server, "call_api", side_effect=ToolError("1C API HTTP 409")):
+    with patch.object(server.runtime, "call_api", side_effect=ToolError("1C API HTTP 409")):
         with pytest.raises(ToolError, match="409"):
             server.cancel_project_export(plan, operation)
-    with patch.object(server, "call_api") as backend:
+    with patch.object(server.runtime, "call_api") as backend:
         with pytest.raises(ToolError, match="indeterminate"):
             server.cancel_project_export(plan, operation)
     backend.assert_not_called()
@@ -86,7 +86,7 @@ def test_in_progress_stop_still_blocks_another_request(store):
     operation = str(uuid.uuid4())
     store.begin(plan, operation, "cancel")
     other = preview()
-    with patch.object(server, "call_api") as backend:
+    with patch.object(server.runtime, "call_api") as backend:
         with pytest.raises(ToolError, match="unresolved cancellation"):
             server.cancel_project_export(other, str(uuid.uuid4()))
     backend.assert_not_called()
@@ -104,7 +104,7 @@ def test_native_recheck_refusal_after_uncertain_stop_is_not_success(store, reaso
     new_operation = str(uuid.uuid4())
     # The old request could set the stop flag after the new preview. The native
     # locked recheck must remain authoritative instead of fabricating success.
-    with patch.object(server, "call_api", side_effect=ToolError("1C API HTTP 409: " + reason)) as backend:
+    with patch.object(server.runtime, "call_api", side_effect=ToolError("1C API HTTP 409: " + reason)) as backend:
         with pytest.raises(ToolError, match=reason):
             server.cancel_project_export(other, new_operation)
     backend.assert_called_once_with("projects/export/cancel", store.get_plan(other).payload)
@@ -113,7 +113,7 @@ def test_native_recheck_refusal_after_uncertain_stop_is_not_success(store, reaso
 
 
 def test_unknown_task_preview_creates_no_plan(store):
-    with patch.object(server, "call_api", return_value={
+    with patch.object(server.runtime, "call_api", return_value={
         "approved": False, "blockers": ["BACKGROUND_JOB_NOT_FOUND"],
     }):
         assert server.preview_project_export_cancellation(GUID, TASK)["planId"] is None

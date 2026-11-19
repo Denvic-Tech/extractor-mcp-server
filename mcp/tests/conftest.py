@@ -9,7 +9,7 @@ def isolated_operator_configuration(monkeypatch, tmp_path):
     """Use no local .env; individual tests provide their own explicit settings."""
     from extractor1c import mcp_server
 
-    monkeypatch.setattr(mcp_server, "ENV_FILE", tmp_path / "absent.env")
+    monkeypatch.setattr(mcp_server.runtime.config, "ENV_FILE", tmp_path / "absent.env")
     for name in list(os.environ):
         if name.startswith("EXTRACTOR_PROJECTS_"):
             monkeypatch.delenv(name)

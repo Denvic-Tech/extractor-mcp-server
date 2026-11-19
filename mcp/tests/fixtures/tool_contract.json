@@ -1,0 +1,577 @@
+{
+  "instructionsSha256": "2822e41b340dc98ed9955eb4cd5a6de40435ca4d59182d3aa8ae86f9247bccee",
+  "serverName": "extractor1c",
+  "tools": {
+    "analyze_reference_graph": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Find outgoing references and dotted snowflake paths for any 1C entity.\n\nExpand selected paths and nonperiodic information registers. Skip periodic\nregisters. Discover document tabular sections with the updated 1C API.\nReturn exact polymorphic branches, join hints, cycles and explicit limits.\n",
+      "forbidsUnknown": false,
+      "parameters": [
+        "account_scope",
+        "base_id",
+        "details",
+        "expand_paths",
+        "include_tabular_sections",
+        "max_depth",
+        "max_edges",
+        "max_nodes",
+        "object",
+        "snapshot_id"
+      ],
+      "required": [
+        "object"
+      ]
+    },
+    "cancel_project_export": {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "readOnlyHint": false
+      },
+      "description": "Request stop for the approved task. Requested means acknowledged, not finished.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id",
+        "operation_id",
+        "plan_id"
+      ],
+      "required": [
+        "operation_id",
+        "plan_id"
+      ]
+    },
+    "create_project": {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "readOnlyHint": false
+      },
+      "description": "Create a SQL definition directly or an approved plan; operation_id is required.",
+      "forbidsUnknown": true,
+      "parameters": [
+        "base_id",
+        "definition",
+        "operation_id",
+        "plan_id"
+      ],
+      "required": [
+        "operation_id"
+      ]
+    },
+    "describe_object": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Read every field of a 1C metadata object. Prefer describe_object_fields.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id",
+        "object"
+      ],
+      "required": [
+        "object"
+      ]
+    },
+    "describe_object_fields": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Read a compact, filtered page of object fields and exact metadata targets.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id",
+        "cursor",
+        "details",
+        "limit",
+        "name_filter",
+        "object",
+        "reference_only",
+        "snapshot_id"
+      ],
+      "required": [
+        "object"
+      ]
+    },
+    "get_metadata_snapshot": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Read DCC snapshot provenance; reuse snapshotId for paging and project plans.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id",
+        "snapshot_id"
+      ],
+      "required": []
+    },
+    "get_operation_status": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Read a durable write-operation status without retrying the write.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id",
+        "operation_id"
+      ],
+      "required": [
+        "operation_id"
+      ]
+    },
+    "get_project_export_status": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Read task status; optionally include bounded, approximate native history.\n\nDiagnostics require task_id and the query_diagnostics EPA capability.\nHistory is not an exact task trace or typed parameter replay. Ordinary\nstatus remains compatible with older EPA and never consumes messages.\n",
+      "forbidsUnknown": true,
+      "parameters": [
+        "base_id",
+        "details",
+        "include_diagnostics",
+        "project_guid",
+        "task_id",
+        "wait_seconds"
+      ],
+      "required": [
+        "project_guid"
+      ]
+    },
+    "get_project_plan": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Read plan readiness and blockers; details=true includes paged preview fields.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id",
+        "cursor",
+        "details",
+        "limit",
+        "plan_id"
+      ],
+      "required": [
+        "plan_id"
+      ]
+    },
+    "get_project_schedule": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Read the project's actual scheduled job, activity, time context and blockers.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id",
+        "project_guid"
+      ],
+      "required": [
+        "project_guid"
+      ]
+    },
+    "get_project_template_schema": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Return JSON Schema for template requests; does not access a base or create a plan.",
+      "forbidsUnknown": false,
+      "parameters": [],
+      "required": []
+    },
+    "get_skill": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Read the full Markdown text of a project skill or one of its listed reference documents.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "document",
+        "skill_id"
+      ],
+      "required": [
+        "skill_id"
+      ]
+    },
+    "health": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Check local configuration; does not test the 1C connection.",
+      "forbidsUnknown": false,
+      "parameters": [],
+      "required": []
+    },
+    "initialize_project_queue": {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "readOnlyHint": false
+      },
+      "description": "Initialize a SQL project by GUID or use an approved plan; poll its taskId.",
+      "forbidsUnknown": true,
+      "parameters": [
+        "base_id",
+        "operation_id",
+        "plan_id",
+        "project_guid"
+      ],
+      "required": [
+        "operation_id"
+      ]
+    },
+    "inspect_project_receiver": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Read saved-row receiver schema/count/explicit bounded samples through EPA.\n\nRequires published 1C methods 3.3.0+. This never starts export, changes a\nproject or runs Python SQL; receiver observation is not source equality.\n",
+      "forbidsUnknown": true,
+      "parameters": [
+        "base_id",
+        "checks",
+        "details",
+        "project_guid",
+        "project_row_id",
+        "sample_fields",
+        "sample_limit"
+      ],
+      "required": [
+        "project_guid"
+      ]
+    },
+    "list_bases": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "List configured direct bases or all DCC connectors accessible to this installation.",
+      "forbidsUnknown": false,
+      "parameters": [],
+      "required": []
+    },
+    "list_connections": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Read live connections of all types. None: ask to configure 1C. One: use it. Many: ask and reuse the user's choice in this conversation.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id"
+      ],
+      "required": []
+    },
+    "list_metadata": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Read all 1C metadata objects. Prefer search_metadata for hosted clients.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id"
+      ],
+      "required": []
+    },
+    "list_projects": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Read projects visible through the 1C API.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id"
+      ],
+      "required": []
+    },
+    "list_skills": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "List project skills from Markdown files. Call this to find skill IDs and documents to read with get_skill.",
+      "forbidsUnknown": false,
+      "parameters": [],
+      "required": []
+    },
+    "preview_project": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Preview a native plan, or save scenario choices and return the next existing tool call.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id",
+        "definition",
+        "metadata_snapshot_id",
+        "scenario"
+      ],
+      "required": []
+    },
+    "preview_project_export": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Preview an immediate whole-project export; no export starts during preview.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id",
+        "project_guid"
+      ],
+      "required": [
+        "project_guid"
+      ]
+    },
+    "preview_project_export_cancellation": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Preview cooperative cancellation of this exact task; never reset lost jobs.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id",
+        "project_guid",
+        "task_id"
+      ],
+      "required": [
+        "project_guid",
+        "task_id"
+      ]
+    },
+    "preview_project_initialization": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Preview queue initialization: eligible rows, native handlers and immediate effects.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id",
+        "project_guid"
+      ],
+      "required": [
+        "project_guid"
+      ]
+    },
+    "preview_project_properties": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Preview a project-property update and bind it to the verified state.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id",
+        "scenario",
+        "update"
+      ],
+      "required": [
+        "update"
+      ]
+    },
+    "preview_project_schedule": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Preview daily/weekly/interval scheduling; omit schedule to pause/resume unchanged.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id",
+        "change"
+      ],
+      "required": [
+        "change"
+      ]
+    },
+    "preview_project_template": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Validate in target 1C through configured transport, reusing ordinary create plans.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id",
+        "metadata_snapshot_id",
+        "request"
+      ],
+      "required": [
+        "request"
+      ]
+    },
+    "readiness": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Verify that the MCP service can reach and authenticate to the 1C API.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id"
+      ],
+      "required": []
+    },
+    "search_metadata": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Search and page metadata names without returning the complete metadata catalog.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id",
+        "cursor",
+        "kinds",
+        "limit",
+        "query",
+        "snapshot_id"
+      ],
+      "required": []
+    },
+    "set_project_schedule": {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "readOnlyHint": false
+      },
+      "description": "Apply the approved schedule plan; enabling can start export. Read back afterwards.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id",
+        "operation_id",
+        "plan_id"
+      ],
+      "required": [
+        "operation_id",
+        "plan_id"
+      ]
+    },
+    "start_project_export": {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "readOnlyHint": false
+      },
+      "description": "Start export by SQL project GUID or an approved plan; poll the returned taskId.",
+      "forbidsUnknown": true,
+      "parameters": [
+        "base_id",
+        "operation_id",
+        "plan_id",
+        "project_guid"
+      ],
+      "required": [
+        "operation_id"
+      ]
+    },
+    "update_project": {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "readOnlyHint": false
+      },
+      "description": "Apply a SQL change with expectedState or an approved update plan.",
+      "forbidsUnknown": true,
+      "parameters": [
+        "base_id",
+        "change",
+        "operation_id",
+        "plan_id"
+      ],
+      "required": [
+        "operation_id"
+      ]
+    },
+    "validate_project_template": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Validate JSON syntax/semantics only; metadata and receiver need target preview.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "request"
+      ],
+      "required": [
+        "request"
+      ]
+    },
+    "verify_project": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Read a compact project summary and short state token; details includes all fields.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id",
+        "details",
+        "project_name"
+      ],
+      "required": [
+        "project_name"
+      ]
+    },
+    "verify_project_summary": {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Read a compact project summary with a short scoped state token.",
+      "forbidsUnknown": false,
+      "parameters": [
+        "base_id",
+        "project_name",
+        "table_name"
+      ],
+      "required": [
+        "project_name"
+      ]
+    }
+  }
+}

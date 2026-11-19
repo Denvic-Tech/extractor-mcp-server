@@ -3,7 +3,8 @@ import uuid
 
 import pytest
 
-from extractor1c.operation_store import OperationIndeterminate, OperationStore, PlanConflict
+from extractor1c.domain.operations.errors import OperationIndeterminate, PlanConflict
+from extractor1c.infrastructure.operation_store import OperationStore
 
 
 def test_store_closes_connections_after_success_and_failure(tmp_path, monkeypatch):

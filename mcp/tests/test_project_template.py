@@ -6,9 +6,9 @@ from unittest.mock import patch
 import pytest
 from pydantic import ValidationError
 
-from extractor1c.project_template import ProjectTemplateRequest, project_template_schema
+from extractor1c.domain.projects.template import ProjectTemplateRequest, project_template_schema
 from extractor1c.mcp_server import validate_project_template, _preview_project_definition
-from extractor1c.operation_store import OperationStore
+from extractor1c.infrastructure.operation_store import OperationStore
 
 
 def request():
@@ -83,7 +83,7 @@ def test_empty_grouping_array_is_preserved_for_unpartitioned_source():
 
 
 def test_validation_is_local_and_not_a_ready_plan():
-    with patch("extractor1c.mcp_server.call_api", side_effect=AssertionError("No upstream call")):
+    with patch("extractor1c.interface.mcp.runtime.call_api", side_effect=AssertionError("No upstream call")):
         result = validate_project_template(ProjectTemplateRequest.model_validate(request()))
     assert result["valid"]
     assert result["metadataChecked"] is False
@@ -104,8 +104,8 @@ def test_template_reuses_native_preview_and_create_plan(tmp_path):
         return {"projectName": "test_order", "source": "Документ.ЗаказКлиента",
                 "table": "test_order", "fields": [{"source": "Ссылка", "target": "id", "type": "String"}],
                 "errors": [], "warnings": []}
-    with patch("extractor1c.mcp_server.call_api", side_effect=backend), \
-         patch("extractor1c.mcp_server.operation_store", return_value=store):
+    with patch("extractor1c.interface.mcp.runtime.call_api", side_effect=backend), \
+         patch("extractor1c.interface.mcp.runtime.operation_store", return_value=store):
         result = _preview_project_definition(definition)
     assert result["approved"]
     assert result["action"] == "create"

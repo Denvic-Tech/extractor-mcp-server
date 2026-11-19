@@ -4,8 +4,11 @@ from uuid import uuid4
 import pytest
 import requests
 
-from extractor1c.projects_api import ApiSettings, ProjectsApiError
-from extractor1c.transport import DccClient, DccOperationPending, list_bases, resolve_target
+from extractor1c.infrastructure.settings import ApiSettings
+from extractor1c.domain.epa.errors import ProjectsApiError
+from extractor1c.infrastructure.dcc import DccClient
+from extractor1c.domain.epa.errors import DccOperationPending
+from extractor1c.infrastructure.targets import list_bases, resolve_target
 
 
 class Response:
@@ -105,7 +108,8 @@ def test_changed_task_identity_keeps_original_operation_pending():
 
 
 def test_accepted_task_is_persisted_before_waiting_can_be_interrupted(tmp_path):
-    from extractor1c.operation_store import OperationStore, PlanConflict
+    from extractor1c.infrastructure.operation_store import OperationStore
+    from extractor1c.domain.operations.errors import PlanConflict
 
     operation, task = str(uuid4()), str(uuid4())
     api, session = client([{"data": {"operation_id": operation, "task_id": task, "status": "queued"}}])

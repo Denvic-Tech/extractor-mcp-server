@@ -3,8 +3,8 @@ from uuid import uuid4
 
 import pytest
 
-from extractor1c.dcc_metadata import DccMetadataClient
-from extractor1c.projects_api import ProjectsApiError
+from extractor1c.infrastructure.dcc_metadata import DccMetadataClient
+from extractor1c.domain.epa.errors import ProjectsApiError
 from tests.test_transport import Session, settings
 
 BASE = str(uuid4())
@@ -36,10 +36,10 @@ def test_snapshot_fields_preserve_compound_types_and_warnings():
 def test_mcp_fields_preserve_characteristics_from_old_platform(monkeypatch):
     """Missing modern characteristic properties must not erase older metadata."""
     from extractor1c import mcp_server as server
-    from extractor1c.transport import Target
+    from extractor1c.infrastructure.targets import Target
 
     target = Target(settings(), BASE, "identity")
-    monkeypatch.setattr(server, "resolve_target", lambda *args: target)
+    monkeypatch.setattr(server.runtime, "resolve_target", lambda *args: target)
     characteristic = {"CharacteristicType": "ПланВидовХарактеристик.Свойства"}
     payload = page(items=[{"name": "ДополнительныеРеквизиты",
                           "characteristics": [characteristic],
@@ -51,10 +51,11 @@ def test_mcp_fields_preserve_characteristics_from_old_platform(monkeypatch):
         calls.append((resource, snapshot_id, kwargs))
         return payload
 
-    monkeypatch.setattr(server, "_read_dcc_metadata", browser)
-    monkeypatch.setattr(server, "call_api", lambda *args: pytest.fail("No direct 1C fallback"))
+    monkeypatch.setattr(server.runtime, "_read_dcc_metadata", browser)
+    monkeypatch.setattr(server.runtime, "call_api", lambda *args: pytest.fail("No direct 1C fallback"))
     result = server.describe_object_fields("Справочник.Номенклатура", snapshot_id=SNAPSHOT, base_id=BASE)
-    assert result == payload
+    assert result["items"] == payload["items"]
+    assert result["segmentChoices"][0]["eligible"] is True
     assert result["items"][0]["characteristics"] == [characteristic]
     assert calls[0][:2] == ("fields", SNAPSHOT)
 
@@ -84,16 +85,16 @@ def test_malformed_page_is_rejected(overrides):
 
 def test_mcp_search_uses_browser_and_returns_compatible_names(monkeypatch):
     from extractor1c import mcp_server as server
-    from extractor1c.transport import Target
+    from extractor1c.infrastructure.targets import Target
 
     target = Target(settings(), BASE, "identity")
-    monkeypatch.setattr(server, "resolve_target", lambda *args: target)
+    monkeypatch.setattr(server.runtime, "resolve_target", lambda *args: target)
     calls = []
     def browser(resource, snapshot_id=None, **kwargs):
         calls.append((resource, snapshot_id, kwargs))
         return page(items=[{"fullName": "Справочник.Номенклатура", "kind": "Справочник"}], total=1)
-    monkeypatch.setattr(server, "_read_dcc_metadata", browser)
-    monkeypatch.setattr(server, "call_api", lambda *args: pytest.fail("No live task for snapshot search"))
+    monkeypatch.setattr(server.runtime, "_read_dcc_metadata", browser)
+    monkeypatch.setattr(server.runtime, "call_api", lambda *args: pytest.fail("No live task for snapshot search"))
     result = server.search_metadata(query="Номенклатура", snapshot_id=SNAPSHOT, base_id=BASE)
     assert result["items"] == ["Справочник.Номенклатура"]
     assert result["snapshotId"] == SNAPSHOT
@@ -102,28 +103,29 @@ def test_mcp_search_uses_browser_and_returns_compatible_names(monkeypatch):
 
 def test_direct_route_rejects_dcc_snapshot_id(monkeypatch):
     from extractor1c import mcp_server as server
-    from extractor1c.projects_api import ApiSettings
-    from extractor1c.transport import Target
+    from extractor1c.infrastructure.settings import ApiSettings
+    from extractor1c.infrastructure.targets import Target
     from mcp.server.fastmcp.exceptions import ToolError
 
-    monkeypatch.setattr(server, "resolve_target", lambda *args: Target(ApiSettings(_env_file=None), "direct", "identity"))
+    monkeypatch.setattr(server.runtime, "resolve_target", lambda *args: Target(ApiSettings(_env_file=None), "direct", "identity"))
     with pytest.raises(ToolError, match="requires DCC"):
         server.search_metadata(snapshot_id=SNAPSHOT, base_id="direct")
 
 
 def test_preview_is_a_dcc_task_with_no_direct_1c_request(tmp_path, monkeypatch):
-    from extractor1c import mcp_server as server, transport
-    from extractor1c.operation_store import OperationStore
-    from extractor1c.projects_api import ProjectDefinition
-    from extractor1c.transport import Target
+    from extractor1c import mcp_server as server
+    from extractor1c.infrastructure import targets as transport
+    from extractor1c.infrastructure.operation_store import OperationStore
+    from extractor1c.domain.projects.definition import ProjectDefinition
+    from extractor1c.infrastructure.targets import Target
     from tests.test_transport import Response
 
     config = settings(operation_db=str(tmp_path / "operations.sqlite"))
     target = Target(config, BASE, "identity")
-    monkeypatch.setattr(server, "resolve_target", lambda *args: target)
-    monkeypatch.setattr(server, "ApiSettings", lambda **kwargs: config)
+    monkeypatch.setattr(server.runtime, "resolve_target", lambda *args: target)
+    monkeypatch.setattr(server.runtime, "ApiSettings", lambda **kwargs: config)
     store = OperationStore(tmp_path / "plan.sqlite")
-    monkeypatch.setattr(server, "operation_store", lambda: store)
+    monkeypatch.setattr(server.runtime, "operation_store", lambda: store)
     operations, calls = {}, []
 
     class RelaySession:

@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from extractor1c.mcp_auth import parse_tokens
+from extractor1c.interface.http.auth import parse_tokens
 from extractor1c.mcp_server import app
 
 ACCEPT = "application/json, text/event-stream"
@@ -42,19 +42,19 @@ def test_parse_tokens_variants():
 
 
 def test_health_is_open_without_tokens():
-    with patch("extractor1c.mcp_auth.current_tokens", return_value=set()):
+    with patch("extractor1c.interface.http.auth.current_tokens", return_value=set()):
         assert TestClient(app).get("/health").status_code == 200
 
 
 def test_missing_header_is_rejected():
-    with patch("extractor1c.mcp_auth.current_tokens", return_value={"tok"}):
+    with patch("extractor1c.interface.http.auth.current_tokens", return_value={"tok"}):
         resp = TestClient(app).post("/mcp", json=rpc_request(), headers={"Accept": ACCEPT})
         assert resp.status_code == 401
         assert resp.headers["www-authenticate"].startswith("Bearer")
 
 
 def test_wrong_token_is_rejected():
-    with patch("extractor1c.mcp_auth.current_tokens", return_value={"tok"}):
+    with patch("extractor1c.interface.http.auth.current_tokens", return_value={"tok"}):
         resp = TestClient(app).post("/mcp", json=rpc_request(),
                                     headers={"Accept": ACCEPT, "Authorization": bearer("wrong")})
         assert resp.status_code == 401
@@ -62,7 +62,7 @@ def test_wrong_token_is_rejected():
 
 def test_basic_scheme_is_rejected():
     # A leftover Basic header must not be accepted now that the scheme is Bearer.
-    with patch("extractor1c.mcp_auth.current_tokens", return_value={"tok"}):
+    with patch("extractor1c.interface.http.auth.current_tokens", return_value={"tok"}):
         basic = "Basic " + base64.b64encode(b"tok:tok").decode("ascii")
         resp = TestClient(app).post("/mcp", json=rpc_request(),
                                     headers={"Accept": ACCEPT, "Authorization": basic})
@@ -70,7 +70,7 @@ def test_basic_scheme_is_rejected():
 
 
 def test_unconfigured_tokens_return_503():
-    with patch("extractor1c.mcp_auth.current_tokens", return_value=set()):
+    with patch("extractor1c.interface.http.auth.current_tokens", return_value=set()):
         resp = TestClient(app).post("/mcp", json=rpc_request(),
                                     headers={"Accept": ACCEPT, "Authorization": bearer("tok")})
         assert resp.status_code == 503

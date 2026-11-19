@@ -12,8 +12,8 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from extractor1c.mcp_server import app, get_project_plan, preview_project, update_project
-from extractor1c.operation_store import OperationStore
-from extractor1c.projects_api import ProjectRowChange, ProjectRowsAppend
+from extractor1c.infrastructure.operation_store import OperationStore
+from extractor1c.domain.projects.changes import ProjectRowChange, ProjectRowsAppend
 
 TOKEN = "secret-token"
 BEARER = "Bearer " + TOKEN
@@ -38,23 +38,23 @@ def check_direct_sql_over_mcp(http):
         ("start_project_export", "project_guid", project, {"launchStatus": "already_running", "taskId": task}),
         ("initialize_project_queue", "project_guid", project, {"launchStatus": "finished", "taskId": task, "status": "succeeded"}),
     ]
-    with TemporaryDirectory() as directory, patch("extractor1c.mcp_server.operation_store", return_value=OperationStore(Path(directory) / "ops.sqlite")):
+    with TemporaryDirectory() as directory, patch("extractor1c.interface.mcp.runtime.operation_store", return_value=OperationStore(Path(directory) / "ops.sqlite")):
         for index, (name, key, value, response) in enumerate(cases):
             arguments = {key: value, "operation_id": str(uuid.uuid4())}
             for invalid in ({key: value}, {**arguments, "plan_id": str(uuid.uuid4())},
                             {**arguments, "directSql": True}, {**arguments, "sql": "SELECT 1"}):
-                with patch("extractor1c.mcp_server.call_api") as backend:
+                with patch("extractor1c.interface.mcp.runtime.call_api") as backend:
                     result = rpc(http, "tools/call", {"name": name, "arguments": invalid})
                 assert result["isError"]
                 backend.assert_not_called()
             responses = ([{"capabilities": ["direct_sql_operations"]}] if index == 0 else []) + [response]
-            with patch("extractor1c.mcp_server.call_api", side_effect=responses) as backend:
+            with patch("extractor1c.interface.mcp.runtime.call_api", side_effect=responses) as backend:
                 result = rpc(http, "tools/call", {"name": name, "arguments": arguments})
             assert not result["isError"], result
             assert backend.call_count == (2 if index == 0 else 1)
             assert backend.call_args.args[1]["directSql"] is True
             assert all("preview" not in call.args[0] for call in backend.call_args_list)
-            with patch("extractor1c.mcp_server.call_api") as backend:
+            with patch("extractor1c.interface.mcp.runtime.call_api") as backend:
                 replay = rpc(http, "tools/call", {"name": name, "arguments": arguments})
             assert not replay["isError"]
             assert json.loads(replay["content"][0]["text"])["replayed"] is True
@@ -72,8 +72,8 @@ def check_reference_graph_scenarios_over_mcp(http):
 
     # The MCP session manager can only start once; reuse the protocol test's client.
     for arguments, expected_path in GRAPH_SCENARIOS:
-        with patch("extractor1c.mcp_server.call_api", side_effect=backend):
-            result = rpc(http, "tools/call", {"name": "analyze_reference_graph", "arguments": arguments})
+        with patch("extractor1c.interface.mcp.runtime.call_api", side_effect=backend):
+            result = rpc(http, "tools/call", {"name": "analyze_reference_graph", "arguments": {**arguments, "details": True}})
         assert not result["isError"]
         graph = json.loads(result["content"][0]["text"])
         assert graph["complete"]
@@ -92,7 +92,7 @@ def check_partition_scenarios_over_mcp(http):
             assert body == definition
             return case["preview"]
 
-        with patch("extractor1c.mcp_server.call_api", side_effect=backend):
+        with patch("extractor1c.interface.mcp.runtime.call_api", side_effect=backend):
             result = rpc(http, "tools/call", {"name": "preview_project", "arguments": {"definition": definition}})
         assert not result["isError"]
         preview = json.loads(result["content"][0]["text"])
@@ -110,8 +110,8 @@ def check_partition_scenarios_over_mcp(http):
 def _configure_auth(tmp_path):
     store = OperationStore(tmp_path / "operations.sqlite3")
     with (
-        patch("extractor1c.mcp_auth.current_tokens", return_value={TOKEN}),
-        patch("extractor1c.mcp_server.operation_store", return_value=store),
+        patch("extractor1c.interface.http.auth.current_tokens", return_value={TOKEN}),
+        patch("extractor1c.interface.mcp.runtime.operation_store", return_value=store),
     ):
         yield store
 
@@ -132,7 +132,7 @@ def test_mcp_protocol_and_backend_dispatch():
             "clientInfo": {"name": "test", "version": "1"},
         })
         assert initialized["serverInfo"]["name"] == "extractor1c"
-        assert initialized["serverInfo"]["version"] == "3.3.8"
+        assert initialized["serverInfo"]["version"] == "3.3.9"
         assert "preview_project" in initialized["instructions"]
         assert "list_skills" in initialized["instructions"]
         assert "get_skill" in initialized["instructions"]
@@ -140,7 +140,7 @@ def test_mcp_protocol_and_backend_dispatch():
         assert "references/10-mcp-projects.md" in initialized["instructions"]
         check_reference_graph_scenarios_over_mcp(http)
         check_partition_scenarios_over_mcp(http)
-        with patch("extractor1c.mcp_server.call_api", side_effect=lambda route, body:
+        with patch("extractor1c.interface.mcp.runtime.call_api", side_effect=lambda route, body:
                    {"methodsVersion": "1.2.0", "capabilities": ["account_subconto_settings"]}
                    if route == "service/readiness" else [{"name": "test"}]):
             ready_result = rpc(http, "tools/call", {"name": "readiness", "arguments": {}})
@@ -163,7 +163,7 @@ def test_mcp_protocol_and_backend_dispatch():
             {"connectionName": "another"}, {"textColumns": ["x", "X"]},
             {"textColumns": ["x;DROP"]},
         ):
-            with patch("extractor1c.mcp_server.call_api") as repair_backend:
+            with patch("extractor1c.interface.mcp.runtime.call_api") as repair_backend:
                 rejected_repair = rpc(http, "tools/call", {"name": "preview_project", "arguments": {
                     "definition": {"projectName": "Existing", "expectedState": "saved",
                                    "currentTableName": "Articles", "receiverRepair": "create_missing_mysql",
@@ -174,21 +174,21 @@ def test_mcp_protocol_and_backend_dispatch():
         assert tools["inspect_project_receiver"]["annotations"]["readOnlyHint"] is True
         assert tools["inspect_project_receiver"]["inputSchema"]["additionalProperties"] is False
         assert set(tools["inspect_project_receiver"]["inputSchema"]["properties"]) == {
-            "project_guid", "project_row_id", "checks", "sample_fields", "sample_limit", "base_id",
+            "project_guid", "project_row_id", "checks", "sample_fields", "sample_limit", "details", "base_id",
         }
-        with patch("extractor1c.mcp_server.call_api") as receiver_backend:
+        with patch("extractor1c.interface.mcp.runtime.call_api") as receiver_backend:
             invalid_receiver = rpc(http, "tools/call", {"name": "inspect_project_receiver", "arguments": {
                 "project_guid": str(uuid.uuid4()), "sample_limit": True,
             }})
         assert invalid_receiver["isError"]
         receiver_backend.assert_not_called()
-        with patch("extractor1c.mcp_server.call_api") as receiver_backend:
+        with patch("extractor1c.interface.mcp.runtime.call_api") as receiver_backend:
             unknown_receiver_argument = rpc(http, "tools/call", {"name": "inspect_project_receiver", "arguments": {
                 "project_guid": str(uuid.uuid4()), "sql": "SELECT 1",
             }})
         assert unknown_receiver_argument["isError"]
         receiver_backend.assert_not_called()
-        with patch("extractor1c.mcp_server.call_api", side_effect=[
+        with patch("extractor1c.interface.mcp.runtime.call_api", side_effect=[
             {"methodsVersion": "3.3.0", "capabilities": ["receiver_inspection"]},
             {"sourceEqualityVerified": False, "checks": {"count": {"status": "ok", "result": {"count": "9223372036854775807", "exact": True}}}},
         ]) as receiver_backend:
@@ -209,11 +209,11 @@ def test_mcp_protocol_and_backend_dispatch():
         assert "analyze_accumulation_register" not in tools
         assert tools["analyze_reference_graph"]["annotations"]["readOnlyHint"] is True
         assert set(tools["analyze_reference_graph"]["inputSchema"]["properties"]) == {
-            "object", "expand_paths", "max_depth", "max_nodes", "max_edges", "include_tabular_sections", "account_scope", "snapshot_id", "base_id",
+            "object", "expand_paths", "max_depth", "max_nodes", "max_edges", "include_tabular_sections", "account_scope", "snapshot_id", "details", "base_id",
         }
-        with patch("extractor1c.mcp_server.call_api", return_value=[]):
+        with patch("extractor1c.interface.mcp.runtime.call_api", return_value=[]):
             graph_result = rpc(http, "tools/call", {
-                "name": "analyze_reference_graph", "arguments": {"object": "Справочник.Номенклатура"},
+                "name": "analyze_reference_graph", "arguments": {"object": "Справочник.Номенклатура", "details": True},
             })
         assert not graph_result["isError"]
         graph = json.loads(graph_result["content"][0]["text"])
@@ -225,14 +225,14 @@ def test_mcp_protocol_and_backend_dispatch():
         assert tools["get_project_export_status"]["annotations"]["readOnlyHint"] is True
         assert tools["get_project_export_status"]["inputSchema"]["additionalProperties"] is False
         assert set(tools["get_project_export_status"]["inputSchema"]["properties"]) == {
-            "project_guid", "task_id", "include_diagnostics", "base_id",
+            "project_guid", "task_id", "include_diagnostics", "details", "wait_seconds", "base_id",
         }
         for bad_status_arguments in (
             {"include_diagnostics": {"sql": "SELECT 1"}},
             {"include_diagnostics": "true"},
             {"sql": "SELECT 1"},
         ):
-            with patch("extractor1c.mcp_server.call_api") as status_backend:
+            with patch("extractor1c.interface.mcp.runtime.call_api") as status_backend:
                 invalid_status = rpc(http, "tools/call", {
                     "name": "get_project_export_status",
                     "arguments": {"project_guid": str(uuid.uuid4()), **bad_status_arguments},
@@ -253,7 +253,7 @@ def test_mcp_protocol_and_backend_dispatch():
         assert tools["create_project"]["annotations"]["idempotentHint"] is True
         check_direct_sql_over_mcp(http)
         assert tools["preview_project"]["annotations"]["readOnlyHint"] is True
-        with TemporaryDirectory() as directory, patch("extractor1c.skill_catalog.SKILL_ROOT", Path(directory)):
+        with TemporaryDirectory() as directory, patch("extractor1c.infrastructure.skill_catalog.SKILL_ROOT", Path(directory)):
             user_skill = Path(directory) / ".user-skills" / "company-rules"
             user_skill.mkdir(parents=True)
             (user_skill / "SKILL.md").write_text("# Company rules", encoding="utf-8")
@@ -305,12 +305,12 @@ def test_mcp_protocol_and_backend_dispatch():
             "skill_id": local["id"], "document": "../../.env",
         }})
         assert rejected["isError"]
-        with patch("extractor1c.mcp_server.call_api", return_value={"objects": ["Catalog.Test"]}) as backend:
+        with patch("extractor1c.interface.mcp.runtime.call_api", return_value={"objects": ["Catalog.Test"]}) as backend:
             result = rpc(http, "tools/call", {"name": "list_metadata", "arguments": {}})
             assert not result["isError"]
             assert json.loads(result["content"][0]["text"]) == {"objects": ["Catalog.Test"]}
             backend.assert_called_once_with("metadata/list", {})
-        with patch("extractor1c.mcp_server.call_api") as backend:
+        with patch("extractor1c.interface.mcp.runtime.call_api") as backend:
             result = rpc(http, "tools/call", {"name": "create_project", "arguments": {
                 "definition": {"code": "unapproved code"},
             }})
@@ -332,7 +332,7 @@ def test_preview_binds_payload_and_completed_operation_replays():
         "object": row["object"], "table": "Articles", "fields": [{"target": "ArticleGuid"}],
         "tableExists": False, "projectTableExists": False,
     }]}
-    with patch("extractor1c.mcp_server.call_api", side_effect=lambda route, body: (
+    with patch("extractor1c.interface.mcp.runtime.call_api", side_effect=lambda route, body: (
         [{"name": row["connectionName"]}] if route == "connections/list" else
         {"connectionName": row["connectionName"]} if route == "projects/verify" else preview_value
     )) as backend:
@@ -341,7 +341,7 @@ def test_preview_binds_payload_and_completed_operation_replays():
         backend.assert_called_with("projects/preview", append.model_dump(exclude_none=True))
     assert planned["approved"] is True
     operation_id = str(uuid.uuid4())
-    with patch("extractor1c.mcp_server.call_api", return_value={"ok": True}) as backend:
+    with patch("extractor1c.interface.mcp.runtime.call_api", return_value={"ok": True}) as backend:
         first = update_project(planned["planId"], operation_id)
         second = update_project(planned["planId"], operation_id)
         # Новый необязательный параметр не меняет прежний payload записи.
@@ -366,7 +366,7 @@ def test_row_update_preview_allows_its_existing_table():
         "object": row["object"], "table": "Partners", "fields": [{"target": "PartnerGuid"}],
         "tableExists": True,
     }
-    with patch("extractor1c.mcp_server.call_api", side_effect=lambda route, body: (
+    with patch("extractor1c.interface.mcp.runtime.call_api", side_effect=lambda route, body: (
         [{"name": row["connectionName"]}] if route == "connections/list" else
         {"connectionName": row["connectionName"]} if route == "projects/verify" else preview_value
     )):
@@ -376,7 +376,7 @@ def test_row_update_preview_allows_its_existing_table():
 
     preview_value["stateMatches"] = False
     preview_value["conflict"] = True
-    with patch("extractor1c.mcp_server.call_api", side_effect=lambda route, body: (
+    with patch("extractor1c.interface.mcp.runtime.call_api", side_effect=lambda route, body: (
         [{"name": row["connectionName"]}] if route == "connections/list" else
         {"connectionName": row["connectionName"]} if route == "projects/verify" else preview_value
     )):

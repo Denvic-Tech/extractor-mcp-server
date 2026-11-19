@@ -1,10 +1,10 @@
 from extractor1c import __version__
 from extractor1c.mcp_server import app, mcp
-from extractor1c.projects_api import ProjectDefinition, GroupProjectDefinition
+from extractor1c.domain.projects.definition import ProjectDefinition, GroupProjectDefinition
 
 
 def test_server_versions_are_synchronized():
-    assert __version__ == app.version == mcp._mcp_server.version == "3.3.8"
+    assert __version__ == app.version == mcp._mcp_server.version == "3.3.9"
 
 
 def test_nested_rows_use_the_same_array_serialization():
@@ -17,8 +17,9 @@ def test_nested_rows_use_the_same_array_serialization():
 def test_direct_and_dcc_send_identical_canonical_array_payload():
     from unittest.mock import Mock
     from uuid import uuid4
-    from extractor1c.projects_api import ApiSettings, ProjectsApiClient
-    from extractor1c.transport import DccClient
+    from extractor1c.infrastructure.settings import ApiSettings
+    from extractor1c.infrastructure.onec_http import ProjectsApiClient
+    from extractor1c.infrastructure.dcc import DccClient
     operation = str(uuid4())
     body = {"object": "РегистрБухгалтерии.Хозрасчетный", "projectName": "p", "connectionName": "receiver", "tableName": "t", "periodicity": "Регистратор", "segmentation": [
         {"field": "Период", "segment": "День", "regular": True, "extended": False, "initialization": True}]}

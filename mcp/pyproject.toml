@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "extractor-build-manager"
-version = "3.3.8"
+version = "3.3.9"
 description = "Python MCP bridge for the published Extractor 1C HTTP API"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -22,6 +22,7 @@ dependencies = [
 dev = [
     "httpx>=0.27",
     "pytest>=8.0",
+    "ruff>=0.6",
 ]
 
 [project.scripts]
@@ -39,3 +40,18 @@ addopts = "-ra --basetemp=.pytest-tmp"
 pythonpath = ["src"]
 testpaths = ["tests"]
 cache_dir = ".pytest_cache"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+extend-exclude = [".pytest-tmp", ".venv"]
+
+[tool.ruff.lint]
+# Ошибки и вероятные дефекты; оформление и сортировка импортов не навязываются.
+select = ["E4", "E7", "E9", "F", "B"]
+# B008: Field(...) в значении по умолчанию — способ FastMCP объявить обязательный аргумент.
+ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+# Тесты используют компактные однострочные подделки и замыкания внутри циклов.
+"tests/*" = ["E701", "E702", "B023"]

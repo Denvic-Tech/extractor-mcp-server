@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 import pytest
-from extractor1c.projects_api import ProjectDefinition
+from extractor1c.domain.projects.definition import ProjectDefinition
 
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLES = json.loads((ROOT / "tests/fixtures/ledger_preview_erp.json").read_text(encoding="utf-8"))

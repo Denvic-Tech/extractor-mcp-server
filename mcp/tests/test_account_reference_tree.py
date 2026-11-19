@@ -4,8 +4,8 @@
 from copy import deepcopy
 import pytest
 from pydantic import ValidationError
-from extractor1c.projects_api import AccountScope, AccountAnalyticsRequest
-from extractor1c.reference_graph import analyze_reference_graph
+from extractor1c.domain.metadata.requests import AccountScope, AccountAnalyticsRequest
+from extractor1c.application.reference_graph import analyze_reference_graph
 
 FACT = "РегистрБухгалтерии.Хозрасчетный"
 CHART = "ПланСчетов.Хозрасчетный"

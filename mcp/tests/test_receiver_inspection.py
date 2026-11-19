@@ -8,9 +8,13 @@ from mcp.server.fastmcp.exceptions import ToolError
 from pydantic import ValidationError
 
 from extractor1c import mcp_server as server
+from extractor1c.application.errors import GatewayError
 from extractor1c import secure_main
-from extractor1c.projects_api import ApiSettings, ProjectReceiverInspect, ProjectsApiClient, ProjectsApiError
-from extractor1c.transport import DccClient
+from extractor1c.infrastructure.settings import ApiSettings
+from extractor1c.domain.execution.requests import ProjectReceiverInspect
+from extractor1c.infrastructure.onec_http import ProjectsApiClient
+from extractor1c.domain.epa.errors import ProjectsApiError
+from extractor1c.infrastructure.dcc import DccClient
 
 PROJECT = "b81d6354-710c-4199-8a4c-f11a6ab63d1b"
 NATIVE = {
@@ -108,7 +112,7 @@ def test_dcc_uses_logical_receiver_route_without_http_marker():
 ])
 def test_older_or_unadvertised_methods_refuse_without_receiver_call(monkeypatch, version, capabilities):
     backend = Mock(return_value={"methodsVersion": version, "capabilities": capabilities})
-    monkeypatch.setattr(server, "call_api", backend)
+    monkeypatch.setattr(server.runtime, "call_api", backend)
     with pytest.raises(ToolError, match="[Rr]eceiver|receiver"):
         server.inspect_project_receiver(PROJECT)
     assert backend.call_args_list == [(("service/readiness", {}),)]
@@ -116,8 +120,8 @@ def test_older_or_unadvertised_methods_refuse_without_receiver_call(monkeypatch,
 
 @pytest.mark.parametrize("status", [401, 404, 405, 500])
 def test_readiness_failure_is_not_success_or_transport_fallback(monkeypatch, status):
-    backend = Mock(side_effect=ToolError(f"1C API HTTP {status}; check publication"))
-    monkeypatch.setattr(server, "call_api", backend)
+    backend = Mock(side_effect=GatewayError(f"1C API HTTP {status}; check publication", status=status))
+    monkeypatch.setattr(server.runtime, "call_api", backend)
     with pytest.raises(ToolError, match="3.3.0" if status in {404, 405} else str(status)):
         server.inspect_project_receiver(PROJECT)
     assert backend.call_count == 1
@@ -129,18 +133,19 @@ def test_selected_base_read_only_pass_through_has_no_project_writes(tmp_path, mo
         {"base_id": "a", "url": "https://a.test", "user": "u", "password": "p"},
         {"base_id": "b", "url": "https://b.test", "user": "u", "password": "p"},
     ])
-    monkeypatch.setattr(server, "ApiSettings", lambda **kwargs: config)
+    monkeypatch.setattr(server.runtime, "ApiSettings", lambda **kwargs: config)
     calls = []
 
     def call(target, route, body, **kwargs):
         calls.append((target.base_id, route, body))
         return {"methodsVersion": version, "capabilities": ["receiver_inspection"]} if route == "service/readiness" else NATIVE
 
-    monkeypatch.setattr(server, "call_target", call)
+    monkeypatch.setattr(server.runtime, "call_target", call)
     store = Mock(side_effect=AssertionError("Receiver observation must not create a project plan or write operation"))
-    monkeypatch.setattr(server, "operation_store", store)
+    monkeypatch.setattr(server.runtime, "operation_store", store)
     result = server.inspect_project_receiver(PROJECT, "row", ["count", "sample"], ["amount"], 1, base_id="b")
-    assert result is NATIVE
+    assert result["checks"] == NATIVE["checks"]
+    assert result["verification"]["status"] == "observed"
     assert result["checks"]["count"]["result"]["count"] == "9223372036854775807"
     assert result["sourceEqualityVerified"] is False
     assert [(base, route) for base, route, _ in calls] == [
@@ -178,7 +183,7 @@ def test_confirmed_receiver_feature_preserves_business_or_access_error(monkeypat
     error_id = "3ef5c425-88c8-4457-93d8-8ae84724ef2b"
     error = ToolError(f"1C API HTTP {status}; receiver failure; code={code}; errorId={error_id}")
     backend = Mock(side_effect=[{"methodsVersion": "3.3.0", "capabilities": ["receiver_inspection"]}, error])
-    monkeypatch.setattr(server, "call_api", backend)
+    monkeypatch.setattr(server.runtime, "call_api", backend)
     with pytest.raises(ToolError) as raised:
         server.inspect_project_receiver(PROJECT)
     assert raised.value is error

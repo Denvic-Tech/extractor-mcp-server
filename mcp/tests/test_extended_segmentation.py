@@ -1,13 +1,13 @@
+from types import SimpleNamespace
 # //(Денис 2026-10-03. Версия MCP 1.2.0
 # Проверяем независимые роли трёх сегментов и отсутствие ложного подтверждения старого API.
-from pathlib import Path
-from extractor1c.cloud_tools import verify_project_summary
-from extractor1c.projects_api import ProjectDefinition
+from extractor1c.application.project_reading import verify_project_summary
+from extractor1c.domain.projects.definition import ProjectDefinition
 import pytest
 from pydantic import ValidationError
 from unittest.mock import patch
 from extractor1c.mcp_server import preview_project, create_project
-from extractor1c.operation_store import OperationStore
+from extractor1c.infrastructure.operation_store import OperationStore
 
 
 def test_three_mapping_segment_roles_are_independent():
@@ -17,13 +17,13 @@ def test_three_mapping_segment_roles_are_independent():
         {"source": "Параметр.ПериодМесяц", "segmentField": False, "extendedSegmentField": False, "initializationSegmentField": True},
     ]
     state = {"rows": [{"fields": fields}]}
-    result = verify_project_summary(lambda *_: state, "P")["rows"][0]["segmentation"]
+    result = verify_project_summary(SimpleNamespace(call=lambda *_: state, state_scope="test"), "P")["rows"][0]["segmentation"]
     assert result == {"extendedMode": None, "rolesAvailable": True, "regular": ["Параметр.Регистратор"], "extended": ["Параметр.ПериодДень"], "initialization": ["Параметр.ПериодМесяц"]}
 
 
 def test_old_api_does_not_confirm_missing_segment_roles():
     state = {"rows": [{"fields": [{"source": "Параметр.Регистратор", "segmentField": True}]}]}
-    result = verify_project_summary(lambda *_: state, "P")["rows"][0]["segmentation"]
+    result = verify_project_summary(SimpleNamespace(call=lambda *_: state, state_scope="test"), "P")["rows"][0]["segmentation"]
     assert result["rolesAvailable"] is False
     assert result["regular"] == ["Параметр.Регистратор"]
 
@@ -34,7 +34,7 @@ def test_manual_bank_mapping_does_not_override_saved_source_mode():
         {"source": "Параметр.Ссылка", "segmentField": True, "extendedSegmentField": False, "initializationSegmentField": False},
         {"source": "Параметр.НаименованиеПервыеДвеБуквы", "segmentField": False, "extendedSegmentField": False, "initializationSegmentField": True},
     ]}]}
-    result = verify_project_summary(lambda *_: state, "P")["rows"][0]["segmentation"]
+    result = verify_project_summary(SimpleNamespace(call=lambda *_: state, state_scope="test"), "P")["rows"][0]["segmentation"]
     assert result["extendedMode"] is False
     assert result["regular"] == ["Параметр.Ссылка"]
     assert result["extended"] == []
@@ -96,9 +96,9 @@ def test_multiple_roles_on_one_group_and_native_periodicity():
 
 def test_summary_reports_actual_saved_mode_and_unknown_old_mode():
     state = {"rows": [{"fields": [], "sourceSettings": {"extendedMode": True}}]}
-    assert verify_project_summary(lambda *_: state, "P")["rows"][0]["segmentation"]["extendedMode"] is True
+    assert verify_project_summary(SimpleNamespace(call=lambda *_: state, state_scope="test"), "P")["rows"][0]["segmentation"]["extendedMode"] is True
     state["rows"][0]["sourceSettings"] = {}
-    assert verify_project_summary(lambda *_: state, "P")["rows"][0]["segmentation"]["extendedMode"] is None
+    assert verify_project_summary(SimpleNamespace(call=lambda *_: state, state_scope="test"), "P")["rows"][0]["segmentation"]["extendedMode"] is None
 
 
 def test_extended_preview_preserves_exact_roles_in_plan_and_write(tmp_path):
@@ -112,12 +112,12 @@ def test_extended_preview_preserves_exact_roles_in_plan_and_write(tmp_path):
         assert route == "projects/preview"
         assert payload == expected
         return {"object": row.object, "table": row.tableName, "fields": [], "sourceSettings": {"extendedMode": True, "grouping": []}}
-    with patch("extractor1c.mcp_server.call_api", side_effect=backend), patch("extractor1c.mcp_server.operation_store", return_value=store):
+    with patch("extractor1c.interface.mcp.runtime.call_api", side_effect=backend), patch("extractor1c.interface.mcp.runtime.operation_store", return_value=store):
         preview = preview_project(row)
         assert preview["approved"]
         assert preview["summary"]["rows"][0]["sourceSettings"]["extendedMode"] is True
         assert store.get_plan(preview["planId"]).payload == expected
-    with patch("extractor1c.mcp_server.call_api", return_value={"ok": True}) as backend, patch("extractor1c.mcp_server.operation_store", return_value=store):
+    with patch("extractor1c.interface.mcp.runtime.call_api", return_value={"ok": True}) as backend, patch("extractor1c.interface.mcp.runtime.operation_store", return_value=store):
         create_project(preview["planId"], str(uuid.uuid4()))
         backend.assert_called_once_with("projects/create", expected)
 # \\\Денис 2026-10-03. Версия MCP 1.2.0)

@@ -6,10 +6,10 @@ from unittest.mock import patch
 
 import pytest
 
-from extractor1c.cloud_tools import preview_summary
+from extractor1c.domain.projects.summaries import preview_summary
 from extractor1c.mcp_server import get_project_plan, preview_project
-from extractor1c.operation_store import OperationStore
-from extractor1c.projects_api import ProjectDefinition
+from extractor1c.infrastructure.operation_store import OperationStore
+from extractor1c.domain.projects.definition import ProjectDefinition
 
 
 CAPTURED = json.loads((Path(__file__).parent / "fixtures/project_segments_erp.json").read_text(encoding="utf-8"))["cases"]
@@ -39,7 +39,7 @@ def test_actual_1c_partition_choice_survives_preview_and_saved_plan(capture, tmp
         # \\\Денис 2026-10-03. Версия MCP 1.2.0)
         return deepcopy(capture["preview"])
 
-    with patch("extractor1c.mcp_server.call_api", side_effect=api), patch("extractor1c.mcp_server.operation_store", return_value=store):
+    with patch("extractor1c.interface.mcp.runtime.call_api", side_effect=api), patch("extractor1c.interface.mcp.runtime.operation_store", return_value=store):
         preview = preview_project(definition)
         assert preview["approved"] and preview["planId"]
         settings = preview["summary"]["rows"][0]["sourceSettings"]
@@ -48,7 +48,7 @@ def test_actual_1c_partition_choice_survives_preview_and_saved_plan(capture, tmp
         assert len(grouping) == 1
         assert grouping[0] == {"enabled": True, "field": parameter, "path": path,
                                "function": function, "inclusive": False}
-        plan = get_project_plan(preview["planId"], limit=200)
+        plan = get_project_plan(preview["planId"], limit=200, details=True)
         assert plan["summary"]["rows"][0]["sourceSettings"] == settings
         assert any(f["source"] == "Параметр." + parameter for f in plan["fields"]["items"])
         # //(Денис 2026-10-03. Версия MCP 1.2.0
@@ -82,10 +82,10 @@ def test_minimal_field_previews_keep_segment_parameters_and_native_uuid(capture,
         # \\\Денис 2026-10-03. Версия MCP 1.2.0)
         return deepcopy(raw)
 
-    with patch("extractor1c.mcp_server.call_api", side_effect=api), patch("extractor1c.mcp_server.operation_store", return_value=store):
+    with patch("extractor1c.interface.mcp.runtime.call_api", side_effect=api), patch("extractor1c.interface.mcp.runtime.operation_store", return_value=store):
         preview = preview_project(definition)
         assert preview["approved"]
-        plan = get_project_plan(preview["planId"], limit=200)
+        plan = get_project_plan(preview["planId"], limit=200, details=True)
         fields = plan["fields"]["items"]
         assert {f["source"] for f in fields} == set(definition.selectedFields)
         parameter = "Параметр." + EXPECTED[capture["case"]][4]

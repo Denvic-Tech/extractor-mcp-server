@@ -9,10 +9,11 @@ from mcp.server.fastmcp.exceptions import ToolError
 from pydantic import ValidationError
 
 from extractor1c import mcp_server as server
-from extractor1c.operation_store import OperationStore, OperationIndeterminate
-from extractor1c.projects_api import (
-    ApiSettings, ProjectsApiClient, ProjectExportRef, ProjectExportStart, ProjectExportStatus,
-)
+from extractor1c.infrastructure.operation_store import OperationStore
+from extractor1c.domain.operations.errors import OperationIndeterminate
+from extractor1c.infrastructure.settings import ApiSettings
+from extractor1c.infrastructure.onec_http import ProjectsApiClient
+from extractor1c.domain.execution.requests import ProjectExportRef, ProjectExportStart, ProjectExportStatus
 
 GUID = "4eac24a8-18ba-4ad0-a595-2dba2017bf14"
 TASK = "2e129faa-5715-4be0-94b7-36833249e5fc"
@@ -22,13 +23,13 @@ JOB = "0d217bff-9e86-4200-aa7e-7b37de99d3d4"
 @pytest.fixture
 def store(tmp_path):
     value = OperationStore(tmp_path / "operations.sqlite3")
-    with patch.object(server, "operation_store", return_value=value):
+    with patch.object(server.runtime, "operation_store", return_value=value):
         yield value
 
 
 def preview(project=GUID):
     response = {"approved": True, "expectedProjectState": "project-version", "executionUser": "http-user"}
-    with patch.object(server, "call_api", return_value=response) as backend:
+    with patch.object(server.runtime, "call_api", return_value=response) as backend:
         result = server.preview_project_export(project)
     backend.assert_called_once_with("projects/export/preview", {"projectGuid": project})
     return result["planId"]
@@ -49,12 +50,12 @@ def test_closed_contract(model, payload):
 
 @pytest.mark.parametrize("response", [None, [], {"approved": True}, {"approved": True, "expectedProjectState": ""}])
 def test_malformed_preview_does_not_create_plan(store, response):
-    with patch.object(server, "call_api", return_value=response), pytest.raises(ToolError):
+    with patch.object(server.runtime, "call_api", return_value=response), pytest.raises(ToolError):
         server.preview_project_export(GUID)
 
 
 def test_blocked_preview_does_not_create_plan(store):
-    with patch.object(server, "call_api", return_value={"approved": False, "blockers": ["EXPORT_FORBIDDEN"]}):
+    with patch.object(server.runtime, "call_api", return_value={"approved": False, "blockers": ["EXPORT_FORBIDDEN"]}):
         assert server.preview_project_export(GUID)["planId"] is None
 
 
@@ -65,12 +66,12 @@ def test_preview_binds_original_project_and_completed_launch_replays(store):
     assert server.get_project_plan(plan_id)["action"] == "export"
     operation = str(uuid.uuid4())
     response = {"launchStatus": "started", "taskId": TASK, "backgroundJobId": JOB}
-    with patch.object(server, "call_api", return_value=response) as backend:
+    with patch.object(server.runtime, "call_api", return_value=response) as backend:
         assert server.start_project_export(plan_id, operation)["result"] == response
         assert server.start_project_export(plan_id, operation)["replayed"]
     backend.assert_called_once_with("projects/export/start", plan.payload)
     assert server.get_operation_status(operation)["status"] == "completed"
-    with patch.object(server, "call_api") as backend, pytest.raises(ToolError):
+    with patch.object(server.runtime, "call_api") as backend, pytest.raises(ToolError):
         server.update_project(plan_id, str(uuid.uuid4()))
     backend.assert_not_called()
 
@@ -84,7 +85,7 @@ def test_preview_binds_original_project_and_completed_launch_replays(store):
 def test_unconfirmed_launch_retains_evidence_and_blocks_fresh_plan(store, response):
     plan_id = preview()
     operation = str(uuid.uuid4())
-    with patch.object(server, "call_api", return_value=response) as backend:
+    with patch.object(server.runtime, "call_api", return_value=response) as backend:
         with pytest.raises(ToolError, match="indeterminate"):
             server.start_project_export(plan_id, operation)
         with pytest.raises(ToolError, match="indeterminate"):
@@ -94,20 +95,20 @@ def test_unconfirmed_launch_retains_evidence_and_blocks_fresh_plan(store, respon
     assert state["status"] == "indeterminate"
     assert state["result"] == response
     other_plan = preview(GUID.upper())
-    with patch.object(server, "call_api") as backend, pytest.raises(ToolError, match="unresolved"):
+    with patch.object(server.runtime, "call_api") as backend, pytest.raises(ToolError, match="unresolved"):
         server.start_project_export(other_plan, str(uuid.uuid4()))
     backend.assert_not_called()
 
 
 def test_network_loss_blocks_only_same_project_and_status_remains_available(store):
     plan_id = preview()
-    with patch.object(server, "call_api", side_effect=ToolError("connection lost")):
+    with patch.object(server.runtime, "call_api", side_effect=ToolError("connection lost")):
         with pytest.raises(ToolError):
             server.start_project_export(plan_id, str(uuid.uuid4()))
     other_plan = preview(str(uuid.uuid4()))
-    with patch.object(server, "call_api", return_value={"launchStatus": "rejected"}):
+    with patch.object(server.runtime, "call_api", return_value={"launchStatus": "rejected"}):
         assert server.start_project_export(other_plan, str(uuid.uuid4()))["result"]["launchStatus"] == "rejected"
-    with patch.object(server, "call_api", return_value={"status": "failed", "taskId": TASK}) as backend:
+    with patch.object(server.runtime, "call_api", return_value={"status": "failed", "taskId": TASK}) as backend:
         assert server.get_project_export_status(GUID, TASK)["status"] == "failed"
         backend.assert_called_once_with("projects/export/status", {"projectGuid": GUID, "taskId": TASK})
 
@@ -116,7 +117,7 @@ def test_network_loss_blocks_only_same_project_and_status_remains_available(stor
 def test_explicit_no_new_launch_outcomes_replay(store, status):
     plan_id = preview()
     operation = str(uuid.uuid4())
-    with patch.object(server, "call_api", return_value={"launchStatus": status, "taskId": TASK}) as backend:
+    with patch.object(server.runtime, "call_api", return_value={"launchStatus": status, "taskId": TASK}) as backend:
         server.start_project_export(plan_id, operation)
         assert server.start_project_export(plan_id, operation)["replayed"]
         assert backend.call_count == 1
