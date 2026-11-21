@@ -133,6 +133,7 @@ python3 scripts/install.py
 - [Методы MCP](docs/Справочник/mcp-methods.md).
 - [Проекты, сохраняемые сценарии и варианты настроек](mcp/skills/extractor1c/references/10-mcp-projects.md).
 - [Схема диалога с помощником](docs/diagrams/extractor-project-question-tree.md).
+- [Диаграммы принятия решений: прямой MCP и DCC](docs/diagrams/mcp-decision-flows.md).
 - [Примеры запросов](mcp/skills/extractor1c/references/25-prompt-examples.md).
 - [Пользовательские навыки](docs/Справочник/user-skills.md).
 - [Диагностика и устранение проблем](docs/Справочник/troubleshooting.md).
