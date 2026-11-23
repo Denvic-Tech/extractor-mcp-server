@@ -227,7 +227,8 @@ class ProjectDefinition(ObjectRequest, ProjectName, ProjectConnection):
         if self.segmentation is not None:
             payload.pop("segment", None)
             payload.pop("segmentField", None)
-        if self.periodicity is None:
+        # EPA трактует переданную пустую строку как неизвестную периодичность.
+        if not self.periodicity:
             payload.pop("periodicity", None)
         if self.rowSettings is None:
             payload.pop("rowSettings", None)
