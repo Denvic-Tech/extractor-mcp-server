@@ -15,10 +15,10 @@ from ..domain.epa.routes import ACTION_ROUTES
 from ..domain.execution.outcomes import execution_result_problem
 from ..domain.execution.requests import ProjectExportRef
 from ..domain.operations.errors import OperationStoreError
-from ..domain.projects.changes import ProjectChange, ProjectRowsAppend
+from ..domain.projects.changes import ProjectChange, ProjectRowsAppend, ProjectReceiverChange
 from ..domain.projects.connections import bind_project_connection
 from ..domain.projects.definition import GroupProjectDefinition, ProjectDefinition
-from ..domain.projects.payloads import uses_column_names, uses_query_source
+from ..domain.projects.payloads import uses_column_names, uses_dotted_field_addition, uses_query_source
 from .capabilities import require_capabilities
 from .errors import ApplicationError, LicenseRejected
 from .ports import AppContext
@@ -37,6 +37,8 @@ def write_project(ctx: AppContext, action: str, plan_id: str | None, operation_i
             request = TypeAdapter(ProjectDefinition | GroupProjectDefinition).validate_python(direct)
         elif action == "update":
             request = TypeAdapter(ProjectChange).validate_python(direct)
+            if isinstance(request, ProjectReceiverChange):
+                raise ValueError("Receiver changes require preview_project and plan_id")
         else:
             request = ProjectExportRef(projectGuid=direct)
         # The caller cannot set this marker in definition/change. It is added
@@ -78,6 +80,12 @@ def commit(ctx: AppContext, plan_id: str | None, operation_id: str, action: str,
             store.reject(operation_id, {"code": "DIRECT_SQL_CAPABILITY_UNAVAILABLE",
                          "error": "Native direct SQL capability could not be confirmed.", "writeApplied": False})
             raise
+    if "receiverChange" in plan.payload:
+        try:
+            require_capabilities(ctx.call, "receiver_change")
+        except Exception:
+            store.reject(operation_id, {"code": "RECEIVER_CHANGE_UNAVAILABLE", "writeApplied": False})
+            raise
     if uses_query_source(plan.payload):
         try:
             require_capabilities(ctx.call, "query_sources")
@@ -111,7 +119,7 @@ def commit(ctx: AppContext, plan_id: str | None, operation_id: str, action: str,
             if not isinstance(saved, dict) or saved.get("projectRef") != result["projectRef"]:
                 verification = {"status": "unavailable", "reason": "SAVED_PROJECT_IDENTITY_UNCONFIRMED"}
             else:
-                verification = confirm_saved(plan.payload, saved)
+                verification = confirm_saved(plan.payload, saved, update_result=result if action == "update" else None)
                 result = {**result, **saved}
         except (ApplicationError, OSError):
             verification = {"status": "unavailable", "reason": "READBACK_UNAVAILABLE",
@@ -146,6 +154,8 @@ def _confirm_direct_capabilities(ctx: AppContext, payload: dict[str, Any]) -> No
         required.append("field_mapping")
         if "rowIdentifier" in payload:
             required.append("field_selection")
+        if uses_dotted_field_addition(payload):
+            required.append("field_selection_paths")
     if uses_column_names(payload):
         required.append("column_names")
     missing = published.first_missing(*required)

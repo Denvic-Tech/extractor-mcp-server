@@ -184,6 +184,22 @@ def test_field_readback_selects_the_requested_saved_row_identifier():
     assert confirm_saved(request, saved)["status"] == "mismatch"
 
 
+@pytest.mark.parametrize("row_details, saved_fields", [
+    ({"rowIdentifier": "other"}, [{"source": "OwnerType", "target": "Kind", "noExport": False}]),
+    ({"table": "other"}, [{"source": "OwnerType", "target": "Kind", "noExport": False}]),
+    ({}, [{"source": "WrongAlias", "target": "Kind", "noExport": False}]),
+    ({}, [{"source": "OwnerType", "target": "Kind", "noExport": True}]),
+    ({}, [{"source": "OwnerType", "target": "WrongTarget", "noExport": False}]),
+])
+def test_added_field_readback_requires_saved_row_and_mapping(row_details, saved_fields):
+    request = {"rowIdentifier": 6, "fieldChanges": [{"source": "Owner.Type", "target": "Kind", "add": True}]}
+    result = {"rowIdentifier": "6", "currentTableName": "items", "changes": {"fieldChanges": [
+        {"source": "OwnerType", "before": None, "after": {"target": "Kind", "noExport": False}},
+    ]}}
+    saved = {"rows": [{"table": "items", "fields": saved_fields, **row_details}]}
+    assert confirm_saved(request, saved, update_result=result)["status"] == "mismatch"
+
+
 def test_initializing_task_requests_waiting_on_the_same_task():
     assert task_decision({"status": "initializing"})["decision"]["nextAction"] == "wait_same_task"
 

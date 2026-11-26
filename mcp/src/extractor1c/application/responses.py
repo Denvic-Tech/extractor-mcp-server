@@ -14,7 +14,8 @@ def project_response(ctx: AppContext, value: Any, project_name: str, *, details:
     full = "fields" in value or isinstance(value.get("rows"), list)
     result = (summarize_project(state_from_verify(value), project_name, table_name)
               if full and not details else dict(value))
-    for key in ("ok", "stateMatches", "conflict", "changes", "error", "code", "verification", "rowIdentifier", "currentTableName"):
+    for key in ("ok", "stateMatches", "conflict", "changes", "error", "code", "verification", "rowIdentifier",
+                "currentTableName", "settingsPreserved", "tableExists"):
         if key in value:
             result[key] = value[key]
     if isinstance(native, str) and native:

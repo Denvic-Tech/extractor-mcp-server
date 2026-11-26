@@ -3,6 +3,8 @@ from copy import deepcopy
 import json
 from typing import Any
 
+from .projects.payloads import matches_field_mapping_row
+
 
 def field_choices(value: dict[str, Any], object_name: str) -> dict[str, Any]:
     choices = []
@@ -104,6 +106,10 @@ def receiver_decision(value: Any, details: bool = False) -> Any:
 def plan_decision(summary: Any) -> dict[str, Any]:
     if not isinstance(summary, dict):
         return {"status": "unconfirmed", "blockers": ["INVALID_NATIVE_PREVIEW"], "nextAction": "inspect_details"}
+    if (summary.get("nextAction") == "confirm_recreate" and summary.get("tableExists") is True
+            and summary.get("stateMatches") is True and summary.get("conflict") is False):
+        return {"status": "choice_required", "blockers": ["TABLE_RECREATION_CONFIRMATION_REQUIRED"],
+                "nextAction": "confirm_recreate"}
     blockers = []
     if isinstance(summary.get("blockers"), list):
         blockers.extend(summary["blockers"])
@@ -167,7 +173,24 @@ def graph_choices(value: Any, details: bool = False) -> Any:
     return result
 
 
-def confirm_saved(payload: dict[str, Any], saved: dict[str, Any]) -> dict[str, Any]:
+def _added_field_sources(result: dict[str, Any]) -> dict[str, list[str]]:
+    sources: dict[str, list[str]] = {}
+    changes = result.get("changes")
+    if not isinstance(changes, dict) or not isinstance(changes.get("fieldChanges"), list):
+        return sources
+    for change in changes["fieldChanges"]:
+        if not isinstance(change, dict) or "before" not in change or change["before"] is not None:
+            continue
+        after = change.get("after")
+        source = change.get("source")
+        if isinstance(after, dict) and isinstance(after.get("target"), str) and isinstance(source, str) and source:
+            sources.setdefault(after["target"], []).append(source)
+    return sources
+
+
+def confirm_saved(
+    payload: dict[str, Any], saved: dict[str, Any], *, update_result: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Compare requested properties to live saved state, never to a requested echo."""
     checked = []
     differences = []
@@ -185,6 +208,14 @@ def confirm_saved(payload: dict[str, Any], saved: dict[str, Any]) -> dict[str, A
                 expected, actual = expected.casefold(), actual.casefold()
             compare(key, expected, actual)
     rows = saved.get("rows") if isinstance(saved.get("rows"), list) else [saved]
+    if "receiverChange" in payload:
+        table = payload["receiverChange"]["tableName"]
+        matches = [row for row in rows if isinstance(row, dict) and row.get("table") == table]
+        compare("tableName", table, matches[0].get("table") if len(matches) == 1 else None)
+        return {"status": "mismatch" if differences else "partial", "checked": checked,
+                "differences": differences, "notIndependentlyChecked": ["settingsPreserved", "receiverSchema"],
+                "sourceEqualityVerified": False,
+                "nextAction": "resolve_differences" if differences else "inspect_project_receiver"}
     if any(not isinstance(row, dict) for row in rows):
         raise ValueError("Invalid saved project rows")
     requested = payload.get("rows") if isinstance(payload.get("rows"), list) else [payload.get("definition", payload)]
@@ -205,9 +236,19 @@ def confirm_saved(payload: dict[str, Any], saved: dict[str, Any]) -> dict[str, A
             continue  # A project-property update needs no arbitrary row selection.
         table = definition.get("currentTableName", definition.get("tableName"))
         identifier = definition.get("rowIdentifier")
+        field_result = (
+            update_result if update_result and definition.get("fieldChanges")
+            and matches_field_mapping_row(definition, update_result) else {}
+        )
         matches = [row for row in rows if (
             str(row.get("rowIdentifier")) == str(identifier) if identifier is not None
             else table is not None and row.get("table") == table)]
+        if not matches and identifier is not None:
+            confirmed_table = field_result.get("currentTableName")
+            if isinstance(confirmed_table, str) and confirmed_table:
+                same_table = [row for row in rows if row.get("table") == confirmed_table]
+                if len(same_table) == 1 and same_table[0].get("rowIdentifier") is None:
+                    matches = same_table
         row = matches[0] if len(matches) == 1 else rows[0] if table is None and identifier is None and len(rows) == 1 else None
         if row is None:
             differences.append({"property": "row", "expected": table, "actual": "not uniquely found"})
@@ -243,8 +284,12 @@ def confirm_saved(payload: dict[str, Any], saved: dict[str, Any]) -> dict[str, A
         for source in definition.get("selectedFields", []):
             mapping = [f for f in fields if f.get("source") == source]
             compare("selectedFields." + source, True, len(mapping) == 1 and mapping[0].get("noExport") is False)
+        added_sources = _added_field_sources(field_result)
         for change in definition.get("fieldChanges", []):
-            mapping = [f for f in fields if f.get("source") == change["source"]]
+            source = change["source"]
+            aliases = added_sources.get(change.get("target"), []) if change.get("add") and "." in source else []
+            mapping_source = aliases[0] if len(aliases) == 1 else source
+            mapping = [field for field in fields if field.get("source") == mapping_source]
             if len(mapping) != 1:
                 differences.append({"property": "fieldChanges", "expected": change["source"],
                                     "actual": "not uniquely found"})
@@ -252,6 +297,8 @@ def confirm_saved(payload: dict[str, Any], saved: dict[str, Any]) -> dict[str, A
             for key in ("target", "noExport"):
                 if key in change:
                     compare(change["source"] + "." + key, change[key], mapping[0].get(key))
+            if change.get("add"):
+                compare(source + ".noExport", False, mapping[0].get("noExport"))
         for key in ("includeGuids", "includeMetadataTypes", "queryText", "queryParameters"):
             if key in definition:
                 unconfirmed.append(key)

@@ -10,9 +10,11 @@ from ..identifiers import is_version
 
 # Текст отказа для каждой возможности, без которой сценарий не начинается.
 CAPABILITY_REQUIRED = {
+    "receiver_change": "Receiver changes require the receiver_change EPA capability; update EPA",
     "direct_sql_operations": "Direct SQL operations require the direct_sql_operations EPA capability; update EPA",
     "field_mapping": "Field mapping changes require the field_mapping EPA capability; update EPA",
     "field_selection": "Row field selection requires the field_selection EPA capability; update EPA",
+    "field_selection_paths": "Adding dotted field paths requires the field_selection_paths EPA capability; update EPA",
     "column_names": "Column names require the column_names EPA capability; update EPA",
     "query_sources": "Query sources require the query_sources EPA capability; update EPA",
     "row_settings": "Native row settings require the row_settings EPA capability; update EPA",

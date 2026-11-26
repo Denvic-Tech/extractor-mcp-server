@@ -5,6 +5,7 @@
 """
 from typing import Any
 
+from ..identifiers import is_uuid
 from ..projects.payloads import matches_field_mapping_row
 from .requests import ProjectExportCancelRef, ProjectExportStatus
 
@@ -17,6 +18,15 @@ EXECUTION_INDETERMINATE = (
 
 def execution_result_problem(action: str, payload: dict[str, Any], result: Any) -> str | None:
     """Вернуть причину, по которой ответ нельзя считать исходом операции, или ``None``."""
+    if action == "update" and "receiverChange" in payload:
+        if (not isinstance(result, dict) or result.get("ok") is not True
+                or not is_uuid(result.get("projectRef"))
+                or result.get("projectName") != payload["projectName"]
+                or result.get("currentTableName") != payload["currentTableName"]
+                or result.get("table") != payload["receiverChange"]["tableName"]
+                or result.get("tableExists") is not True
+                or result.get("settingsPreserved") is not True):
+            return "Receiver change is indeterminate; verify the original operation and receiver"
     if action == "update" and "fieldChanges" in payload:
         if (not isinstance(result, dict) or result.get("ok") is not True
                 or result.get("projectName") != payload["projectName"]

@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import Field, SerializerFunctionWrapHandler, StrictBool, model_serializer, model_validator
 
-from ..identifiers import BOUNDED_LATIN_NAME, FIELD_PATH_PATTERN, LATIN_NAME_PATTERN
+from ..identifiers import BOUNDED_LATIN_NAME, FIELD_PATH_PATTERN, LATIN_NAME_PATTERN, TABLE_NAME_PATTERN
 from ..requests import StrictRequest
 from .definition import (
     GroupProjectDefinition, ProjectConnection, ProjectDefinition, ProjectName, RowSettings, require_consistent_rows,
@@ -41,6 +41,12 @@ class ProjectRowsAppend(ProjectName, ProjectConnection):
 
 
 class ProjectRowChange(ProjectName):
+    """Identify the saved row separately from its requested receiver definition.
+
+    Native EPA validates whether changing the receiver is supported. Accepting
+    a different tableName here does not authorize a physical table rename.
+    """
+
     expectedState: str = Field(min_length=1, max_length=524288)
     currentTableName: str = Field(pattern=LATIN_NAME_PATTERN, max_length=100)
     definition: ProjectDefinition
@@ -49,8 +55,6 @@ class ProjectRowChange(ProjectName):
     def consistent_definition(self):
         if self.definition.projectName != self.projectName:
             raise ValueError("Definition must use the existing project")
-        if self.definition.tableName.casefold() != self.currentTableName.casefold():
-            raise ValueError("Renaming a target table is not supported")
         return self
 
 
@@ -60,6 +64,28 @@ class ProjectRowSettingsChange(ProjectName):
     expectedState: str = Field(min_length=1, max_length=524288)
     currentTableName: str = Field(pattern=LATIN_NAME_PATTERN, max_length=100)
     rowSettings: RowSettings
+
+
+class ReceiverChange(StrictRequest):
+    """Select a different receiver; recreating an existing table destroys its data."""
+
+    tableName: str = Field(pattern=TABLE_NAME_PATTERN, max_length=100)
+    recreateExisting: StrictBool = False
+    expectedTableExists: StrictBool | None = None
+
+
+class ProjectReceiverChange(ProjectName):
+    """Change only the saved row receiver, using a preview-bound operation."""
+
+    expectedState: str = Field(min_length=1, max_length=524288)
+    currentTableName: str = Field(pattern=TABLE_NAME_PATTERN, max_length=100)
+    receiverChange: ReceiverChange
+
+    @model_validator(mode="after")
+    def different_receiver(self):
+        if self.currentTableName.casefold() == self.receiverChange.tableName.casefold():
+            raise ValueError("Specify a different receiver table")
+        return self
 
 
 class FieldMappingChange(StrictRequest):
@@ -84,8 +110,8 @@ class FieldMappingChange(StrictRequest):
 
     @model_validator(mode="after")
     def validate_addition(self) -> "FieldMappingChange":
-        if self.add and (self.target is None or self.noExport is not None or "." in self.source):
-            raise ValueError("Addition requires target and a direct source field")
+        if self.add and (self.target is None or self.noExport is not None):
+            raise ValueError("Addition requires target and does not accept noExport")
         return self
 
     @model_serializer(mode="wrap")
@@ -147,6 +173,6 @@ class ProjectReceiverRepair(ProjectName):
 # Project-level and row-level changes share the same public preview/update
 # operations; the closed union still validates each concrete payload strictly.
 ProjectChange = (ProjectUpdate | ProjectRowsAppend | ProjectRowChange | ProjectReceiverRepair
-                 | ProjectRowSettingsChange | ProjectFieldMappingChange)
+                 | ProjectRowSettingsChange | ProjectFieldMappingChange | ProjectReceiverChange)
 ProjectPreview = (ProjectDefinition | GroupProjectDefinition | ProjectRowsAppend | ProjectRowChange
-                  | ProjectReceiverRepair | ProjectRowSettingsChange | ProjectFieldMappingChange)
+                  | ProjectReceiverRepair | ProjectRowSettingsChange | ProjectFieldMappingChange | ProjectReceiverChange)

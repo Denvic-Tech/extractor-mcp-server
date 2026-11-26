@@ -33,7 +33,7 @@ def project_plan(ctx: AppContext, plan_id: str, cursor: int = 0, limit: int = 10
             return {"planId": plan.plan_id, "action": plan.action,
                     "summary": plan.preview, "operationId": plan.operation_id,
                     "decision": {"status": "operation_record", "nextAction": "get_operation_status"}}
-        if plan.action in _PLAIN_PREVIEW_ACTIONS:
+        if plan.action in _PLAIN_PREVIEW_ACTIONS or "receiverChange" in plan.payload:
             return {"planId": plan.plan_id, "action": plan.action,
                     "expiresAt": plan.expires_at, "summary": plan.preview,
                     "decision": plan_decision(plan.preview)}

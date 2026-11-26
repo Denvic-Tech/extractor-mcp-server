@@ -15,7 +15,7 @@ LICENSE_ERRORS = {
 
 PREWRITE_ERRORS = {
     **LICENSE_ERRORS,
-    "PROJECT_CREATE_BUSY": (409, "Project creation is busy; no project or receiver changes were made."),
+    "PROJECT_CREATE_BUSY": (409, "Project creation lock could not be acquired; no project or receiver changes were made. Inspect error details before retry."),
     "DIRECT_SQL_RECEIVER_REQUIRED": (422, "Direct operations require a native SQL receiver; use preview for message receivers."),
     "DIRECT_SQL_STATE_CHANGED": (412, "Native project or SQL receiver changed before the operation; verify current state."),
 }

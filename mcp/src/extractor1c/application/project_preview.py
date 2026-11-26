@@ -11,10 +11,12 @@ from typing import Any
 from ..domain.identifiers import is_uuid
 from ..domain.projects.changes import (
     ProjectFieldMappingChange, ProjectPreview, ProjectReceiverRepair, ProjectRowChange, ProjectRowSettingsChange,
-    ProjectUpdate,
+    ProjectUpdate, ProjectReceiverChange,
 )
 from ..domain.projects.definition import GroupProjectDefinition, ProjectDefinition, RowSettings
-from ..domain.projects.payloads import matches_field_mapping_row, uses_column_names, uses_query_source
+from ..domain.projects.payloads import (
+    matches_field_mapping_row, uses_column_names, uses_dotted_field_addition, uses_query_source,
+)
 from ..domain.projects.summaries import preview_summary
 from .capabilities import require_capabilities
 from .connections import resolve_project_connection
@@ -27,6 +29,8 @@ def preview_project_definition(ctx: AppContext, definition: ProjectPreview,
                                metadata_snapshot_id: str | None = None) -> Any:
     """Resolve receiver and store the exact approved native preview input once."""
     raw_payload = definition.model_dump(exclude_none=True)
+    if isinstance(definition, ProjectReceiverChange):
+        return _preview_receiver_change(ctx, raw_payload)
     if uses_query_source(raw_payload):
         require_capabilities(ctx.call, "query_sources")
     if uses_column_names(raw_payload):
@@ -45,12 +49,40 @@ def preview_project_definition(ctx: AppContext, definition: ProjectPreview,
     return _preview_with_receiver(ctx, definition, raw_payload, rows, uses_row_settings, metadata_snapshot_id)
 
 
+def _preview_receiver_change(ctx: AppContext, payload: dict[str, Any]) -> dict[str, Any]:
+    require_capabilities(ctx.call, "receiver_change")
+    preview = ctx.call("projects/preview", _resolve(ctx, payload))
+    requested = payload["receiverChange"]
+    if (not isinstance(preview, dict)
+            or preview.get("projectName") != payload["projectName"]
+            or preview.get("currentTableName") != payload["currentTableName"]
+            or preview.get("table") != requested["tableName"]
+            or not is_uuid(preview.get("projectRef"))
+            or type(preview.get("tableExists")) is not bool):
+        raise ApplicationError("Invalid receiver change preview; no plan was created")
+    exists = preview["tableExists"]
+    approved = (preview.get("approved") is True and preview.get("stateMatches") is True
+                and preview.get("conflict") is False
+                and (not exists or requested["recreateExisting"] is True)
+                and ("expectedTableExists" not in requested or requested["expectedTableExists"] is exists))
+    result = {"approved": approved, "action": "update", "summary": preview, "planId": None}
+    if not approved:
+        return result
+    payload["receiverChange"]["expectedTableExists"] = exists
+    plan = ctx.operations.create_plan("update", payload, preview, ctx.plan_ttl_seconds)
+    return {**result, "planId": plan.plan_id, "expiresAt": plan.expires_at}
+
+
 def _preview_field_mapping(ctx: AppContext, definition: ProjectFieldMappingChange,
                            raw_payload: dict[str, Any]) -> dict[str, Any]:
     # A saved-field patch is already bound to its receiver. Never rebuild
     # the helper definition or add connection overrides to this contract.
-    require_capabilities(ctx.call, "field_mapping",
-                         *(("field_selection",) if "rowIdentifier" in raw_payload else ()))
+    required = ["field_mapping"]
+    if "rowIdentifier" in raw_payload:
+        required.append("field_selection")
+    if uses_dotted_field_addition(raw_payload):
+        required.append("field_selection_paths")
+    require_capabilities(ctx.call, *required)
     preview = ctx.call("projects/preview", _resolve(ctx, raw_payload))
     if (not isinstance(preview, dict)
             or preview.get("projectName") != definition.projectName

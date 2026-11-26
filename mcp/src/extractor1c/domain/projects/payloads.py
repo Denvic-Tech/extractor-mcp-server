@@ -22,6 +22,14 @@ def uses_column_names(payload: dict[str, Any]) -> bool:
     return any(uses_column_names(row) for row in payload.get("rows", []) if isinstance(row, dict))
 
 
+def uses_dotted_field_addition(payload: dict[str, Any]) -> bool:
+    """Отличить новое добавление по пути от правок уже сохранённых полей."""
+    return any(
+        change.get("add") is True and "." in change["source"]
+        for change in payload.get("fieldChanges", [])
+    )
+
+
 def matches_field_mapping_row(payload: dict[str, object], response: dict[str, object]) -> bool:
     """Ответ 1С относится к той же сохранённой строке, что и запрос изменения полей."""
     if "rowIdentifier" in payload:
