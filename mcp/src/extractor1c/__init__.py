@@ -4,5 +4,5 @@
 Разработчик: Денвик Аналитика, ООО — https://bi.denvic.ru/.
 """
 
-__version__ = "3.3.9"
+__version__ = "3.3.10"
 EPA_CONTRACT_VERSION = "3.3.5"
