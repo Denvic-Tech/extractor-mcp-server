@@ -70,6 +70,9 @@ class AppContext(Protocol):
     def plan_ttl_seconds(self) -> int: ...
 
     @property
+    def mask_personal_data(self) -> bool: ...
+
+    @property
     def operations(self) -> OperationRepository: ...
 
     @property

@@ -31,7 +31,7 @@
 
 ## Порядок публикации
 
-1. Обновить Экстрактор 1С начиная с 3.16.1.34 из коммерческой поставки [«Экстрактор данных 1С в BI»](https://bi.denvic.ru/), методы EPA_Projects 3.3.5 и MCP 3.3.11. Проверить отдельно mcpVersion, expectedOneCMethodsVersion, фактическую oneCMethodsVersion и capabilities через readiness.
+1. Обновить Экстрактор 1С начиная с 3.16.1.34 из коммерческой поставки [«Экстрактор данных 1С в BI»](https://bi.denvic.ru/), методы EPA_Projects 3.3.5 и MCP 3.3.12. Проверить отдельно mcpVersion, expectedOneCMethodsVersion, фактическую oneCMethodsVersion и capabilities через readiness.
 2. Развернуть MCP в доступной к 1С сети с постоянным томом.
 3. Настроить DNS/TLS и ограничение входящего трафика.
 4. Проверить `/health`, затем MCP-инструмент `readiness`: он проверяет хранилище операций и доступ выбранного транспорта.

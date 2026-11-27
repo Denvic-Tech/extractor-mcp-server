@@ -38,6 +38,10 @@ class RuntimeContext:
         return runtime.settings().plan_ttl_seconds
 
     @property
+    def mask_personal_data(self) -> bool:
+        return runtime.settings().mask_personal_data
+
+    @property
     def operations(self) -> OperationRepository:
         return runtime.operation_store()
 

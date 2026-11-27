@@ -1,5 +1,6 @@
 """Closed receiver observation requests, fixed transports and read-only isolation."""
 from unittest.mock import Mock
+from copy import deepcopy
 from uuid import uuid4
 
 import pytest
@@ -13,8 +14,10 @@ from extractor1c import secure_main
 from extractor1c.infrastructure.settings import ApiSettings
 from extractor1c.domain.execution.requests import ProjectReceiverInspect
 from extractor1c.infrastructure.onec_http import ProjectsApiClient
-from extractor1c.domain.epa.errors import ProjectsApiError
+from extractor1c.domain.epa.errors import DccOperationPending, ProjectsApiError
+from extractor1c.domain.execution.masking import mask_receiver_sample
 from extractor1c.infrastructure.dcc import DccClient
+from extractor1c.infrastructure.targets import Target
 
 PROJECT = "b81d6354-710c-4199-8a4c-f11a6ab63d1b"
 NATIVE = {
@@ -29,6 +32,102 @@ NATIVE = {
                    "truncatedCells": [], "order": "unspecified"}}},
     "sourceEqualityVerified": False, "warnings": [],
 }
+
+
+@pytest.fixture
+def personal_sample():
+    native = deepcopy(NATIVE)
+    native["source"] = "Справочник.ФизическиеЛица"
+    sample = native["checks"]["sample"]["result"]
+    fields = {
+        "full_name": "ФизЛицо.ФИО",
+        "name": "Наименование",
+        "home": "АдресРегистрации",
+        "mobile": "МобильныйТелефон",
+        "mail": "ЭлектроннаяПочта",
+        "tax": "ИНН",
+        "insurance": "СНИЛС",
+        "dob": "ДатаРождения",
+        "derived": None,
+    }
+    sample["fields"].extend(
+        {"name": name, "source": source, "typeTag": "string"} for name, source in fields.items()
+    )
+    sample["rows"][0].update(dict.fromkeys(fields, "private"))
+    sample["rows"][0]["tax"] = 123456789012
+    sample["rows"][0]["unmapped"] = "private"
+    return native, sorted([*fields, "unmapped"])
+
+
+@pytest.mark.parametrize("source", ["Справочник.Партнеры.КонтактнаяИнформация", "ПартнерыКонтактнаяИнформация"])
+def test_masks_generic_value_columns_in_partner_contact_tabular_part(source):
+    native = deepcopy(NATIVE)
+    native["source"] = source
+    sample = native["checks"]["sample"]["result"]
+    source_fields = {
+        "display": "Представление", "value": "Значение", "payload": "ЗначенияПолей",
+        "domain": "ДоменноеИмяСервера", "kind": "Тип",
+    }
+    sample["fields"] = [{"name": alias, "source": source} for alias, source in source_fields.items()]
+    sample["rows"] = [dict.fromkeys(source_fields, "test")]
+    masked = mask_receiver_sample(native)["checks"]["sample"]["result"]
+    assert masked["maskedFields"] == ["display", "domain", "payload", "value"]
+    assert masked["rows"] == [
+        {"display": "[СКРЫТО]", "domain": "[СКРЫТО]", "payload": "[СКРЫТО]", "value": "[СКРЫТО]", "kind": "test"}
+    ]
+
+
+@pytest.mark.parametrize("details", [False, True])
+@pytest.mark.parametrize("enabled", [True, False])
+def test_receiver_sample_masks_source_fields(monkeypatch, tmp_path, personal_sample, details, enabled):
+    native, masked = personal_sample
+    env_file = tmp_path / ".env"
+    env_file.write_text("" if enabled else "EXTRACTOR_PROJECTS_MASK_PERSONAL_DATA=false\n", encoding="utf-8")
+    monkeypatch.delenv("EXTRACTOR_PROJECTS_MASK_PERSONAL_DATA", raising=False)
+    config = ApiSettings(_env_file=env_file)
+    monkeypatch.setattr(server.runtime, "ApiSettings", lambda **kwargs: config)
+    monkeypatch.setattr(server.runtime, "call_api", Mock(side_effect=[
+        {"methodsVersion": "3.3.5", "capabilities": ["receiver_inspection"]}, native,
+    ]))
+    result = server.inspect_project_receiver(PROJECT, "row", ["sample"], masked + ["amount"], 1, details)
+    sample = result["checks"]["sample"]["result"]
+    raw = native["checks"]["sample"]["result"]
+    assert raw["rows"][0]["full_name"] == "private"
+    assert ("verification" in result) is not details
+    if enabled:
+        assert sample["maskedFields"] == masked
+        assert sample["rows"] == [{**dict.fromkeys(masked, "[СКРЫТО]"), "amount": raw["rows"][0]["amount"]}]
+    else:
+        assert sample == raw
+
+
+@pytest.mark.parametrize("status,http_status", [("completed", 200), ("failed", 500), ("uncertain", 200)])
+def test_dcc_operation_status_masks_receiver_sample(monkeypatch, tmp_path, personal_sample, status, http_status):
+    native, masked = personal_sample
+    config = ApiSettings(_env_file=None, transport="dcc", operation_db=str(tmp_path / "ops.sqlite"))
+    target = Target(config, "connector", "identity")
+    monkeypatch.setattr(server.runtime, "ApiSettings", lambda **kwargs: config)
+    monkeypatch.setattr(server.runtime, "resolve_target", lambda *args: target)
+    operation = str(uuid4())
+    monkeypatch.setattr(server.runtime, "call_target", Mock(side_effect=[
+        {"methodsVersion": "3.3.5", "capabilities": ["receiver_inspection"]},
+        DccOperationPending(operation),
+    ]))
+    with pytest.raises(ToolError, match=operation):
+        server.inspect_project_receiver(PROJECT, "row", ["sample"], masked, 1, base_id="connector")
+    monkeypatch.setattr(server.runtime, "get_target_operation", Mock(return_value={
+        "operation_id": operation, "task_id": operation, "method": "projects/receiver/inspect",
+        "status": status, "result_ready": True, "http_status": http_status,
+        "result": native, "diagnostic": "private",
+    }))
+    result = server.get_operation_status(operation, base_id="connector")
+    assert result["status"] == status
+    assert "private" not in str(result)
+    if status == "failed":
+        assert "result" not in result["dcc"]
+    else:
+        payload = result["result"] if status == "completed" else result["dcc"]["result"]
+        assert payload["checks"]["sample"]["result"]["maskedFields"] == masked
 
 
 @pytest.mark.parametrize("overrides", [

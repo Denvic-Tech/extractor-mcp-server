@@ -8,6 +8,7 @@ from typing import Any
 from ..domain.epa.errors import ProjectsApiError
 from ..domain.epa.relay import operation_result
 from ..domain.epa.routes import ACTION_ROUTES
+from ..domain.execution.masking import mask_receiver_sample
 from ..domain.operations.errors import OperationStoreError
 from .commits import require_definite_outcome
 from .errors import ApplicationError
@@ -52,9 +53,19 @@ def _relay_only_status(ctx: AppContext, operation_id: str) -> dict[str, Any]:
     """Чтение через DCC без записи в журнале операций: известен только маршрут и задача."""
     route = ctx.operations.relay_route(operation_id)
     state = _matching_relay_state(ctx, operation_id, route)
+    mask_sample = route == "projects/receiver/inspect" and ctx.mask_personal_data
     if state.get("status") in {"failed", "cancelled", "recovery_required", "uncertain"}:
-        return {"operationId": operation_id, "status": state["status"], "dcc": relay_details(state)}
+        details = relay_details(state)
+        if mask_sample:
+            details.pop("diagnostic", None)
+            if state.get("http_status") == 200:
+                details["result"] = mask_receiver_sample(details.get("result"))
+            else:
+                details.pop("result", None)
+        return {"operationId": operation_id, "status": state["status"], "dcc": details}
     ready, result = operation_result(state, route)
+    if ready and mask_sample:
+        result = mask_receiver_sample(result)
     return {"operationId": operation_id, "status": "completed" if ready else state["status"],
             "result": result if ready else None}
 

@@ -9,6 +9,7 @@ from typing import Any
 from ..domain.decisions import task_decision, receiver_decision
 
 from ..domain.epa.capabilities import CAPABILITY_REQUIRED, PublishedEpa
+from ..domain.execution.masking import mask_receiver_sample
 from ..domain.execution.requests import (
     ProjectExportCancel, ProjectExportCancelRef, ProjectExportRef, ProjectExportStart, ProjectExportStatus,
     ProjectQueryDiagnostics, ProjectReceiverInspect,
@@ -128,4 +129,7 @@ def inspect_receiver(ctx: AppContext, request: ProjectReceiverInspect, details: 
         raise ApplicationError(CAPABILITY_REQUIRED["receiver_inspection"])
     # Readiness confirmed the feature. A receiver 404 can describe a missing
     # saved project/row; preserve the business code and diagnostic identifier.
-    return receiver_decision(ctx.call("projects/receiver/inspect", payload), details=details)
+    result = ctx.call("projects/receiver/inspect", payload)
+    if ctx.mask_personal_data:
+        result = mask_receiver_sample(result)
+    return receiver_decision(result, details=details)

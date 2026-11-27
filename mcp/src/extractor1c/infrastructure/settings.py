@@ -26,6 +26,7 @@ class ApiSettings(BaseSettings):
     dcc_wait_timeout: float = Field(default=60, ge=0, le=3600)
     dcc_poll_interval: float = Field(default=1, gt=0, le=60)
     proxy_key: str = ""
+    mask_personal_data: bool = True
     # Bearer tokens accepted at the MCP endpoint. One or more tokens separated
     # by commas; an optional "label:token" keeps a readable name per client,
     # e.g. "extractor:s3cret-token,ci:another-token". Empty means unconfigured:
