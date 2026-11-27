@@ -6,6 +6,8 @@
 from typing import Any
 
 from ...application.ports import AppContext, DirectCapabilityCache, OperationRepository
+from ...domain.epa.routes import ACTION_ROUTES
+from ...domain.operations.plan import Action
 from . import runtime
 
 
@@ -51,6 +53,12 @@ class RuntimeContext:
             return runtime.call_api(route, body)
         finally:
             runtime._operation_id.reset(token)
+
+    def execute_operation(self, action: Action, payload: dict[str, Any], operation_id: str) -> Any:
+        return self.call(ACTION_ROUTES[action], payload, operation_id=operation_id)
+
+    def read_saved_project(self, project_name: str) -> Any:
+        return self.call("projects/verify", {"projectName": project_name})
 
     def read_snapshot(self, resource: str, snapshot_id: str | None = None, *,
                       params: dict[str, Any] | None = None,

@@ -3,6 +3,7 @@ from typing import Any
 
 from ....application import commits, project_preview
 from ....application.responses import preview_response
+from ....domain.operations.plan import Action
 from ....domain.projects.changes import ProjectPreview
 from ..context import CONTEXT
 from ..registry import tool_errors
@@ -15,12 +16,12 @@ def _preview_project_definition(definition: ProjectPreview, metadata_snapshot_id
 
 
 @tool_errors
-def _commit(plan_id: str | None, operation_id: str, action: str,
+def _commit(plan_id: str | None, operation_id: str, action: Action,
             *, direct_payload: dict[str, Any] | None = None) -> Any:
     return commits.commit(CONTEXT, plan_id, operation_id, action, direct_payload=direct_payload)
 
 
 @tool_errors
-def _write_project(action: str, plan_id: str | None, operation_id: str, direct: Any) -> Any:
+def _write_project(action: Action, plan_id: str | None, operation_id: str, direct: Any) -> Any:
     """Select exactly one closed input contract, before journal or network work."""
     return commits.write_project(CONTEXT, action, plan_id, operation_id, direct)

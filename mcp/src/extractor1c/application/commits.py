@@ -11,10 +11,10 @@ from pydantic import TypeAdapter
 from ..domain.decisions import confirm_saved
 from ..domain.identifiers import is_uuid
 from ..domain.epa.capabilities import CAPABILITY_REQUIRED, PublishedEpa
-from ..domain.epa.routes import ACTION_ROUTES
 from ..domain.execution.outcomes import execution_result_problem
 from ..domain.execution.requests import ProjectExportRef
 from ..domain.operations.errors import OperationStoreError
+from ..domain.operations.plan import Action
 from ..domain.projects.changes import ProjectChange, ProjectRowsAppend, ProjectReceiverChange
 from ..domain.projects.connections import bind_project_connection
 from ..domain.projects.definition import GroupProjectDefinition, ProjectDefinition
@@ -26,7 +26,7 @@ from .responses import project_response
 from .state_tokens import PREFIX, resolve_state
 
 
-def write_project(ctx: AppContext, action: str, plan_id: str | None, operation_id: str, direct: Any) -> Any:
+def write_project(ctx: AppContext, action: Action, plan_id: str | None, operation_id: str, direct: Any) -> Any:
     """Select exactly one closed input contract, before journal or network work."""
     if (plan_id is None) == (direct is None):
         raise ApplicationError("Specify exactly one of plan_id or the direct operation input")
@@ -58,7 +58,7 @@ def write_project(ctx: AppContext, action: str, plan_id: str | None, operation_i
     return commit(ctx, None, operation_id, action, direct_payload=payload)
 
 
-def commit(ctx: AppContext, plan_id: str | None, operation_id: str, action: str,
+def commit(ctx: AppContext, plan_id: str | None, operation_id: str, action: Action,
            *, direct_payload: dict[str, Any] | None = None) -> dict[str, Any]:
     """Выполнить запись один раз и зафиксировать её исход в журнале."""
     try:
@@ -104,7 +104,7 @@ def commit(ctx: AppContext, plan_id: str | None, operation_id: str, action: str,
                      "error": "Could not read native state; no write performed", "writeApplied": False})
         raise
     try:
-        result = ctx.call(ACTION_ROUTES[action], wire_payload, operation_id=operation_id)
+        result = ctx.execute_operation(action, wire_payload, operation_id)
     except LicenseRejected as exc:
         ctx.operations.reject(operation_id, exc.result)
         raise
@@ -115,7 +115,7 @@ def commit(ctx: AppContext, plan_id: str | None, operation_id: str, action: str,
     if (action in {"create", "update"} and isinstance(result, dict)
             and is_uuid(result.get("projectRef"))):
         try:
-            saved = ctx.call("projects/verify", {"projectName": plan.payload["projectName"]})
+            saved = ctx.read_saved_project(plan.payload["projectName"])
             if not isinstance(saved, dict) or saved.get("projectRef") != result["projectRef"]:
                 verification = {"status": "unavailable", "reason": "SAVED_PROJECT_IDENTITY_UNCONFIRMED"}
             else:

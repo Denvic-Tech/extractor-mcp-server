@@ -136,7 +136,7 @@ Query допускает одну ось; несколько осей требу
 [24-row-settings.md](row-settings.md): `rowSettings.saved`, capability
 `row_settings`, прямой SQL-update либо preview-план и штатное назначение каждого поля.
 
-MCP 3.3.10 сохраняет опубликованные коды API и errorId для HTTP и DCC. EPA может дополнительно вернуть очищенный errorDetails (до 4000 символов), errorDetailsRedacted и errorDetailsTruncated. Текст с признаками секретов скрывается целиком до сокращения; произвольное поле error не считается подробной диагностикой.
+Начиная с MCP 3.3.6, сервер сохраняет опубликованные коды API и errorId для HTTP и DCC. EPA может дополнительно вернуть очищенный errorDetails (до 4000 символов), errorDetailsRedacted и errorDetailsTruncated. Текст с признаками секретов скрывается целиком до сокращения; произвольное поле error не считается подробной диагностикой.
 
 Для ClickHouse, PostgreSQL, MySQL, MS SQL и Kafka перед записью читай [проверки приёмника](receiver-name-preflight.md).
 

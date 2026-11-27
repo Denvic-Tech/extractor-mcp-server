@@ -59,6 +59,6 @@
 
 ## Версия сборки методов 1С
 
-MCP: 3.3.6; ожидаемый контракт EPA_Projects: 3.3.5. Читай readiness.mcpVersion и expectedOneCMethodsVersion отдельно от фактической oneCMethodsVersion. Экстрактор: начиная с 3.16.1.34. Читай readiness.oneCMethodsVersion и oneCCapabilities фактически опубликованной базы. Для account_scope нужна capability account_subconto_settings. Отсутствующая версия означает непроверенную совместимость; не подставляй локальную версию. Контракт сегментации - массив; см. [описание](partition-segments.md). Платформа 8.3.5 и совместимость 8.2 проверяются отдельно от версии Экстрактора.
+MCP: 3.3.11; ожидаемый контракт EPA_Projects: 3.3.5. Читай readiness.mcpVersion и expectedOneCMethodsVersion отдельно от фактической oneCMethodsVersion. Экстрактор: начиная с 3.16.1.34. Читай readiness.oneCMethodsVersion и oneCCapabilities фактически опубликованной базы. Для account_scope нужна capability account_subconto_settings. Отсутствующая версия означает непроверенную совместимость; не подставляй локальную версию. Контракт сегментации - массив; см. [описание](partition-segments.md). Платформа 8.3.5 и совместимость 8.2 проверяются отдельно от версии Экстрактора.
 
 Версии MCP и EPA проверяй раздельно через readiness выбранной базы. Для DCC нужен выпуск 2.0.2 или новее. Платформа 8.3.5 и режим совместимости 8.2 требуют отдельной проверки выполнения.

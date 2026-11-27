@@ -78,6 +78,12 @@ class AppContext(Protocol):
     def call(self, route: str, body: dict[str, Any], *, operation_id: str | None = None) -> Any:
         """Вызвать маршрут EPA. ``operation_id`` связывает запись с её операцией в журнале и DCC."""
 
+    def execute_operation(self, action: Action, payload: dict[str, Any], operation_id: str) -> Any:
+        """Выполнить зарегистрированную операцию в выбранной базе."""
+
+    def read_saved_project(self, project_name: str) -> Any:
+        """Прочитать фактическое состояние сохранённого проекта."""
+
     def read_snapshot(self, resource: str, snapshot_id: str | None = None, *,
                       params: dict[str, Any] | None = None,
                       body: dict[str, Any] | None = None) -> dict[str, Any]:
